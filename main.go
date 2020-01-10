@@ -630,8 +630,21 @@ func wzGet() iris.Handler {
 				if err != nil {
 
 					if !fileExists(dbk) {
-						ctx.StatusCode(iris.StatusNotFound)
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+							if err != nil {
+								GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
 						return
+
 					}
 
 					tries := 0
@@ -794,8 +807,21 @@ func wzGet() iris.Handler {
 				if err != nil {
 
 					if !fileExists(dbk) {
-						ctx.StatusCode(iris.StatusNotFound)
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+							if err != nil {
+								GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
 						return
+
 					}
 
 					tries := 0
@@ -1414,8 +1440,21 @@ func wzGet() iris.Handler {
 		if err != nil {
 
 			if !fileExists(dbf) {
-				ctx.StatusCode(iris.StatusNotFound)
+
+				ctx.StatusCode(iris.StatusInternalServerError)
+				GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+					if err != nil {
+						GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					}
+
+				}
+
 				return
+
 			}
 
 			tries := 0
@@ -2745,9 +2784,22 @@ func wzPut(keymutex *mmutex.Mutex, cdb *sql.DB) iris.Handler {
 				if err != nil {
 
 					if !fileExists(dbf) {
-						ctx.StatusCode(iris.StatusNotFound)
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open/create db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t open/create db file error\n")
+							if err != nil {
+								PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
 						keymutex.Unlock(dbf)
 						return
+
 					}
 
 					tries := 0
@@ -3435,9 +3487,22 @@ func wzDel(keymutex *mmutex.Mutex, cdb *sql.DB) iris.Handler {
 			if err != nil {
 
 				if !fileExists(dbf) {
-					ctx.StatusCode(iris.StatusNotFound)
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					DelLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+						if err != nil {
+							DelLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						}
+
+					}
+
 					keymutex.Unlock(dbf)
 					return
+
 				}
 
 				tries := 0
