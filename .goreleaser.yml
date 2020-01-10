@@ -47,7 +47,7 @@ nfpms:
     homepage: "https://wzd.dev/"
     maintainer: "Andrey Kuvshinov <dev@wzd.dev>"
     description: "Sharded NoSQL Compact Storage Server. Distributing any number of small and large files/values"
-    license: "BSD-2 Clause"
+    license: "BSD-3 Clause"
     name_template: "{{.ProjectName}}-{{.Version}}-{{.Os}}-{{.Arch}}"
     replacements:
       amd64: x86_64
@@ -122,7 +122,7 @@ scoop:
     name: "Andrey Kuvshinov"
     email: dev@wzd.dev
   homepage: "https://wzd.dev/"
-  license: BSD-2 Clause
+  license: BSD-3 Clause
 
 brews:
  -
@@ -140,5 +140,8 @@ changelog:
   sort: asc
   filters:
     exclude:
-    - '^images:'
-    - '^conf:'
+    - Readme
+    - Image
+    - Script
+    - Docker
+    - Typo
