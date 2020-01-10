@@ -131,9 +131,7 @@ wZD разрабатывался как сервер для смешанного
 Установка пакетов/бинарников
 ------------
 
-- Страница с релизами:
-
-<a href=https://github.com/eltaline/wzd/releases>Релизы</a>
+- <a href=https://github.com/eltaline/wzd/releases>Скачать</a>
 
 Установка docker образа
 ------------
