@@ -1,0 +1,25 @@
+[Unit]
+Description=wZD Service
+
+[Service]
+Type=simple
+User=wzd
+Group=wzd
+PIDFile=/run/wzd/wzd.pid
+RuntimeDirectory=wzd
+TimeoutStopSec=300
+
+ExecStart=/usr/sbin/wzd
+ExecStop=/bin/kill -s TERM $MAINPID
+
+Restart=always
+RestartSec=60s
+
+StandardOutput=syslog
+StandardError=syslog
+
+LimitNOFILE=131072
+
+[Install]
+WantedBy=multi-user.target
+Alias=wzd.service
