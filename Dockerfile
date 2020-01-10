@@ -68,7 +68,7 @@ RUN chown wzd.wzd /var/storage
 RUN chown wzd.wzd /run/wzd
 
 RUN apt-get update
-RUN apt-get -y install nginx sed su
+RUN apt-get -y install nginx sed util-linux
 
 RUN rm -f /etc/nginx/sites-available/*
 RUN rm -f /etc/nginx/sites-enabled/*
