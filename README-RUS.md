@@ -133,7 +133,7 @@ wZD разрабатывался как сервер для смешанного
 
 - <a href=https://github.com/eltaline/wzd/releases>Скачать</a>
 
-```bash
+```
 systemctl enable wzd && systemctl start wzd
 ```
 
