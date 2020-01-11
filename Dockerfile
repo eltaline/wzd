@@ -46,8 +46,8 @@ ENV nonunique false
 ENV cctrl 2592000
 ENV minbuffer 262144
 ENV lowbuffer 1048576
-ENV medbuffer 67042304
-ENV bigbuffer 536338432
+ENV medbuffer 67108864
+ENV bigbuffer 536870912
 ENV filemode 0640
 ENV dirmode 0750
 ENV delbolt false
