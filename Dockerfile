@@ -14,7 +14,6 @@ ENV pidfile "/run/wzd/wzd.pid"
 ENV logdir "/var/log/wzd"
 ENV logmode 0640
 ENV defsleep 1
-ENV opentries 30
 ENV dbdriver "sqlite"
 ENV dbfile "/var/lib/wzd/wzd.sqlite3"
 ENV dbhost "127.0.0.1"

@@ -58,7 +58,6 @@ type global struct {
 	LOGDIR            string
 	LOGMODE           uint32
 	DEFSLEEP          int
-	OPENTRIES         int
 	DBDRIVER          string
 	DBFILE            string
 	DBHOST            string
@@ -146,8 +145,7 @@ var (
 	logdir  string = "/var/log/wzd"
 	logmode os.FileMode
 
-	defsleep  time.Duration = 1 * time.Second
-	opentries int           = 30
+	defsleep time.Duration = 1 * time.Second
 
 	dbdriver        = "sqlite"
 	dbfile          = "/var/lib/wzd/wzd.sqlite3"
@@ -252,21 +250,29 @@ func compactScheduler(cdb *sql.DB) {
 		for _, dbf := range pathsSlice {
 
 			if !fileExists(dbf.Path) {
+
 				AppLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
 				deltask := fmt.Sprintf("DELETE FROM compact WHERE path = '%s';", dbf.Path)
 				_, err := cdb.Exec(deltask)
 				if err != nil {
 					AppLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-					continue
 				}
+
 				continue
 
 			}
 
 			infile, err := os.Stat(dbf.Path)
 			if err != nil {
+
 				AppLogger.Errorf("| Can`t stat file error | File [%s] | %v", dbf.Path, err)
-				return
+				deltask := fmt.Sprintf("DELETE FROM compact WHERE path = '%s';", dbf.Path)
+				_, err := cdb.Exec(deltask)
+				if err != nil {
+					AppLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
+				}
+
+				continue
 
 			}
 
@@ -275,44 +281,14 @@ func compactScheduler(cdb *sql.DB) {
 			db, err := bolt.Open(dbf.Path, filemode, &bolt.Options{Timeout: timeout})
 			if err != nil {
 
-				if !fileExists(dbf.Path) {
-					AppLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
-					deltask := fmt.Sprintf("DELETE FROM compact WHERE path = '%s';", dbf.Path)
-					_, err := cdb.Exec(deltask)
-					if err != nil {
-						AppLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-						continue
-					}
-					continue
-
+				AppLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
+				deltask := fmt.Sprintf("DELETE FROM compact WHERE path = '%s';", dbf.Path)
+				_, err := cdb.Exec(deltask)
+				if err != nil {
+					AppLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
 				}
 
-				tries := 0
-
-				for itry := 0; itry <= opentries; itry++ {
-
-					tries++
-
-					db, err = bolt.Open(dbf.Path, filemode, &bolt.Options{Timeout: timeout})
-					if err == nil {
-						break
-					}
-
-					time.Sleep(defsleep)
-
-				}
-
-				if tries == opentries {
-					AppLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
-					deltask := fmt.Sprintf("DELETE FROM compact WHERE path = '%s';", dbf.Path)
-					_, err := cdb.Exec(deltask)
-					if err != nil {
-						AppLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-						continue
-					}
-					continue
-
-				}
+				continue
 
 			}
 			defer db.Close()
@@ -320,6 +296,16 @@ func compactScheduler(cdb *sql.DB) {
 			err = db.CompactQuietly()
 			if err != nil {
 				AppLogger.Errorf("| Scheduled compaction task error | DB [%s] | %v", dbf.Path, err)
+				db.Close()
+
+				deltask := fmt.Sprintf("DELETE FROM compact WHERE path = '%s';", dbf.Path)
+				_, err = cdb.Exec(deltask)
+				if err != nil {
+					AppLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
+				}
+
+				continue
+
 			}
 
 			err = os.Chmod(dbf.Path, filemode)
@@ -331,7 +317,6 @@ func compactScheduler(cdb *sql.DB) {
 				_, err = cdb.Exec(deltask)
 				if err != nil {
 					AppLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-					continue
 				}
 
 				continue
@@ -629,56 +614,19 @@ func wzGet() iris.Handler {
 				db, err := bolt.Open(dbk, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
 				if err != nil {
 
-					if !fileExists(dbk) {
+					ctx.StatusCode(iris.StatusInternalServerError)
+					GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
 
-						ctx.StatusCode(iris.StatusInternalServerError)
-						GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+					if debugmode {
 
-						if debugmode {
-
-							_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-							if err != nil {
-								GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-							}
-
+						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+						if err != nil {
+							GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
-
-						return
 
 					}
 
-					tries := 0
-
-					for itry := 0; itry <= opentries; itry++ {
-
-						tries++
-
-						db, err = bolt.Open(dbk, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
-						if err == nil {
-							break
-						}
-
-						time.Sleep(defsleep)
-
-					}
-
-					if tries == opentries {
-
-						ctx.StatusCode(iris.StatusInternalServerError)
-						GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
-
-						if debugmode {
-
-							_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-							if err != nil {
-								GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-							}
-
-						}
-
-						return
-
-					}
+					return
 
 				}
 				defer db.Close()
@@ -806,56 +754,19 @@ func wzGet() iris.Handler {
 				db, err := bolt.Open(dbk, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
 				if err != nil {
 
-					if !fileExists(dbk) {
+					ctx.StatusCode(iris.StatusInternalServerError)
+					GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
 
-						ctx.StatusCode(iris.StatusInternalServerError)
-						GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+					if debugmode {
 
-						if debugmode {
-
-							_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-							if err != nil {
-								GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-							}
-
+						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+						if err != nil {
+							GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
-
-						return
 
 					}
 
-					tries := 0
-
-					for itry := 0; itry <= opentries; itry++ {
-
-						tries++
-
-						db, err = bolt.Open(dbk, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
-						if err == nil {
-							break
-						}
-
-						time.Sleep(defsleep)
-
-					}
-
-					if tries == opentries {
-
-						ctx.StatusCode(iris.StatusInternalServerError)
-						GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
-
-						if debugmode {
-
-							_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-							if err != nil {
-								GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-							}
-
-						}
-
-						return
-
-					}
+					return
 
 				}
 				defer db.Close()
@@ -1439,56 +1350,19 @@ func wzGet() iris.Handler {
 		db, err := bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
 		if err != nil {
 
-			if !fileExists(dbf) {
+			ctx.StatusCode(iris.StatusInternalServerError)
+			GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
-				ctx.StatusCode(iris.StatusInternalServerError)
-				GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+			if debugmode {
 
-				if debugmode {
-
-					_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-					if err != nil {
-						GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-					}
-
+				_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+				if err != nil {
+					GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 				}
-
-				return
 
 			}
 
-			tries := 0
-
-			for itry := 0; itry <= opentries; itry++ {
-
-				tries++
-
-				db, err = bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
-				if err == nil {
-					break
-				}
-
-				time.Sleep(defsleep)
-
-			}
-
-			if tries == opentries {
-
-				ctx.StatusCode(iris.StatusInternalServerError)
-				GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
-
-				if debugmode {
-
-					_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-					if err != nil {
-						GetLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-					}
-
-				}
-
-				return
-
-			}
+			return
 
 		}
 		defer db.Close()
@@ -2264,56 +2138,19 @@ func wzPut(keymutex *mmutex.Mutex, cdb *sql.DB) iris.Handler {
 				db, err := bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
 				if err != nil {
 
-					if !fileExists(dbf) {
+					ctx.StatusCode(iris.StatusInternalServerError)
+					PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
-						ctx.StatusCode(iris.StatusInternalServerError)
-						PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+					if debugmode {
 
-						if debugmode {
-
-							_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-							if err != nil {
-								PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-							}
-
+						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+						if err != nil {
+							PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
-
-						return
 
 					}
 
-					tries := 0
-
-					for itry := 0; itry <= opentries; itry++ {
-
-						tries++
-
-						db, err = bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
-						if err == nil {
-							break
-						}
-
-						time.Sleep(defsleep)
-
-					}
-
-					if tries == opentries {
-
-						ctx.StatusCode(iris.StatusInternalServerError)
-						PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
-
-						if debugmode {
-
-							_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-							if err != nil {
-								PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-							}
-
-						}
-
-						return
-
-					}
+					return
 
 				}
 				defer db.Close()
@@ -2783,58 +2620,20 @@ func wzPut(keymutex *mmutex.Mutex, cdb *sql.DB) iris.Handler {
 				db, err := bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout})
 				if err != nil {
 
-					if !fileExists(dbf) {
+					ctx.StatusCode(iris.StatusInternalServerError)
+					PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open/create db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
-						ctx.StatusCode(iris.StatusInternalServerError)
-						PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open/create db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+					if debugmode {
 
-						if debugmode {
-
-							_, err = ctx.WriteString("[ERRO] Can`t open/create db file error\n")
-							if err != nil {
-								PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-							}
-
+						_, err = ctx.WriteString("[ERRO] Can`t open/create db file error\n")
+						if err != nil {
+							PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
-
-						keymutex.Unlock(dbf)
-						return
 
 					}
 
-					tries := 0
-
-					for itry := 0; itry <= opentries; itry++ {
-
-						tries++
-
-						db, err = bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout})
-						if err == nil {
-							break
-						}
-
-						time.Sleep(defsleep)
-
-					}
-
-					if tries == opentries {
-
-						ctx.StatusCode(iris.StatusInternalServerError)
-						PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open/create db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
-
-						if debugmode {
-
-							_, err = ctx.WriteString("[ERRO] Can`t open/create db file error\n")
-							if err != nil {
-								PutLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-							}
-
-						}
-
-						keymutex.Unlock(dbf)
-						return
-
-					}
+					keymutex.Unlock(dbf)
+					return
 
 				}
 				defer db.Close()
@@ -3486,58 +3285,20 @@ func wzDel(keymutex *mmutex.Mutex, cdb *sql.DB) iris.Handler {
 			db, err := bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout})
 			if err != nil {
 
-				if !fileExists(dbf) {
+				ctx.StatusCode(iris.StatusInternalServerError)
+				DelLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					DelLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+				if debugmode {
 
-					if debugmode {
-
-						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-						if err != nil {
-							DelLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-						}
-
+					_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+					if err != nil {
+						DelLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 					}
-
-					keymutex.Unlock(dbf)
-					return
 
 				}
 
-				tries := 0
-
-				for itry := 0; itry <= opentries; itry++ {
-
-					tries++
-
-					db, err = bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout})
-					if err == nil {
-						break
-					}
-
-					time.Sleep(defsleep)
-
-				}
-
-				if tries == opentries {
-
-					ctx.StatusCode(iris.StatusInternalServerError)
-					DelLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
-
-					if debugmode {
-
-						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-						if err != nil {
-							DelLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
-						}
-
-					}
-
-					keymutex.Unlock(dbf)
-					return
-
-				}
+				keymutex.Unlock(dbf)
+				return
 
 			}
 			defer db.Close()
@@ -4535,9 +4296,6 @@ func init() {
 	mchdefsleep := RBInt(config.Global.DEFSLEEP, 1, 5)
 	check(mchdefsleep, "[global]", "defsleep", fmt.Sprintf("%d", config.Global.DEFSLEEP), "from 1 to 5", doexit)
 
-	mchopentries := RBInt(config.Global.OPENTRIES, 1, 1000)
-	check(mchopentries, "[global]", "opentries", fmt.Sprintf("%d", config.Global.OPENTRIES), "from 1 to 1000", doexit)
-
 	if config.Global.DBDRIVER != "" {
 		rgxdbdriver := regexp.MustCompile("^(?i)(sqlite|pgsql|mysql)$")
 		mchdbdriver := rgxdbdriver.MatchString(config.Global.DBDRIVER)
@@ -4559,7 +4317,7 @@ func init() {
 		rgxdbhost := regexp.MustCompile("^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5]).){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$")
 		rgxdbname := regexp.MustCompile("^([a-zA-Z0-9-_]+)")
 		mchdbhost := rgxdbhost.MatchString(config.Global.DBHOST)
-		mchdbport := RBInt(config.Global.OPENTRIES, 1, 65535)
+		mchdbport := RBInt(config.Global.DBPORT, 1, 65535)
 		mchdbname := rgxdbname.MatchString(config.Global.DBNAME)
 		mchdbconn := RBInt(config.Global.DBCONN, 1, 1024)
 		check(mchdbhost, "[global]", "dbhost", config.Global.DBHOST, "ex. 127.0.0.1", doexit)
@@ -4854,7 +4612,6 @@ func main() {
 	// Default Timers / Tries
 
 	defsleep = time.Duration(config.Global.DEFSLEEP) * time.Second
-	opentries = config.Global.OPENTRIES
 
 	// SQL Database Configuration
 
