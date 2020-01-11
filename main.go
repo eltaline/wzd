@@ -409,8 +409,8 @@ func wzGet() iris.Handler {
 
 		minbuffer := int64(262144)
 		lowbuffer := int64(1048576)
-		medbuffer := int64(67042304)
-		bigbuffer := int64(536338432)
+		medbuffer := int64(67108864)
+		bigbuffer := int64(536870912)
 
 		filemode := os.FileMode(0640)
 
@@ -2008,8 +2008,8 @@ func wzPut(keymutex *mmutex.Mutex, cdb *sql.DB) iris.Handler {
 
 		minbuffer := int64(262144)
 		lowbuffer := int64(1048576)
-		medbuffer := int64(67042304)
-		bigbuffer := int64(536338432)
+		medbuffer := int64(67108864)
+		bigbuffer := int64(536870912)
 
 		filemode := os.FileMode(0640)
 		dirmode := os.FileMode(0750)
@@ -4680,8 +4680,8 @@ func init() {
 		mchlocktimeout := RBInt(Server.LOCKTIMEOUT, 1, 3600)
 		check(mchlocktimeout, section, "locktimeout", (fmt.Sprintf("%d", Server.LOCKTIMEOUT)), "from 1 to 3600", doexit)
 
-		mchfmaxsize := RBInt64(Server.FMAXSIZE, 1, 536338432)
-		check(mchfmaxsize, section, "fmaxsize", (fmt.Sprintf("%d", Server.FMAXSIZE)), "from 1 to 536338432", doexit)
+		mchfmaxsize := RBInt64(Server.FMAXSIZE, 1, 536870912)
+		check(mchfmaxsize, section, "fmaxsize", (fmt.Sprintf("%d", Server.FMAXSIZE)), "from 1 to 536870912", doexit)
 
 		mchargs := rgxargs.MatchString(fmt.Sprintf("%t", Server.ARGS))
 		check(mchargs, section, "args", (fmt.Sprintf("%t", Server.ARGS)), "true or false", doexit)
@@ -4692,14 +4692,14 @@ func init() {
 		mchminbuffer := RBInt64(Server.MINBUFFER, 4096, 524288)
 		check(mchminbuffer, section, "minbuffer", (fmt.Sprintf("%d", Server.MINBUFFER)), "from 4096 to 524288", doexit)
 
-		mchlowbuffer := RBInt64(Server.LOWBUFFER, 1048576, 33521152)
-		check(mchlowbuffer, section, "lowbuffer", (fmt.Sprintf("%d", Server.LOWBUFFER)), "from 1048576 to 33521152", doexit)
+		mchlowbuffer := RBInt64(Server.LOWBUFFER, 1048576, 33554432)
+		check(mchlowbuffer, section, "lowbuffer", (fmt.Sprintf("%d", Server.LOWBUFFER)), "from 1048576 to 33554432", doexit)
 
-		mchmedbuffer := RBInt64(Server.MEDBUFFER, 67042304, 268169216)
-		check(mchmedbuffer, section, "medbuffer", (fmt.Sprintf("%d", Server.MEDBUFFER)), "from 67042304 to 268169216", doexit)
+		mchmedbuffer := RBInt64(Server.MEDBUFFER, 67108864, 268169216)
+		check(mchmedbuffer, section, "medbuffer", (fmt.Sprintf("%d", Server.MEDBUFFER)), "from 67108864 to 268169216", doexit)
 
-		mchbigbuffer := RBInt64(Server.BIGBUFFER, 536338432, 2147483647)
-		check(mchbigbuffer, section, "bigbuffer", (fmt.Sprintf("%d", Server.BIGBUFFER)), "from 536338432 to 2147483647", doexit)
+		mchbigbuffer := RBInt64(Server.BIGBUFFER, 536870912, 2147483647)
+		check(mchbigbuffer, section, "bigbuffer", (fmt.Sprintf("%d", Server.BIGBUFFER)), "from 536870912 to 2147483647", doexit)
 
 		mchfilemode := rgxfilemode.MatchString(fmt.Sprintf("%d", Server.FILEMODE))
 		check(mchfilemode, section, "filemode", (fmt.Sprintf("%d", Server.FILEMODE)), "from 0600 to 0666", doexit)
