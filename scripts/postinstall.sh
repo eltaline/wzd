@@ -11,4 +11,6 @@ fi
 install --mode=755 --owner=wzd --group=wzd --directory /var/lib/wzd
 install --mode=755 --owner=wzd --group=wzd --directory /var/log/wzd
 
+systemctl daemon-reload
+
 #END
