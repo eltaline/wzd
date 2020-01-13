@@ -17,6 +17,7 @@ ENV defsleep 1
 ENV cmpsched true
 ENV cmpdir "/var/lib/wzd"
 ENV cmptime 30
+ENV cmpcount 100
 ENV cmpcheck 5
 
 ENV host "localhost"
@@ -59,13 +60,19 @@ RUN chown wzd.wzd /var/storage
 RUN chown wzd.wzd /run/wzd
 
 RUN apt-get update
-RUN apt-get -y install sed util-linux
+RUN apt-get -y install nginx sed util-linux
+
+RUN rm -f /etc/nginx/sites-available/*
+RUN rm -f /etc/nginx/sites-enabled/*
 
 COPY wzd /usr/bin/
 COPY conf/wzd/wzd-docker.conf /etc/wzd/wzd.conf
+COPY conf/nginx/localhost-docker.conf /etc/nginx/sites-available/localhost.conf
 COPY scripts/docker/start.sh /
 COPY LICENSE /
 
-EXPOSE 9699/tcp
+RUN test -L /etc/nginx/sites-enabled/localhost.conf || ln -s /etc/nginx/sites-available/localhost.conf /etc/nginx/sites-enabled/localhost.conf
+
+EXPOSE 80/tcp
 
 ENTRYPOINT ["/start.sh"]
