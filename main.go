@@ -380,6 +380,20 @@ func init() {
 		appLogger.Warnf("| Host [%s] | Max File Size [%d]", Server.HOST, Server.FMAXSIZE)
 
 		switch {
+		case Server.UPLOAD:
+			appLogger.Warnf("| Host [%s] | Upload [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Upload [DISABLED]", Server.HOST)
+		}
+
+		switch {
+		case Server.DELETE:
+			appLogger.Warnf("| Host [%s] | Delete [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Delete [DISABLED]", Server.HOST)
+		}
+
+		switch {
 		case Server.COMPACTION && config.Global.CMPSCHED:
 			appLogger.Warnf("| Host [%s] | Compaction [ENABLED]", Server.HOST)
 		default:
