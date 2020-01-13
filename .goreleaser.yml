@@ -24,7 +24,6 @@ builds:
       - amd64
       - arm64
       - ppc64
-      - sparc64
       - mips64
     goarm:
       - 7
