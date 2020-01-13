@@ -23,8 +23,9 @@ builds:
     goarch:
       - amd64
       - arm64
-      - 386
-      - arm
+      - ppc64
+      - sparc64
+      - mips64
     goarm:
       - 7
 
