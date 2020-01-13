@@ -159,7 +159,7 @@ docker run -d --restart=always -e host=localhost -e root=/var/storage \
 -v /var/storage:/var/storage --name wzd -p 80:80 eltaline/wzd
 ```
 
-Все ENV параметры по умолчанию посмотреть тут: <a href=/Dockerfile>Dockerfile</a>
+Все ENV параметры по умолчанию можно посмотреть тут: <a href=/Dockerfile>Dockerfile</a>
 
 - Включите ротацию на хост системе для контейнеров:
 
