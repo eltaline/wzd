@@ -12,11 +12,19 @@ builds:
     id: wzd
     ldflags: -s -w
     env:
-      - CGO_ENABLED=1
+      - CGO_ENABLED=0
     goos:
       - linux
+      - freebsd
+      - openbsd
+      - netbsd
+      - solaris
+      - darwin
     goarch:
       - amd64
+      - arm64
+      - 386
+      - arm
     goarm:
       - 7
 
@@ -29,10 +37,6 @@ archives:
     builds: ['wzd']
     format: tar.gz
     name_template: "{{.ProjectName}}-{{.Version}}-{{.Os}}-{{.Arch}}"
-    replacements:
-      amd64: x86_64
-      linux: linux
-
     files:
       - LICENSE
 
@@ -49,9 +53,6 @@ nfpms:
     description: "Sharded NoSQL Compact Storage Server. Distributing any number of small and large files/values"
     license: "BSD-3 Clause"
     name_template: "{{.ProjectName}}-{{.Version}}-{{.Os}}-{{.Arch}}"
-    replacements:
-      amd64: x86_64
-      linux: linux
 
     bindir: /usr/sbin
 
