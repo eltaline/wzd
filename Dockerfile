@@ -14,17 +14,9 @@ ENV pidfile "/run/wzd/wzd.pid"
 ENV logdir "/var/log/wzd"
 ENV logmode 0640
 ENV defsleep 1
-ENV dbdriver "sqlite"
-ENV dbfile "/var/lib/wzd/wzd.sqlite3"
-ENV dbhost "127.0.0.1"
-ENV dbport 5432
-ENV dbname "wzd"
-ENV dbuser "wzd"
-ENV dbpass "wzd"
-ENV dbconn 16
 ENV cmpsched true
+ENV cmpdir "/var/lib/wzd"
 ENV cmptime 30
-ENV cmpcount 100
 ENV cmpcheck 5
 
 ENV host "localhost"
@@ -67,19 +59,13 @@ RUN chown wzd.wzd /var/storage
 RUN chown wzd.wzd /run/wzd
 
 RUN apt-get update
-RUN apt-get -y install nginx sed util-linux
-
-RUN rm -f /etc/nginx/sites-available/*
-RUN rm -f /etc/nginx/sites-enabled/*
+RUN apt-get -y install sed util-linux
 
 COPY wzd /usr/bin/
 COPY conf/wzd/wzd-docker.conf /etc/wzd/wzd.conf
-COPY conf/nginx/localhost-docker.conf /etc/nginx/sites-available/localhost.conf
 COPY scripts/docker/start.sh /
 COPY LICENSE /
 
-RUN test -L /etc/nginx/sites-enabled/localhost.conf || ln -s /etc/nginx/sites-available/localhost.conf /etc/nginx/sites-enabled/localhost.conf
-
-EXPOSE 80/tcp
+EXPOSE 9699/tcp
 
 ENTRYPOINT ["/start.sh"]
