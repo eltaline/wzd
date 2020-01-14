@@ -59,10 +59,10 @@ Use only binary data transfer protocol to write files or values.
 Requirements
 ========
 
-**Only use with reverse proxy servers like Nginx or HAProxy**
-Operating Systems: Linux, BSD, Solaris, OSX
-Architectures: amd64, arm64, ppc64 and mips64, with only amd64 tested
-Supported Byte Order: Little or Big Endian
+- **Only use with reverse proxy servers like Nginx or HAProxy**
+- Operating Systems: Linux, BSD, Solaris, OSX
+- Architectures: amd64, arm64, ppc64 and mips64, with only amd64 tested
+- Supported Byte Order: Little or Big Endian
 
 Real application
 ========
