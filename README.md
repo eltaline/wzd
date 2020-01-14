@@ -83,9 +83,9 @@ The wZD server was designed for mixed use. One can write not only ordinary files
 Performance tests
 ========
 
-**Testing shows the read or write difference between working with regular files and with Bolt archives. The writeintegrity and re1adintegrity options are enabled; that is, when writing or reading files in Bolt archives, CRC is used.**
+**Testing shows the read or write difference between working with regular files and with Bolt archives. The writeintegrity and readintegrity options are enabled; that is, when writing or reading files in Bolt archives, CRC is used.**
 
-**Important: The time in the tests is indicated for full GET or PUT requests, in these milliseconds the full write or read of HTTP files by the client is included.**
+**Important: The time in the tests is indicated for full GET or PUT requests, and the full write or read of HTTP files by the client is included in these milliseconds.**
 
 Tests were carried out on SSD disks, since on SATA disks the tests are not very objective, and there is no clear difference between working with Bolt archives and ordinary files.
 
