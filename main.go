@@ -661,6 +661,8 @@ func main() {
 		MaxHeaderBytes:    1 << 20,
 	}
 
+	srv.SetKeepAlivesEnabled(false)
+
 	err = app.Run(iris.Server(srv), iris.WithoutInterruptHandler, iris.WithoutBodyConsumptionOnUnmarshal, iris.WithCharset(charset), iris.WithRemoteAddrHeader(realheader), iris.WithOptimizations, iris.WithConfiguration(iris.Configuration{
 		DisablePathCorrection: false,
 		EnablePathEscape:      true,
