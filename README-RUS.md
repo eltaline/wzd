@@ -6,12 +6,12 @@ wZD это сервер написанный на языке Go, использ�
 
 ...И миллиарды файлов больше не будут проблемой.
 
-<img src="/images/wzd-scheme.png" alt="wZD Scheme"/>
+<img align="center" src="/images/wzd-scheme.png" alt="wZD Scheme"/>
 
 Архитектура
 ========
 
-<img src="/images/wzd-arch.png" alt="wZD Arch"/>
+<img align="center" src="/images/wzd-arch.png" alt="wZD Arch"/>
 
 Текущая стабильная версия: 1.0.0
 ========
@@ -93,19 +93,19 @@ wZD разрабатывался как сервер для смешанного
 
 - GET 1000 файлов
 
-<img src="/images/get-files.png"/>
+<img align="center" src="/images/get-files.png"/>
 
 - GET 1000 файлов из 1000 Bolt архивов
 
-<img src="/images/get-bolts.png"/>
+<img align="center" src="/images/get-bolts.png"/>
 
 - PUT 1000 файлов
 
-<img src="/images/put-files.png"/>
+<img align="center" src="/images/put-files.png"/>
 
 - PUT 1000 файлов в 1000 Bolt архивов
 
-<img src="/images/put-bolts.png"/>
+<img align="center" src="/images/put-bolts.png"/>
 
 Как видно по графикам, разница практически не значительная.
 
@@ -113,15 +113,15 @@ wZD разрабатывался как сервер для смешанного
 
 - GET 32M 1000 файлов и файлов из Bolt архивов
 
-<img src="/images/get-32M.png"/>
+<img align="center" src="/images/get-32M.png"/>
 
 - PUT 32M 1000 файлов и файлов в Bolt архивы
 
-<img src="/images/put-32M.png"/>
+<img align="center" src="/images/put-32M.png"/>
 
 Таблица, описывающая наиболее оптимальные варианты использования сервера. Сколько файлов можно загрузить в один Bolt архив.
 ----
-<img src="/images/optimal.png"/>
+<img align="center" src="/images/optimal.png"/>
 
 Документация
 ========
