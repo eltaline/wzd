@@ -75,7 +75,9 @@ The multithreaded <a href=https://github.com/eltaline/wza>wZA</a> archiver has a
 
 Our cluster used (10 servers) is an Origin server installed behind a CDN network and served by only 2 wZD servers.
 
-<img align="center" src="/images/reduction.png"/>
+<p align="center">
+<img align="center" src="/images/reduction-full.png"/>
+</p>
 
 Mixed use
 ========
