@@ -119,7 +119,10 @@ PUT 32M 1000 files and files in Bolt archives
 
 <img align="center" src="/images/put-32M.png"/>
 
-A table that describes the best options for using the server. How many files can be uploaded in one Bolt archive.
+<p align="center">
+A table that describes the best options for using the server.
+How many files can be uploaded in one Bolt archive.
+</p>
 ----
 <p align="center">
 <img src="/images/optimal.png"/>
