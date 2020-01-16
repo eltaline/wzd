@@ -6,12 +6,12 @@ wZD is a server written in Go language that uses a <a href=https://github.com/el
 
 ...and billions of files will no longer be a problem.
 
-<img src="/images/wzd-scheme.png" alt="wZD Scheme"/>
+<img align="center" src="/images/wzd-scheme.png" alt="wZD Scheme"/>
 
 Architecture:
 ========
 
-<img src="/images/wzd-arch.png" alt="wZD Arch"/>
+<img align="center" src="/images/wzd-arch.png" alt="wZD Arch"/>
 
 Current stable version: 1.0.0
 ========
@@ -93,19 +93,19 @@ The test involved 32KB, 256KB, 1024KB, 4096KB, and 32768KB files.
 
 - GET 1000 files
 
-<img src="/images/get-files.png"/>
+<img align="center" src="/images/get-files.png"/>
 
 - GET 1000 files from 1000 Bolt archives
 
-<img src="/images/get-bolts.png"/>
+<img align="center" src="/images/get-bolts.png"/>
 
 - PUT 1000 files
 
-<img src="/images/put-files.png"/>
+<img align="center" src="/images/put-files.png"/>
 
 - PUT 1000 files in 1000 Bolt archives
 
-<img src="/images/put-bolts.png"/>
+<img align="center" src="/images/put-bolts.png"/>
 
 As can be seen from the graphs, the difference is practically insignificant.
 
@@ -113,15 +113,17 @@ Below is a more visual test done with files of 32 megabytes in size. In this cas
 
 GET 32M 1000 files and files from Bolt archives
 
-<img src="/images/get-32M.png"/>
+<img align="center" src="/images/get-32M.png"/>
 
 PUT 32M 1000 files and files in Bolt archives
 
-<img src="/images/put-32M.png"/>
+<img align="center" src="/images/put-32M.png"/>
 
 A table that describes the best options for using the server. How many files can be uploaded in one Bolt archive.
 ----
+<p align="center">
 <img src="/images/optimal.png"/>
+</p>
 
 Documentation
 ========
