@@ -65,8 +65,9 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		writeintegrity := true
 
-		trytimes := 60
-		locktimeout := 60
+		trytimes := 5
+		opentries := 5
+		locktimeout := 5
 
 		fmaxsize := int64(1048576)
 
@@ -99,6 +100,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				writeintegrity = Server.WRITEINTEGRITY
 
 				trytimes = Server.TRYTIMES
+				opentries = Server.OPENTRIES
 				locktimeout = Server.LOCKTIMEOUT
 
 				fmaxsize = Server.FMAXSIZE
@@ -325,7 +327,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if FileExists(dbf) && nonunique {
 
-				db, err := bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
+				db, err := BoltOpenRead(dbf, filemode, timeout, opentries)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
@@ -807,7 +809,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				wcrc := uint32(0)
 
-				db, err := bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout})
+				db, err := BoltOpenWrite(dbf, filemode, timeout, opentries)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)

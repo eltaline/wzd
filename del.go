@@ -54,8 +54,9 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		compaction := true
 
-		trytimes := 60
-		locktimeout := 60
+		trytimes := 5
+		opentries := 5
+		locktimeout := 5
 
 		filemode := os.FileMode(0640)
 
@@ -75,6 +76,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				compaction = Server.COMPACTION
 
 				trytimes = Server.TRYTIMES
+				opentries = Server.OPENTRIES
 				locktimeout = Server.LOCKTIMEOUT
 
 				cfilemode, err := strconv.ParseUint(fmt.Sprintf("%d", Server.FILEMODE), 8, 32)
@@ -301,7 +303,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		if key {
 
-			db, err := bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout})
+			db, err := BoltOpenWrite(dbf, filemode, timeout, opentries)
 			if err != nil {
 
 				ctx.StatusCode(iris.StatusInternalServerError)

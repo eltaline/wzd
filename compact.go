@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/eltaline/badgerhold"
-	"github.com/eltaline/bolt"
 	"os"
 	"time"
 )
@@ -18,6 +17,7 @@ func CompactScheduler(cdb *badgerhold.Store) {
 
 	// Variables
 
+	opentries := 30
 	timeout := time.Duration(60) * time.Second
 
 	// Struct
@@ -89,7 +89,7 @@ func CompactScheduler(cdb *badgerhold.Store) {
 
 			filemode := infile.Mode()
 
-			db, err := bolt.Open(dbf.Path, filemode, &bolt.Options{Timeout: timeout})
+			db, err := BoltOpenWrite(dbf.Path, filemode, timeout, opentries)
 			if err != nil {
 
 				appLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)

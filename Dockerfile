@@ -27,8 +27,9 @@ ENV delete true
 ENV compaction true
 ENV writeintegrity true
 ENV readintegrity true
-ENV trytimes 45
-ENV locktimeout 60
+ENV trytimes 5
+ENV opentries 5
+ENV locktimeout 5
 ENV fmaxsize 1048576
 ENV args false
 ENV getbolt false
