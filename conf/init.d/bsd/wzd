@@ -1,0 +1,60 @@
+#!/bin/sh
+# PROVIDE: wzd
+# REQUIRE: networking syslog
+ 
+. /etc/rc.subr
+ 
+name="wzd"
+rcvar="wzd_enable"
+
+command="/usr/local/wzd/sbin/wzd"
+
+wzd_user="wzd"
+wzd_libdir="/usr/local/wzd/lib"
+wzd_logdir="/usr/local/wzd/log"
+
+pidfile="${wzd_libdir}/${name}.pid"
+
+start_precmd="wzd_precmd"
+start_cmd="/usr/sbin/daemon -f -u $wzd_user $command"
+gracefulstop_cmd="wzd_gracefulstop"
+
+load_rc_config $name
+: ${wzd_enable:=no}
+
+wzd_check()
+{
+
+    if [ -z `getent group wzd` ]; then
+	pw groupadd wzd
+    fi
+
+    if [ -z `getent passwd wzd` ]; then
+	pw useradd wzd -g wzd
+    fi
+
+    if [ ! -d ${wzd_libdir} ] ; then
+	install -d -o wzd -g wzd -m 755 ${wzd_libdir}
+    fi
+
+    if [ ! -d ${wzd_logdir} ] ; then
+	install -d -o wzd -g wzd -m 755 ${wzd_logdir}
+    fi
+
+}
+
+wzd_precmd()
+{
+
+wzd_check
+
+}
+
+wzd_gracefulstop()
+{
+    echo "Performing a graceful stop:"
+    sig_stop="TERM"
+    run_rc_command ${rc_prefix}stop || return 1
+}
+ 
+run_rc_command "$1"
