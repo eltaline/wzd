@@ -95,33 +95,21 @@ Tests were carried out on SSD disks, since on SATA disks the tests are not very 
 
 The test involved 32KB, 256KB, 1024KB, 4096KB, and 32768KB files.
 
-- GET 1000 files
+- <b>GET 1000 files and GET 1000 files from 1000 Bolt archives</b>
 
-<img align="center" src="/images/get-files.png"/>
+<img align="center" src="/images/get.png"/>
 
-- GET 1000 files from 1000 Bolt archives
+- <b>PUT 1000 files and PUT 1000 files in 1000 Bolt archives</b>
 
-<img align="center" src="/images/get-bolts.png"/>
-
-- PUT 1000 files
-
-<img align="center" src="/images/put-files.png"/>
-
-- PUT 1000 files in 1000 Bolt archives
-
-<img align="center" src="/images/put-bolts.png"/>
+<img align="center" src="/images/put.png"/>
 
 As can be seen from the graphs, the difference is practically insignificant.
 
 Below is a more visual test done with files of 32 megabytes in size. In this case, writing to Bolt archives becomes slower compared to writing to regular files. Although this is a count, writing 32MB for 300ms is generally quite fast. Reading such files works quite quickly, and if one wants to store large files in Bolt archives and the write speed is not critical, such use is allowed but not recommended, and not more than 32MB per uploaded file.
 
-GET 32M 1000 files and files from Bolt archives
+<b>GET 32M 1000 files and files from Bolt archives and PUT 32M 1000 files and files in Bolt archives</b>
 
-<img align="center" src="/images/get-32M.png"/>
-
-PUT 32M 1000 files and files in Bolt archives
-
-<img align="center" src="/images/put-32M.png"/>
+<img align="center" src="/images/get-put-32M.png"/>
 
 <p align="center">
 <b>A table that describes the best options for using the server. How many files can be uploaded in one Bolt archive.</b>
