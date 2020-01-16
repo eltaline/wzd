@@ -119,6 +119,10 @@ PUT 32M 1000 files and files in Bolt archives
 
 <img src="/images/put-32M.png"/>
 
+The table that describes the best options for using the server.
+
+<img src="/images/optimal.png"/>
+
 Documentation
 ========
 
