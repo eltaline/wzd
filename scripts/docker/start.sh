@@ -20,6 +20,6 @@ done
 ulimit -n 131072
 
 nginx -c /etc/nginx/nginx.conf
-su wzd -c '/usr/bin/wzd --config /etc/wzd/wzd.conf'
+su wzd -c 'ulimit -n 131072 ; /usr/bin/wzd --config /etc/wzd/wzd.conf'
 
 #END
