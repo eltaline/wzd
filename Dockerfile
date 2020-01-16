@@ -36,7 +36,7 @@ ENV getbolt false
 ENV getcount true
 ENV getkeys true
 ENV nonunique false
-ENV cctrl 2592000
+ENV cctrl 0
 ENV minbuffer 262144
 ENV lowbuffer 1048576
 ENV medbuffer 67108864
