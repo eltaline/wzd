@@ -354,7 +354,7 @@ curl -X DELETE http://localhost/test/test.bolt
 
 Никакие гарантии на данное программное обеспечение не предоставляются. Просьба сначала тестировать.
 
-Пожертвование:
+Пожертвования:
 ========
 
 <a href="https://www.paypal.me/xwzd"><img src="/images/paypal.png"><a/>
