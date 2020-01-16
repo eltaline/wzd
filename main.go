@@ -59,6 +59,7 @@ type server struct {
 	WRITEINTEGRITY bool
 	READINTEGRITY  bool
 	TRYTIMES       int
+	OPENTRIES      int
 	LOCKTIMEOUT    int
 	ARGS           bool
 	CCTRL          int
@@ -338,6 +339,9 @@ func init() {
 
 		mchtrytimes := RBInt(Server.TRYTIMES, 1, 1000)
 		Check(mchtrytimes, section, "trytimes", (fmt.Sprintf("%d", Server.TRYTIMES)), "from 1 to 1000", DoExit)
+
+		mchopentries := RBInt(Server.OPENTRIES, 1, 1000)
+		Check(mchopentries, section, "opentries", (fmt.Sprintf("%d", Server.OPENTRIES)), "from 1 to 1000", DoExit)
 
 		mchlocktimeout := RBInt(Server.LOCKTIMEOUT, 1, 3600)
 		Check(mchlocktimeout, section, "locktimeout", (fmt.Sprintf("%d", Server.LOCKTIMEOUT)), "from 1 to 3600", DoExit)

@@ -62,7 +62,8 @@ func ZDGet() iris.Handler {
 
 		readintegrity := true
 
-		locktimeout := 60
+		opentries := 5
+		locktimeout := 5
 
 		args := false
 		cctrl := 0
@@ -88,6 +89,7 @@ func ZDGet() iris.Handler {
 
 				readintegrity = Server.READINTEGRITY
 
+				opentries = Server.OPENTRIES
 				locktimeout = Server.LOCKTIMEOUT
 
 				args = Server.ARGS
@@ -286,7 +288,7 @@ func ZDGet() iris.Handler {
 
 			if FileExists(dbk) {
 
-				db, err := bolt.Open(dbk, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
+				db, err := BoltOpenRead(dbk, filemode, timeout, opentries)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
@@ -426,7 +428,7 @@ func ZDGet() iris.Handler {
 					uniq = false
 				}
 
-				db, err := bolt.Open(dbk, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
+				db, err := BoltOpenRead(dbk, filemode, timeout, opentries)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
@@ -1022,7 +1024,7 @@ func ZDGet() iris.Handler {
 			return
 		}
 
-		db, err := bolt.Open(dbf, filemode, &bolt.Options{Timeout: timeout, ReadOnly: true})
+		db, err := BoltOpenRead(dbf, filemode, timeout, opentries)
 		if err != nil {
 
 			ctx.StatusCode(iris.StatusInternalServerError)
