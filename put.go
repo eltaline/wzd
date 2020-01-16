@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"github.com/eltaline/badgerhold"
 	"github.com/eltaline/bolt"
@@ -259,7 +260,10 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		dbn := filepath.Base(dir)
 		dbf := fmt.Sprintf("%s%s/%s.bolt", base, dir, dbn)
 
-		bucket := "default"
+		bucket := "wzd1"
+		ibucket := "index"
+		cbucket := "count"
+
 		timeout := time.Duration(locktimeout) * time.Second
 
 		if file == "/" {
@@ -347,15 +351,15 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				}
 				defer db.Close()
 
-				keyexists, err := KeyExists(db, bucket, file)
+				keyexists, err := KeyExists(db, ibucket, file)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t check key of file in db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t check key of file in db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
 						if err != nil {
 							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
@@ -367,14 +371,14 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
-				if keyexists {
+				if keyexists != "" {
 
 					ctx.StatusCode(iris.StatusConflict)
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t upload standart file due to conflict with duplicate key/file name in db error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t upload standart file due to conflict with duplicate key/file name in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t upload standart file due to conflict with duplicate key/file name in db error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t upload standart file due to conflict with duplicate key/file name in index db bucket error\n")
 						if err != nil {
 							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
@@ -793,6 +797,31 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			}
 
+			var perbucket int = 1024
+
+			switch {
+			case clength >= 262144 && clength < 1048576:
+				perbucket = 512
+			case clength >= 1048576 && clength < 4194304:
+				perbucket = 256
+			case clength >= 4194304 && clength < 8388608:
+				perbucket = 128
+			case clength >= 8388608 && clength < 16777216:
+				perbucket = 64
+			case clength >= 16777216 && clength < 33554432:
+				perbucket = 32
+			case clength >= 33554432 && clength < 67108864:
+				perbucket = 16
+			case clength >= 67108864 && clength < 134217728:
+				perbucket = 8
+			case clength >= 134217728 && clength < 268435456:
+				perbucket = 4
+			case clength >= 268435456 && clength < 536870912:
+				perbucket = 2
+			case clength >= 536870912:
+				perbucket = 1
+			}
+
 			key := false
 
 			for i := 0; i < trytimes; i++ {
@@ -808,6 +837,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 			if key {
 
 				wcrc := uint32(0)
+				rcrc := uint32(0)
 
 				db, err := BoltOpenWrite(dbf, filemode, timeout, opentries)
 				if err != nil {
@@ -852,7 +882,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				}
 
 				err = db.Update(func(tx *bolt.Tx) error {
-					_, err := tx.CreateBucketIfNotExists([]byte(bucket))
+					_, err := tx.CreateBucketIfNotExists([]byte(ibucket))
 					if err != nil {
 						return err
 					}
@@ -862,11 +892,11 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t write file to db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t create index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t write file to db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t create index db bucket error\n")
 						if err != nil {
 							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
@@ -879,15 +909,236 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
-				keyexists, err := KeyExists(db, bucket, file)
+				keyexists, err := KeyExists(db, ibucket, file)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t check key of file in db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t check key of file in db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				err = db.Update(func(tx *bolt.Tx) error {
+					_, err := tx.CreateBucketIfNotExists([]byte(cbucket))
+					if err != nil {
+						return err
+					}
+					return nil
+
+				})
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t create count db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t create count db bucket error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				keybucket, err := BucketCount(db, cbucket)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count buckets in count db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t count buckets in count db bucket error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				if keybucket > uint64(0) && keyexists == "" {
+
+					lastbucket := fmt.Sprintf("wzd%d", keybucket)
+
+					keycount, err := KeyCountBucket(db, lastbucket)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count keys of files in last db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t count keys of files in last db bucket error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+					keybytes, err := BucketStats(db, lastbucket)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count bytes of files in last db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t count bytes of files in last db bucket error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+					if keycount >= perbucket || keybytes >= 536870912 {
+
+						bucket = fmt.Sprintf("wzd%d", keybucket+1)
+
+						nb := make([]byte, 8)
+						Endian.PutUint64(nb, keybucket+1)
+
+						err = db.Update(func(tx *bolt.Tx) error {
+
+							verr := errors.New("count bucket not exists")
+
+							b := tx.Bucket([]byte(cbucket))
+							if b != nil {
+								err = b.Put([]byte("counter"), []byte(nb))
+								if err != nil {
+									return err
+								}
+
+							} else {
+								return verr
+							}
+
+							return nil
+
+						})
+						if err != nil {
+
+							ctx.StatusCode(iris.StatusInternalServerError)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t write bucket counter to count db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+							if debugmode {
+
+								_, err = ctx.WriteString("[ERRO] Can`t write bucket counter to count db bucket error\n")
+								if err != nil {
+									putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+								}
+
+							}
+
+							db.Close()
+							keymutex.Unlock(dbf)
+							return
+
+						}
+
+					} else {
+						bucket = lastbucket
+					}
+
+				} else if keyexists != "" {
+
+					bucket = keyexists
+
+				} else {
+
+					nb := make([]byte, 8)
+					Endian.PutUint64(nb, uint64(1))
+
+					err = db.Update(func(tx *bolt.Tx) error {
+
+						verr := errors.New("count bucket not exists")
+
+						b := tx.Bucket([]byte(cbucket))
+						if b != nil {
+							err = b.Put([]byte("counter"), []byte(nb))
+							if err != nil {
+								return err
+							}
+
+						} else {
+							return verr
+						}
+
+						return nil
+
+					})
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t write bucket counter to count db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t write bucket counter to count db bucket error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+				}
+
+				err = db.Update(func(tx *bolt.Tx) error {
+					_, err := tx.CreateBucketIfNotExists([]byte(bucket))
+					if err != nil {
+						return err
+					}
+					return nil
+
+				})
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t create db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t create db bucket error\n")
 						if err != nil {
 							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
@@ -1006,11 +1257,11 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Write header data to db error | File [%s] | DB [%s] | Header [%v] | %v", vhost, ip, file, dbf, head, err)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Write binary header data to db error | File [%s] | DB [%s] | Header [%v] | %v", vhost, ip, file, dbf, head, err)
 
 						if debugmode {
 
-							_, err = ctx.WriteString("[ERRO] Write header data to db error\n")
+							_, err = ctx.WriteString("[ERRO] Write binary header data to db error\n")
 							if err != nil {
 								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 							}
@@ -1095,10 +1346,18 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				}
 
 				err = db.Update(func(tx *bolt.Tx) error {
-					nb := tx.Bucket([]byte(bucket))
-					err = nb.Put([]byte(file), []byte(endbuffer.Bytes()))
-					if err != nil {
-						return err
+
+					verr := errors.New("bucket not exists")
+
+					b := tx.Bucket([]byte(bucket))
+					if b != nil {
+						err = b.Put([]byte(file), []byte(endbuffer.Bytes()))
+						if err != nil {
+							return err
+						}
+
+					} else {
+						return verr
 					}
 
 					return nil
@@ -1124,7 +1383,184 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
-				if keyexists && compaction && cmpsched {
+				err = db.Update(func(tx *bolt.Tx) error {
+
+					verr := errors.New("index bucket not exists")
+
+					b := tx.Bucket([]byte(ibucket))
+					if b != nil {
+						err = b.Put([]byte(file), []byte(bucket))
+						if err != nil {
+							return err
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t write key to index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t write key to index db bucket error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				if writeintegrity {
+
+					var pdata []byte
+
+					err = db.View(func(tx *bolt.Tx) error {
+
+						verr := errors.New("bucket not exists")
+
+						b := tx.Bucket([]byte(bucket))
+						if b != nil {
+							pdata = b.Get([]byte(file))
+							return nil
+						} else {
+							return verr
+						}
+
+					})
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t get data by key from db error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t get data by key from db error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+					pread := bytes.NewReader(pdata)
+
+					var readhead Header
+
+					headbuffer := make([]byte, 32)
+
+					hsizebuffer, err := pread.Read(headbuffer)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Read binary header data from db error | File [%s] | DB [%s] | Header Buffer [%p] | %v", vhost, ip, file, dbf, headbuffer, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Read binary header data from db error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+					hread := bytes.NewReader(headbuffer[:hsizebuffer])
+
+					err = binary.Read(hread, Endian, &readhead)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Read binary header data from db error | File [%s] | DB [%s] | Header Buffer [%p] | %v", vhost, ip, file, dbf, hread, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Read binary header data from db error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+					rtbl := crc32.MakeTable(0xEDB88320)
+
+					rcrcdata := new(bytes.Buffer)
+
+					_, err = rcrcdata.ReadFrom(pread)
+					if err != nil && err != io.EOF {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t read pread data error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t read pread data error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+					rcrc = crc32.Checksum(rcrcdata.Bytes(), rtbl)
+
+					rcrcdata.Reset()
+
+					if wcrc != rcrc {
+
+						fmt.Printf("CRC read file error | File [%s] | DB [%s] | Have CRC [%v] | Awaiting CRC [%v]\n", file, dbf, rcrc, wcrc)
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | CRC read file error | File [%s] | DB [%s] | Have CRC [%v] | Awaiting CRC [%v]", vhost, ip, file, dbf, rcrc, wcrc)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] CRC read file error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+				}
+
+				if keyexists != "" && compaction && cmpsched {
 
 					sdts := &Compact{
 						Path:   dbf,
