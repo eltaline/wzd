@@ -76,7 +76,7 @@ Multipart не будет поддерживаться, так как требу
 Наш кластер (10 серверов) это Origin сервер, установленный за CDN сетью и обслуживаемый всего 2-мя wZD серверами.
 
 <p align="center">
-<img align="center" src="/images/reduction.png"/>
+<img align="center" src="/images/reduction-full.png"/>
 </p>
 
 Смешанное применение
