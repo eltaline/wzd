@@ -808,18 +808,8 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				perbucket = 128
 			case clength >= 8388608 && clength < 16777216:
 				perbucket = 64
-			case clength >= 16777216 && clength < 33554432:
+			case clength >= 16777216:
 				perbucket = 32
-			case clength >= 33554432 && clength < 67108864:
-				perbucket = 16
-			case clength >= 67108864 && clength < 134217728:
-				perbucket = 8
-			case clength >= 134217728 && clength < 268435456:
-				perbucket = 4
-			case clength >= 268435456 && clength < 536870912:
-				perbucket = 2
-			case clength >= 536870912:
-				perbucket = 1
 			}
 
 			key := false

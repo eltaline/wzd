@@ -1325,7 +1325,7 @@ func ZDGet() iris.Handler {
 					readbuffer = make([]byte, rlength)
 				case rlength >= minbuffer && rlength < lowbuffer:
 					readbuffer = make([]byte, minbuffer)
-				case rlength >= lowbuffer && rlength < bigbuffer:
+				case rlength >= lowbuffer && rlength < medbuffer:
 					readbuffer = make([]byte, lowbuffer)
 				case rlength >= bigbuffer:
 					readbuffer = make([]byte, medbuffer)
@@ -1481,7 +1481,7 @@ func ZDGet() iris.Handler {
 				readbuffer = make([]byte, rlength)
 			case rlength >= minbuffer && rlength < lowbuffer:
 				readbuffer = make([]byte, minbuffer)
-			case rlength >= lowbuffer && rlength < bigbuffer:
+			case rlength >= lowbuffer && rlength < medbuffer:
 				readbuffer = make([]byte, lowbuffer)
 			case rlength >= bigbuffer:
 				readbuffer = make([]byte, medbuffer)
