@@ -109,7 +109,7 @@ The test involved 32KB, 256KB, 1024KB, 4096KB, and 32768KB files.
 
 As can be seen from the graphs, the difference is practically insignificant.
 
-Below is a more visual test done with files of 32 megabytes in size. In this case, writing to Bolt archives becomes slower compared to writing to regular files. Although this is a count, writing 32MB for 300ms is generally quite fast. Reading such files works quite quickly, and if one wants to store large files in Bolt archives and the write speed is not critical, such use is allowed but not recommended, but not more than 32MB per file.
+Below is a more visual test done with files of 32 megabytes in size. In this case, writing to Bolt archives becomes slower compared to writing to regular files. Although this is a count, writing 32MB for 300ms is generally quite fast. Reading such files works quite quickly, and if one wants to store large files in Bolt archives and the write speed is not critical, such use is allowed but not recommended, and not more than 32MB per uploaded file.
 
 GET 32M 1000 files and files from Bolt archives
 
