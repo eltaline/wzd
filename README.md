@@ -109,7 +109,7 @@ The test involved 32KB, 256KB, 1024KB, 4096KB, and 32768KB files.
 
 As can be seen from the graphs, the difference is practically insignificant.
 
-Below is a more visual test done with files of 32 megabytes in size. In this case, writing to Bolt archives becomes slower compared to writing to regular files. Although this is a count, writing 32MB for 300ms is generally quite fast. Reading such files works quite quickly, and if one wants to store large files in Bolt archives and the write speed is not critical, such use is allowed but not recommended.
+Below is a more visual test done with files of 32 megabytes in size. In this case, writing to Bolt archives becomes slower compared to writing to regular files. Although this is a count, writing 32MB for 300ms is generally quite fast. Reading such files works quite quickly, and if one wants to store large files in Bolt archives and the write speed is not critical, such use is allowed but not recommended, but not more than 32MB per file.
 
 GET 32M 1000 files and files from Bolt archives
 
@@ -309,15 +309,15 @@ Notes and Q&A
 
 - It is not recommended to upload 100,000+ files to one directory (one Bolt archive); this would be a large overhead. If possible, plan your directory structure correctly.
 
-- It is not recommended to upload files or values larger than 32MB to Bolt archives. By default, the parameter fmaxsize = 1048576 bytes.
+- It is not recommended to upload files or values larger than 16MB to Bolt archives. By default, the parameter fmaxsize = 1048576 bytes.
 
-- If the fmaxsize parameter is exceeded, even with the "Archive: 1" client header set, the data will be loaded into a separate regular file without notification. The maximum possible size of the parameter is fmaxsize = 536338432 bytes
+- If the fmaxsize parameter is exceeded, even with the "Archive: 1" client header set, the data will be loaded into a separate regular file without notification. The maximum possible size of the parameter is fmaxsize = 33554432 bytes
 
 - If the nonunique = true parameter is turned on in the virtual host, this means that the wZD server will allow uploading of individual files with the same name, even if the Bolt archive in this directory already contains data with the same key name as the uploaded file
 
 - Despite the fact that the nonunique = false parameter is disabled in the virtual host, the wZD server will upload the file or value to the new Bolt archive, even if the key name matches the already existing file name in this directory. This is required for non-stop operation of the service and working in mixed mode during data migration to Bolt archives, including when adding new files non-stop through the PUT method or deleting them through the DELETE method
 
-- When using the writeintegrity = true and readintegrity = true parameters, the downloaded file or value is completely written to RAM, but no more than 512 MB per request, with the maximum parameter fmaxsize set. It is highly recommended that these options be enabled as true. These parameters affect only files or values in Bolt archives
+- When using the writeintegrity = true and readintegrity = true parameters, the downloaded file or value is completely written to RAM, but no more than 32 MB per request, with the maximum parameter fmaxsize set. It is highly recommended that these options be enabled as true. These parameters affect only files or values in Bolt archives
 
 - If the writeintegrity = true parameter has not been enabled, and a lot of files or values have been uploaded to the Bolt archives, then the checksum will not have been calculated for them. In this case, for the checksum to be calculated and recorded, <a href=https://github.com/eltaline/wza>wZA</a> archiver can be used to unpack all current Bolt archives and repack them again, but without disabling the CRC amount record in the archiver itself. In the future, the archiver will support the calculation and recording of the checksum for files or values in the current Bolt archives without unpacking and packing operations, if the values in the Bolt archives did not initially have a checksum
 

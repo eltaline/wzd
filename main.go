@@ -346,8 +346,8 @@ func init() {
 		mchlocktimeout := RBInt(Server.LOCKTIMEOUT, 1, 3600)
 		Check(mchlocktimeout, section, "locktimeout", (fmt.Sprintf("%d", Server.LOCKTIMEOUT)), "from 1 to 3600", DoExit)
 
-		mchfmaxsize := RBInt64(Server.FMAXSIZE, 1, 536870912)
-		Check(mchfmaxsize, section, "fmaxsize", (fmt.Sprintf("%d", Server.FMAXSIZE)), "from 1 to 536870912", DoExit)
+		mchfmaxsize := RBInt64(Server.FMAXSIZE, 1, 33554432)
+		Check(mchfmaxsize, section, "fmaxsize", (fmt.Sprintf("%d", Server.FMAXSIZE)), "from 1 to 33554432", DoExit)
 
 		mchargs := rgxargs.MatchString(fmt.Sprintf("%t", Server.ARGS))
 		Check(mchargs, section, "args", (fmt.Sprintf("%t", Server.ARGS)), "true or false", DoExit)
