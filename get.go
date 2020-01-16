@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"github.com/eltaline/bolt"
 	"github.com/kataras/iris"
@@ -249,7 +250,9 @@ func ZDGet() iris.Handler {
 		dbf := fmt.Sprintf("%s%s/%s.bolt", base, dir, dbn)
 		dbk := fmt.Sprintf("%s%s/%s.bolt", base, uri, file)
 
-		bucket := "default"
+		bucket := ""
+		ibucket := "index"
+
 		timeout := time.Duration(locktimeout) * time.Second
 
 		// Standart/Bolt Counter
@@ -328,15 +331,15 @@ func ZDGet() iris.Handler {
 
 				}
 
-				keycount, err := KeyCount(db, bucket)
+				keycount, err := KeyCount(db, ibucket)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count keys of files in db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t count keys of files in db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t count keys of files in index db bucket error\n")
 						if err != nil {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
@@ -448,15 +451,15 @@ func ZDGet() iris.Handler {
 				}
 				defer db.Close()
 
-				getkeys, err := AllKeys(db, bucket, abs, uniq)
+				getkeys, err := AllKeys(db, ibucket, abs, uniq)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t iterate keys of files in db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
 						if err != nil {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
@@ -1044,15 +1047,15 @@ func ZDGet() iris.Handler {
 		}
 		defer db.Close()
 
-		keyexists, err := KeyExists(db, bucket, file)
+		keyexists, err := KeyExists(db, ibucket, file)
 		if err != nil {
 
 			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t check key of file in db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 			if debugmode {
 
-				_, err = ctx.WriteString("[ERRO] Can`t check key of file in db bucket error\n")
+				_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
 				if err != nil {
 					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 				}
@@ -1064,20 +1067,30 @@ func ZDGet() iris.Handler {
 
 		}
 
-		if !keyexists {
+		if keyexists == "" {
 			ctx.StatusCode(iris.StatusNotFound)
 			db.Close()
 			return
 		}
+
+		bucket = keyexists
 
 		// Header Bolt Reader
 
 		var pheader []byte
 
 		err = db.View(func(tx *bolt.Tx) error {
-			nb := tx.Bucket([]byte(bucket))
-			pheader = nb.GetLimit([]byte(file), uint32(544))
-			return nil
+
+			verr := errors.New("bucket not exists")
+
+			b := tx.Bucket([]byte(bucket))
+			if b != nil {
+				pheader = b.GetLimit([]byte(file), uint32(544))
+				return nil
+			} else {
+				return verr
+			}
+
 		})
 		if err != nil {
 
@@ -1265,9 +1278,17 @@ func ZDGet() iris.Handler {
 			hrlength := strconv.FormatInt(rlength, 10)
 
 			err = db.View(func(tx *bolt.Tx) error {
-				nb := tx.Bucket([]byte(bucket))
-				pdata = nb.GetRange([]byte(file), uint32(rstart+32), uint32(rlength))
-				return nil
+
+				verr := errors.New("bucket not exists")
+
+				b := tx.Bucket([]byte(bucket))
+				if b != nil {
+					pdata = b.GetRange([]byte(file), uint32(rstart+32), uint32(rlength))
+					return nil
+				} else {
+					return verr
+				}
+
 			})
 			if err != nil {
 
@@ -1358,9 +1379,17 @@ func ZDGet() iris.Handler {
 		// Standart Bolt Reader
 
 		err = db.View(func(tx *bolt.Tx) error {
-			nb := tx.Bucket([]byte(bucket))
-			pdata = nb.GetOffset([]byte(file), uint32(32))
-			return nil
+
+			verr := errors.New("bucket not exists")
+
+			b := tx.Bucket([]byte(bucket))
+			if b != nil {
+				pdata = b.GetOffset([]byte(file), uint32(32))
+				return nil
+			} else {
+				return verr
+			}
+
 		})
 		if err != nil {
 

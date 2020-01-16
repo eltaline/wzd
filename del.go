@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"github.com/eltaline/badgerhold"
 	"github.com/eltaline/bolt"
@@ -183,7 +184,9 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		dbn := filepath.Base(dir)
 		dbf := fmt.Sprintf("%s%s/%s.bolt", base, dir, dbn)
 
-		bucket := "default"
+		bucket := ""
+		ibucket := "index"
+
 		timeout := time.Duration(locktimeout) * time.Second
 
 		if file == "/" {
@@ -324,15 +327,15 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 			}
 			defer db.Close()
 
-			keyexists, err := KeyExists(db, bucket, file)
+			keyexists, err := KeyExists(db, ibucket, file)
 			if err != nil {
 
 				ctx.StatusCode(iris.StatusInternalServerError)
-				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t check key of file in db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 				if debugmode {
 
-					_, err = ctx.WriteString("[ERRO] Can`t check key of file in db bucket error\n")
+					_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
 					if err != nil {
 						delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 					}
@@ -345,13 +348,48 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			}
 
-			if keyexists {
+			if keyexists != "" {
+
+				bucket = keyexists
 
 				err = db.Update(func(tx *bolt.Tx) error {
-					nb := tx.Bucket([]byte(bucket))
-					err = nb.Delete([]byte(file))
-					if err != nil {
-						return err
+
+					b := tx.Bucket([]byte(bucket))
+					if b != nil {
+						err = b.Delete([]byte(file))
+						if err != nil {
+							return err
+						}
+
+					} else {
+
+						err = db.Update(func(tx *bolt.Tx) error {
+
+							verr := errors.New("index bucket not exists")
+
+							b := tx.Bucket([]byte(ibucket))
+							if b != nil {
+								err = b.Delete([]byte(file))
+								if err != nil {
+									return err
+								}
+
+							} else {
+								return verr
+							}
+
+							return nil
+
+						})
+						if err != nil {
+
+							delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t remove key from index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+							return err
+
+						}
+
+						return nil
+
 					}
 
 					return nil
@@ -377,15 +415,106 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
-				keycount, err := KeyCount(db, bucket)
+				err = db.Update(func(tx *bolt.Tx) error {
+
+					verr := errors.New("index bucket not exists")
+
+					b := tx.Bucket([]byte(ibucket))
+					if b != nil {
+						err = b.Delete([]byte(file))
+						if err != nil {
+							return err
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count keys of files in db bucket error | DB [%s] | %v", vhost, ip, dbf, err)
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t remove key from index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t count keys of files in db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t remove key from index db bucket error\n")
+						if err != nil {
+							delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				keycountbucket, err := KeyCountBucket(db, bucket)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count keys of files in current db bucket error | DB [%s] | %v", vhost, ip, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t count keys of files in current db bucket error\n")
+						if err != nil {
+							delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				if keycountbucket == 0 {
+
+					err = db.Update(func(tx *bolt.Tx) error {
+						err = tx.DeleteBucket([]byte(bucket))
+						if err != nil {
+							return err
+						}
+						return nil
+
+					})
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t delete current db bucket error | DB [%s] | %v", vhost, ip, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t delete current db bucket error\n")
+							if err != nil {
+								delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							}
+
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+				}
+
+				keycount, err := KeyCount(db, ibucket)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t count keys of files in index db bucket error\n")
 						if err != nil {
 							delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
 						}
