@@ -2,7 +2,7 @@
 
 Документация на русском: https://github.com/eltaline/wzd/blob/master/README-RUS.md
 
-wZD is a server written in Go language that uses a <a href=https://github.com/eltaline/bolt>modified</a> version of the BoltDB database as a backend for saving and distributing any number of small and large files, NoSQL keys or values, in a compact form inside micro Bolt databases (archives), with distribution of files or values in BoltDB databases depending on the number of directories or subdirectories and the general structure of the directories. Using wZD can permanently solve the problem of a large number of files on any POSIX compatible file system, including a clustered one. Outwardly it works like a regular WebDAV server. 
+wZD is a server written in Go language that uses a <a href=https://github.com/eltaline/bolt>modified</a> version of the BoltDB database as a backend for saving and distributing any number of small and large files, NoSQL keys/values, in a compact form inside micro Bolt databases (archives), with distribution of files or values in BoltDB databases depending on the number of directories or subdirectories and the general structure of the directories. Using wZD can permanently solve the problem of a large number of files on any POSIX compatible file system, including a clustered one. Outwardly it works like a regular WebDAV server. 
 
 ...and billions of files will no longer be a problem.
 
