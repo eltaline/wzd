@@ -63,6 +63,7 @@ Requirements
 - Operating Systems: Linux, BSD, Solaris, OSX
 - Architectures: amd64, arm64, ppc64 and mips64, with only amd64 tested
 - Supported Byte Order: Little or Big Endian
+- Any POSIX compatible file system with full locking support (preferred clustered MooseFS)
 
 Real application
 ========
