@@ -337,7 +337,7 @@ Notes and Q&A
 - Native protocol for the possibility of using permanent network connections and drivers for different programming languages
 - Advanced features for using NoSQL component
 - ~~Abandoning of SQLite in favor of a simpler solution (abandoning CGO)~~ (Completed)
-- Вifferent types of compression (gzip, zstd, snappy) for files or values inside Bolt archives and for ordinary files
+- Different types of compression (gzip, zstd, snappy) for files or values inside Bolt archives and for ordinary files
 - Different types of encryption for files or values inside Bolt archives and for regular files
 - Delayed server video conversion, including on GPU
 
