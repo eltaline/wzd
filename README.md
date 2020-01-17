@@ -33,7 +33,7 @@ Features
 - Support for adding, updating, deleting files and values, and delayed compaction of Bolt archives
 - Allows the server to be used as a NoSQL database, with easy sharding based on the directory structure
 - Bolt archives support for selective reading of a certain number of bytes from a value
-- Easy sharding of data for thousands or millions of Bolt archives based on the directory structure
+- Easy sharding of data over thousands or millions of Bolt archives based on the directory structure
 - Mixed mode support, with ability to save large files separately from Bolt archives
 - Support for obtaining a list or number of keys in a directory, including non-unique ones
 - Semi-dynamic buffers for minimal memory consumption and optimal network performance tuning
