@@ -35,6 +35,7 @@ dockers:
 
     image_templates:
     - "eltaline/wzd:latest"
+    - "eltaline/wzd:{{.Version}}"
 
     skip_push: false
 
