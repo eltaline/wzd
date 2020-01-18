@@ -135,8 +135,8 @@ systemctl enable wzd && systemctl start wzd
 Установка docker образа
 --------
 
-**Docker образ содержит nginx и wZD**
-**Docker образ автоматически меняет рекурсивно права на примонтированный /var/storage**
+- **Docker образ содержит nginx и wZD**
+- **Docker образ автоматически рекурсивно меняет UID и GID в примонтированном /var/storage**
 
 ```bash
 docker run -d --restart=always -e host=localhost -e root=/var/storage \
