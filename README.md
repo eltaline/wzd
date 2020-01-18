@@ -136,6 +136,7 @@ Install docker image
 --------
 
 **Docker image contains nginx and wZD**
+**Docker image automatically change UID and GID in mounted /var/storage**
 
 ```bash
 docker run -d --restart=always -e host=localhost -e root=/var/storage \
