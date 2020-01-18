@@ -50,15 +50,15 @@ RUN groupadd wzd
 RUN useradd wzd -g wzd
 
 RUN mkdir -p /etc/wzd
-RUN mkdir -p /var/log/wzd
-RUN mkdir -p /var/lib/wzd
-RUN mkdir -p /var/storage
-RUN mkdir -p /run/wzd
+RUN mkdir -p ${logdir}
+RUN mkdir -p ${cmpdir}
+RUN mkdir -p ${root}
+RUN mkdir -p `dirname ${pidfile}`
 
-RUN chown wzd.wzd /var/log/wzd
-RUN chown wzd.wzd /var/lib/wzd
-RUN chown wzd.wzd /var/storage
-RUN chown wzd.wzd /run/wzd
+RUN chown wzd.wzd ${logdir}
+RUN chown wzd.wzd ${cmpdir}
+RUN chown wzd.wzd ${root}
+RUN chown wzd.wzd `dirname ${pidfile}`
 
 RUN apt-get update
 RUN apt-get -y install nginx sed util-linux
