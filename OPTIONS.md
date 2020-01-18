@@ -25,311 +25,258 @@ bindaddr
 - **Section:** [global]
 
 readtimeout
-- **Description:** задает таймаут на максимальное время передачи данных от клиента серверу. Для передачи больших файлов следует увеличить. Если wZD сервер установлен за Nginx или HAProxy, тогда можно не использовать данный таймаут установив его в 0. Не настраивается для виртуального хоста
+- **Description:** This sets the timeout for the maximum data transfer time from the client to the server. It should be increased to transfer large files. If the wZD server is installed behind Nginx or HAProxy, this timeout can be disabled by setting it to 0. It is not configured for a virtual host.
 - **Default:** 60
 - **Values:** 0-86400
 - **Type:** int
 - **Section:** [global]
 
 readheadertimeout
-- **Description:** задает таймаут на максимальное время получения заголовков от клиента. Если wZD сервер установлен за Nginx или HAProxy, тогда можно не использовать данный таймаут установив его в 0. Если параметр = 0, тогда берется значение параметра readtimeout, если и readtimeout = 0, тогда readheadertimeout таймаут не используется (без таймаута). Не настраивается для виртуального хоста
+- **Description:** This sets the timeout for the maximum time for receiving headers from the client. If the wZD server is installed behind Nginx or HAProxy, this timeout can be disabled by setting it to 0. If the parameter = 0, the readtimeout parameter is taken. If the readtimeout = 0, the readheadertimeout timeout is not used (no timeout). It is not configured for a virtual host.
 - **Default:** 5
 - **Values:** 0-86400
 - **Type:** int
 - **Section:** [global]
 
 idletimeout
-- **Description:** задает таймаут на максимальное время жизни keep alive соединений. Если параметр = 0, тогда берется значение параметра readtimeout, если и readtimeout = 0, тогда idletimeout таймаут не используется (без таймаута). Не настраивается для виртуального хоста
+- **Description:** This sets the timeout for the maximum lifetime of keep alive connections. If the parameter = 0, the readtimeout parameter value is taken. If the readtimeout = 0, the idletimeout timeout is not used (no timeout). It is not configured for a virtual host.
 - **Default:** 60
 - **Values:** 0-86400
 - **Type:** int
 - **Section:** [global]
 
 writetimeout
-- **Description:** задает таймаут на максимальное время передачи данных клиенту. Для передачи больших файлов следует значительно увеличить. Если wZD сервер установлен за Nginx или HAProxy, тогда можно не использовать данный таймаут установив его в 0 (без таймаута). Не настраивается для виртуального хоста
+- **Description:** This sets the timeout for the maximum data transfer time to the client. The transfer of large files should be significantly increased. If the wZD server is installed behind Nginx or HAProxy, this timeout can be disabled by setting it to 0 (no timeout). It is not configured for a virtual host.
 - **Default:** 60
 - **Values:** 0-86400
 - **Type:** int
 - **Section:** [global]
 
 realheader
-- **Description:** заголовок реального IP адреса от реверс прокси. Не настраивается для виртуального хоста
+- **Description:** This is the real IP address header from the reverse proxy. It is not configured for a virtual host.
 - **Default:** "X-Real-IP"
 - **Type:** string
 - **Section:** [global]
        
 charset
-- **Description:** кодировка на весь сервер. Не настраивается для виртуального хоста
+- **Description:** This is the encoding used for the entire server. It is not configured for a virtual host.
 - **Default:** "UTF-8"
 - **Type:** string
 - **Section:** [global]
 
 debugmode
-- **Description:** режим отладки
+- **Description:** This is the debug mode.
 - **Default:** false
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [global]
 
 pidfile
-- **Description:** путь к pid файлу
+- **Description:** This is the PID file path.
 - **Default:** "/run/wzd/wzd.pid"
 - **Type:** string
 - **Section:** [global]
 
 logdir
-- **Description:** путь к log директории
+- **Description:** This is the path to the log directory.
 - **Default:** "/var/log/wzd"
 - **Type:** string
 - **Section:** [global]
 
 logmode
-- **Description:** права на log файлы (маска)
+- **Description:** This sets the permissions for the log files (mask).
 - **Default:** 0640
 - **Values:** 0600-0666
 - **Type:** uint32
 - **Section:** [global]
 
 defsleep
-- **Description:** sleep между попытками открытия bolt архивов (секунды)
+- **Description:** This sets the sleep time between attempts to open Bolt archive (seconds).
 - **Default:** 1
 - **Values:** 1-5
 - **Type:** int
 - **Section:** [global]
 
 cmpsched = true
-- **Description:** глобальное включение или отключение автоматического диспетчера компакции bolt архивов 
+- **Description:** This globally enables or disables the automatic compaction manager for Bolt archives.
 - **Default:** false
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [global]
 
 cmpdir
-- **Description:** директория технической базы данных. Технических данных мало, если не перезаписывать или удалять десятки миллионов файлов в Bolt архивах при включенном диспетчере компакции
+- **Description:** This is the directory of the technical database. There is little technical data for compaction manager.
 - **Default:** /var/lib/wzd
 - **Type:** string
 - **Section:** [global]
 
 cmptime = 30 
-- **Description:** время ожидания компакции обновленных bolt архивов (дни)
+- **Description:** This is the compaction timeout for updated Bolt archives (days).
 - **Default:** 30
 - **Values:** 1-1000
 - **Type:** int
 - **Section:** [global]
 
 cmpcheck = 5
-- **Description:** интервал запуска автоматического диспетчера компакции (секунды)
+- **Description:** This is the start interval of the automatic compaction manager (seconds).
 - **Default:** 5
 - **Values:** 1-5
 - **Type:** int
 - **Section:** [global]
 
-Секция [server] и подсекции [server.name]
+Section [server] and subsections [server.name]
 ------------
 
 [server.name]
-- **Description:** основной внутренний идентификатор виртуального хоста. после "." можно использовать любое имя, это не доменное имя, только внутренний идентификатор
+- **Description:** This is the primary internal identifier of the virtual host. After "." any name can be used. This is not a domain name, only an internal identifier.
 - **Type:** string
 - **Section:** [server]
 
 host
-- **Description:** имя виртуального хоста. Не поддерживается * или _ , для сведения множества виртуальных хостов на 1 виртуальный хост в wZD сервере используйте Nginx или HAProxy или любой другой реверс прокси сервер с жестко заданным proxy_set_header Host hostname; (на примере Nginx), где hostname = host в виртуальном хосте wZD сервера
+- **Description:** This is the virtual host name. The value * or _ is not supported. To convert multiple virtual hosts to one virtual host in a wZD server, use Nginx or HAProxy, or any other reverse proxy server with a hard-set "proxy_set_header Host hostname;" (using Nginx as an example) where hostname = host in the wZD server virtual host.
 - **Default:** обязательный параметр
 - **Type:** string
 - **Section:** [server.name]
 
 root
-- **Description:** корневая директория виртуального хоста
+- **Description:** This is the virtual host root directory.
 - **Default:** обязательный параметр
 - **Type:** string
 - **Section:** [server.name]
 
 upload
-- **Description:** включает или отключает метод PUT для виртуального хоста
+- **Description:** This enables or disables the PUT method for the virtual host.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 delete
-- **Description:** включает или отключает метод DELETE для виртуального хоста
+- **Description:** This enables or disables the DELETE method for the virtual host.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 compaction
-- **Description:** включает или отключает автоматическое добавление задач для диспетчера компакции bolt архивов, при обновлении или удалении, файлов или значений в bolt архивах, если cmpsched не отключен глобально
+- **Description:** This enables or disables the automatic addition of tasks for the compaction manager of the Bolt archives when updating or deleting files or values in Bolt archives, if parameter cmpsched is not disabled globally.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 writeintegrity
-- **Description:** включает или отключает подсчет и запись контрольной суммы в бинарный заголовок во время загрузки файлов или значений через wZD сервер в bolt архивы. Рекомендуется включить
+- **Description:** This enables or disables the calculation and recording of the checksum in the binary header while uploading files or values through the wZD server to Bolt archives. It is recommended that this be enabled.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 readintegrity
-- **Description:** включает или отключает проверку контрольной суммы из бинарного заголовка во время выдачи файлов или значений клиенту сервера. Рекомендуется включить
+- **Description:** This enables or disables checksum verification from the binary header during the output of files or values to the client. It is recommended that this be enabled.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 trytimes
-- **Description:** количество попыток получения виртуальной блокировки bolt архива, прежде чем выдать http ошибку (количество)
+- **Description:** This is the number of attempts to obtain a virtual lock of the Bolt archive before returning an HTTP error (number).
 - **Default:** обязательный параметр
 - **Values:** 1-1000
 - **Type:** int
 - **Section:** [server.name]
 
 opentries
-- **Description:** количество попыток открытия bolt архива, прежде чем выдать http ошибку (количество)
+- **Description:** This is the number of attempts to open Bolt archive before returning an HTTP error (number).
 - **Default:** обязательный параметр
 - **Values:** 1-1000
 - **Type:** int
 - **Section:** [server.name]
 
 fmaxsize
-- **Description:** максимальный размер загружаемого файла или значения в bolt архив. Если данный параметр превышен, то файл или значение загрузится как отдельный файл по тому же пути. Рекомендуемый размер не более 1048576 (1МБ). Не рекомендуется загружать файлы или значения в bolt архивы размером больше 32МБ. Такие файлы или значения должны сохраняться отдельно (байты)
+- **Description:** This is the maximum size of the uploaded file or value in the Bolt archive. If this parameter is exceeded, the file or value will be loaded as a separate file with the same path. The recommended size is not more than 1048576 (1MB). It is not recommended to upload files or values to Bolt archives that are larger than 16MB. Such files or values must be stored separately (bytes).
 - **Default:** обязательный параметр
 - **Values:** 1-33554432
 - **Type:** int64
 - **Section:** [server.name]
 
 args
-- **Description:** если отключено, тогда query аргументы будут запрещены для GET запросов. Рекомендуется включить, если вы используете Vary заголовки на реверс прокси сервере или версионность через query аргументы
+- **Description:** If this is disabled, query arguments will be denied for GET requests. It is recommended that this be enabled if using Vary header on a reverse proxy server, or if versioning through query arguments.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 getbolt
-- **Description:** если отключено, тогда будет запрещено скачивать напрямую bolt архивы
+- **Description:**  If this is disabled, direct download of Bolt archives will be forbidden.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 getcount
-- **Description:** если отключено, тогда будет запрещено получать суммарное количество файлов или значений (в том числе отдельных файлов) в директории
+- **Description:** If this is disabled, getting a count of the total number of files or values (including individual files) in the directory will be forbidden.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 getkeys
-- **Description:** если отключено, тогда будет запрещено получать имена файлов или ключей (в том числе отдельных файлов) в директории
+- **Description:** If this is disabled, getting file or key names (including individual files) from the directory will be forbidden.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 nonunique
-- **Description:** если включено, тогда будет возможно загрузить файл с не уникальным именем в директорию, где уже есть bolt архив, и в этом bolt архиве есть файл или значение с тем же именем ключа, что и загружаемый отдельный файл. В случае если этот параметр выключен, то обратное все равно возможно, то есть возможно загрузить файл или значение именно в bolt архив, даже если уже есть отдельный файл в той же директории с тем же именем, что и имя ключа, загружаемого в bolt архив файла или значения
+- **Description:** If this is enabled, it is then possible to upload a file with a non-unique name to a directory where there is already a Bolt archive, and where the Bolt archive includes a file or value with the same key name as the separate file to be uploaded. If this parameter is turned off, the reverse will be possible. That is, it will be possible to upload a file or value to the Bolt archive, even if there is already a separate file in the same directory with the same name as the name of the key loaded into the Bolt file archive or value.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]  
 
 cctrl
-- **Description:** устанавливает заголовок Cache-Control
+- **Description:** This sets the Cache-Control header.
 - **Default:** обязательный параметр
 - **Values:** 0-2147483647
 - **Type:** int
 - **Section:** [server.name]
 
 buffers options
-- **Description:** параметры буферов чтения и записи. Все буферы могут увеличены в несколько раз для сетей с 10-100 Gbit пропускной способностью. Каждый следующий буфер не может быть меньше или равен предыдущему. Требуется увеличивать при условии, что у вас действительно есть большие файлы. В данном примере установлены минимально возможные значения у всех буферов, кроме minbuffer, его минимально возможное значение равно 4096 байт. Для большиства задач, параметров по умолчанию вполне достаточно
+- **Description:** This controls the read and write buffers. All buffers can be increased several times for networks with 10-100 Gbit bandwidth. Each subsequent buffer cannot be less than or equal to the previous one. Increasing the buffer is required for very large files. Here, the minimum possible values are set for all buffers except minbuffer, which has a minimum possible value of 4096 bytes. The default options are sufficient for most tasks.
 - **Default:** обязательный параметр 
 - **Type:** int
 - **Section:** [global]
 
-- minbuffer = 262144 # минимальный буфер памяти, при не превышении данного значения используется буфер еще более меньший 
-- lowbuffer = 1048576 # малый буфер памяти, при превышении данного значения используется минимальный буфер памяти
-- medbuffer = 67108864 # средний буфер памяти, при превышении данного значения используется малый буфер памяти
-- bigbuffer = 536870912 # не совсем буфер памяти, при превышении данного значения используется средний буфер памяти
+- minbuffer = 262144 # -- minimum memory buffer. If this value is not exceeded, an even smaller buffer is used. 
+- lowbuffer = 1048576 # -- small memory buffer. If this value is exceeded, the minbuffer memory buffer is used.
+- medbuffer = 67108864 # -- medium memory buffer. If this value is exceeded, the lowbuffer memory buffer is used.
+- bigbuffer = 536870912 # -- not quite a memory buffer. When this value is exceeded, the medbuffer memory buffer is used.
 
 filemode
-- **Description:** права создания bolt архивов, файлов и виртуальных атрибутов в бинарном заголовке внутри значения в bolt архивах 
+- **Description:** This sets the permissions to create Bolt archives, files and virtual attributes in a binary header inside a values in Bolt archives. 
 - **Default:** обязательный параметр
 - **Values:** 0600-0666
 - **Type:** uint32
 - **Section:** [server.name]
 
 dirmode
-- **Description:** права создания директорий 
+- **Description:** This sets directory creation permissions.
 - **Default:** обязательный параметр
 - **Values:** 0700-0777
 - **Type:** uint32
 - **Section:** [server.name]
 
 delbolt
-- **Description:** если включено, тогда будет разрешено удалять напрямую bolt архивы
+- **Description:** If this is enabled, direct deletion of Bolt archives will be allowed.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 deldir
-- **Description:** если включено, тогда wZD сервер будет удалять последнюю пустую директорию, при условии, что реально отсутствуют файлы, поддиректории и количество ключей в bolt архиве = 0. Но удаляется только текущая директория, рекурсивного обхода не реализовано в целях безопасности
+- **Description:** If this is enabled, the wZD server will delete the last empty directory, provided there really are no files or subdirectories and the number of keys in the Bolt archive = 0. Only the current directory is deleted. Recursive traversal is not implemented for security reasons.
 - **Default:** обязательный параметр
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
-
-Параметры wZA:
-========
-
-Секция [command line]
-------------
-
-- -bfilemode string
-        --bfilemode=0640 - (0600-0666) права на bolt архивы при упаковке с uid и gid от текущего пользователя и группы (по умолчанию 0640)
-- -delete
-        --delete - включает режим удаления оригинальных регулярных файлов (с --pack) после упаковки или оригинальных bolt архивов (с --unpack) после распаковки
-- -disablecompaction
-        --disablecompaction - отключает отложенную компакцию bolt архивов после упаковки (с --overwrite)
-- -disablereadintegrity
-        --disablereadintegrity - отключает чтение контрольных сумм CRC из бинарного заголовка для регулярных файлов в bolt архивах
-- -disablewriteintegrity
-        --disablewriteintegrity - отключает запись контрольных сумм CRC в бинарный заголовок для регулярных файлов в bolt архивах
-- -fmaxsize int
-        --fmaxsize=1048576 - максимально допустимый размер регулярного файла для записи в bolt архивы, в противном случае пропускает файл, максимальное значение: 33554432 байта (по умолчанию 1048576)
-- -help
-        --help - выводит помощь
-- -ignore
-        --ignore - включает режим игнорирования всех ошибок при выполнении режима массовой упаковки/распаковки из списка (если потоков > 1, тогда режим игнорирования всегда включен для продолжения выполнения рабочих потоков)
-- -ignore-not
-        --ignore-not - включает режим игнорирования только тех файлов, которые не существуют или к которым в доступе отказано, действует при работе в режиме массовой упаковки или распаковки по списку
-- -list string
-        --list=/path/to/list.txt - список файлов или bolt архивов
-- -locktimeout int
-        locktimeout=60 - максимальный таймаут для открытия bolt архива за 1 попытку, максимальное значение: 3600 (по умолчанию 60)
-- -overwrite
-        --overwrite - включает режим перезаписи регулярных файлов или файлов в bolt архивах при упаковке или распаковке
-- -pack
-        --pack - включает режим упаковки регулярных файлов из списка (с --list) или одиночного регулярного файла (с --single=) в bolt архивы
-- -progress
-        --progress - включает режим индикатора выполнения (несовместим с --verbose)
-- -single string
-        --single=/path/to/file - упаковать или распаковать один регулярный файл (с --pack) или bolt архив (с --unpack)
-- - show string
-        --show=/path/to/file.bolt - показывает регулярные файлы/значения в bolt архиве
-- -threads int
-        --threads=1 - параллельная массовая упаковка или распаковка (компакция (с --overwrite) однопоточная, для безопасности), максимальное значение: 256 (по умолчанию 1)
-- -tmpdir string
-        --tmpdir=/tmp/wza - временная директория для разделения списка файлов между потоками
-- -trytimes int
-        trytimes=5 - количество попыток взять виртуальную блокировку для bolt архива (по умолчанию sleep = 1 между попытками), максимальное значение: 1000 (по умолчанию 5)
-- -opentries int
-        opentries=5 максимальное количество попыток открытия bolt архива (по умолчанию sleep = 1 между попытками), максимальное значение: 1000 (по умолчанию 5)
-- -unpack
-        --unpack - включает режим распаковки bolt архивов из списка (--list=) или одиночного bolt архива (с --single=) в регулярные файлы
-- -verbose
-        --verbose - включает подробный режим (несовместим с --progress)
-- -version
-        --version - выводит версию
