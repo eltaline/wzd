@@ -15,6 +15,12 @@ sed -i -e "s#var_$VARKEY#$VARVAL#" /etc/nginx/sites-available/localhost.conf
 
 fi
 
+if [ "$VARKEY" == "root" ] ; then
+
+chown -R wzd.wzd $VARVAL
+
+fi
+
 done
 
 ulimit -n 131072
