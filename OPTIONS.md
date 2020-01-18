@@ -1,9 +1,9 @@
 <img src="/images/logo.png" alt="wZD Logo"/>
 
-Параметры wZD:
+wZD Parameters:
 ========
 
-Секция [command line]
+Section [command line]
 ------------
 
 - -config string
@@ -15,7 +15,7 @@
 - -version 
         --version - print version
 
-Секция [global]
+Section [global]
 ------------
 
 bindaddr
