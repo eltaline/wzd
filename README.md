@@ -345,7 +345,7 @@ Notes and Q&A
 Parameters:
 ========
 
-A full description of all product parameters is available here: <a href="/OPTIONS-RUS.md">Options</a>
+A full description of all product parameters is available here: <a href="/OPTIONS.md">Options</a>
 
 Guarantees:
 ========
