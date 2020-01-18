@@ -347,6 +347,11 @@ curl -X DELETE http://localhost/test/test.bolt
 
 Полное описание всех параметров продукта доступно здесь: <a href="/OPTIONS-RUS.md">Опции</a>
 
+HTTP Core
+========
+
+Использует <a href=https://github.com/kataras/iris>Iris</a> в качестве http ядра
+
 Гарантии
 ========
 
