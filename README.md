@@ -342,15 +342,15 @@ Notes and Q&A
 - Different types of encryption for files or values inside Bolt archives and for regular files
 - Delayed server video conversion, including on GPU
 
-HTTP Core
-========
-
-Uses <a href=https://github.com/kataras/iris>Iris</a> as server http core
-
 Parameters
 ========
 
 A full description of all product parameters is available here: <a href="/OPTIONS.md">Options</a>
+
+HTTP Core
+========
+
+Uses <a href=https://github.com/kataras/iris>Iris</a> as server http core
 
 Guarantees
 ========
