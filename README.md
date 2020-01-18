@@ -8,7 +8,7 @@ wZD is a server written in Go language that uses a <a href=https://github.com/el
 
 <img align="center" src="/images/wzd-scheme.png" alt="wZD Scheme"/>
 
-Architecture:
+Architecture
 ========
 
 <img align="center" src="/images/wzd-arch.png" alt="wZD Arch"/>
@@ -342,12 +342,12 @@ Notes and Q&A
 - Different types of encryption for files or values inside Bolt archives and for regular files
 - Delayed server video conversion, including on GPU
 
-Parameters:
+Parameters
 ========
 
 A full description of all product parameters is available here: <a href="/OPTIONS.md">Options</a>
 
-Guarantees:
+Guarantees
 ========
 
 No warranty is provided for this software. Please test first
@@ -357,7 +357,7 @@ Donations
 
 <a href="https://www.paypal.me/xwzd"><img src="/images/paypal.png"><a/>
 
-Contacts:
+Contacts
 ========
 
 - E-mail: dev@wzd.dev
