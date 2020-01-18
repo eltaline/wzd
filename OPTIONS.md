@@ -9,17 +9,17 @@
 - -config string
         --config=/etc/wzd/wzd.conf (default is "/etc/wzd/wzd.conf")
 - -debug 
-        --debug - режим отладки
+        --debug - debug mode
 - -help 
-        --help - выводит помощь
+        --help - displays help
 - -version 
-        --version - выводит версию
+        --version - print version
 
 Секция [global]
 ------------
 
 bindaddr
-- **Описание:** основной адрес и TCP порт, значение ":9699" все адреса
+- **Description**: This is the primary address and TCP port. The value is ": 9699" for all addresses.
 - **Умолчание:** "127.0.0.1:9699"
 - **Тип:** string
 - **Секция:** [global]
