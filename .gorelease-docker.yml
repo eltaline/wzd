@@ -19,7 +19,7 @@ builds:
       - amd64
 
 release:
-    skip: true
+    draft: true
 
 dockers:
   -
