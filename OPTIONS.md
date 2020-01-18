@@ -105,7 +105,7 @@ cmpsched = true
 - **Section:** [global]
 
 cmpdir
-- **Description:** This is the directory of the technical database. There is little technical data for compaction manager.
+- **Description:** This is the directory of the technical database. There is little technical data for the compaction manager.
 - **Default:** /var/lib/wzd
 - **Type:** string
 - **Section:** [global]
@@ -254,7 +254,7 @@ buffers options
 - bigbuffer = 536870912 # -- not quite a memory buffer. When this value is exceeded, the medbuffer memory buffer is used.
 
 filemode
-- **Description:** This sets the permissions to create Bolt archives, files and virtual attributes in a binary header inside a values in Bolt archives. 
+- **Description:** This sets the permissions to create Bolt archives, files and virtual attributes in a binary header inside values in Bolt archives. 
 - **Default:** Required
 - **Values:** 0600-0666
 - **Type:** uint32
