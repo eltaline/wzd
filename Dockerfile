@@ -57,7 +57,6 @@ RUN mkdir -p `dirname ${pidfile}`
 
 RUN chown wzd.wzd ${logdir}
 RUN chown wzd.wzd ${cmpdir}
-RUN chown wzd.wzd ${root}
 RUN chown wzd.wzd `dirname ${pidfile}`
 
 RUN apt-get update
