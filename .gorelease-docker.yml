@@ -19,7 +19,7 @@ builds:
       - amd64
 
 release:
-  draft: true
+    skip: true
 
 dockers:
   -
@@ -35,7 +35,6 @@ dockers:
 
     image_templates:
     - "eltaline/wzd:latest"
-    - "eltaline/wzd:{{.Version}}"
 
     skip_push: false
 
