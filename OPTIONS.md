@@ -134,117 +134,117 @@ Section [server] and subsections [server.name]
 
 host
 - **Description:** This is the virtual host name. The value * or _ is not supported. To convert multiple virtual hosts to one virtual host in a wZD server, use Nginx or HAProxy, or any other reverse proxy server with a hard-set "proxy_set_header Host hostname;" (using Nginx as an example) where hostname = host in the wZD server virtual host.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Type:** string
 - **Section:** [server.name]
 
 root
 - **Description:** This is the virtual host root directory.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Type:** string
 - **Section:** [server.name]
 
 upload
 - **Description:** This enables or disables the PUT method for the virtual host.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 delete
 - **Description:** This enables or disables the DELETE method for the virtual host.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 compaction
 - **Description:** This enables or disables the automatic addition of tasks for the compaction manager of the Bolt archives when updating or deleting files or values in Bolt archives, if parameter cmpsched is not disabled globally.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 writeintegrity
 - **Description:** This enables or disables the calculation and recording of the checksum in the binary header while uploading files or values through the wZD server to Bolt archives. It is recommended that this be enabled.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 readintegrity
 - **Description:** This enables or disables checksum verification from the binary header during the output of files or values to the client. It is recommended that this be enabled.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 trytimes
 - **Description:** This is the number of attempts to obtain a virtual lock of the Bolt archive before returning an HTTP error (number).
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** 1-1000
 - **Type:** int
 - **Section:** [server.name]
 
 opentries
 - **Description:** This is the number of attempts to open Bolt archive before returning an HTTP error (number).
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** 1-1000
 - **Type:** int
 - **Section:** [server.name]
 
 fmaxsize
 - **Description:** This is the maximum size of the uploaded file or value in the Bolt archive. If this parameter is exceeded, the file or value will be loaded as a separate file with the same path. The recommended size is not more than 1048576 (1MB). It is not recommended to upload files or values to Bolt archives that are larger than 16MB. Such files or values must be stored separately (bytes).
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** 1-33554432
 - **Type:** int64
 - **Section:** [server.name]
 
 args
 - **Description:** If this is disabled, query arguments will be denied for GET requests. It is recommended that this be enabled if using Vary header on a reverse proxy server, or if versioning through query arguments.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 getbolt
 - **Description:**  If this is disabled, direct download of Bolt archives will be forbidden.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 getcount
 - **Description:** If this is disabled, getting a count of the total number of files or values (including individual files) in the directory will be forbidden.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 getkeys
 - **Description:** If this is disabled, getting file or key names (including individual files) from the directory will be forbidden.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 nonunique
 - **Description:** If this is enabled, it is then possible to upload a file with a non-unique name to a directory where there is already a Bolt archive, and where the Bolt archive includes a file or value with the same key name as the separate file to be uploaded. If this parameter is turned off, the reverse will be possible. That is, it will be possible to upload a file or value to the Bolt archive, even if there is already a separate file in the same directory with the same name as the name of the key loaded into the Bolt file archive or value.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]  
 
 cctrl
 - **Description:** This sets the Cache-Control header.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** 0-2147483647
 - **Type:** int
 - **Section:** [server.name]
 
 buffers options
 - **Description:** This controls the read and write buffers. All buffers can be increased several times for networks with 10-100 Gbit bandwidth. Each subsequent buffer cannot be less than or equal to the previous one. Increasing the buffer is required for very large files. Here, the minimum possible values are set for all buffers except minbuffer, which has a minimum possible value of 4096 bytes. The default options are sufficient for most tasks.
-- **Default:** обязательный параметр 
+- **Default:** Required 
 - **Type:** int
 - **Section:** [global]
 
@@ -255,28 +255,28 @@ buffers options
 
 filemode
 - **Description:** This sets the permissions to create Bolt archives, files and virtual attributes in a binary header inside a values in Bolt archives. 
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** 0600-0666
 - **Type:** uint32
 - **Section:** [server.name]
 
 dirmode
 - **Description:** This sets directory creation permissions.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** 0700-0777
 - **Type:** uint32
 - **Section:** [server.name]
 
 delbolt
 - **Description:** If this is enabled, direct deletion of Bolt archives will be allowed.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
 
 deldir
 - **Description:** If this is enabled, the wZD server will delete the last empty directory, provided there really are no files or subdirectories and the number of keys in the Bolt archive = 0. Only the current directory is deleted. Recursive traversal is not implemented for security reasons.
-- **Default:** обязательный параметр
+- **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [server.name]
