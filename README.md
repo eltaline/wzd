@@ -29,7 +29,7 @@ Features
 - Effective methods of reading and writing data
 - Supports CRC data integrity when writing or reading
 - Support for Range and Accept-Ranges, If-None-Match and If-Modifed-Since headers
-- Store and share 10,000 times more files than there are inodes on any Posix compatible file system, depending on the directory structure
+- Store and share 10,000 times more files than there are inodes on any POSIX compatible file system, depending on the directory structure
 - Support for adding, updating, deleting files and values, and delayed compaction of Bolt archives
 - Allows the server to be used as a NoSQL database, with easy sharding based on the directory structure
 - Bolt archives support for selective reading of a certain number of bytes from a value
