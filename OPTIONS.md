@@ -25,7 +25,7 @@ bindaddr
 - **Section:** [global]
 
 readtimeout
-- **Description:** This sets the timeout for the maximum data transfer time from the client to the server. It should be increased to transfer large files. If the wZD server is installed behind Nginx or HAProxy, this timeout can be disabled by setting it to 0. It is not configured for a virtual host.
+- **Description:** This sets the timeout for the maximum data transfer time from the client to the server. It should be increased to transfer large files. If the wZD server is installed behind Nginx or HAProxy, this timeout can be disabled by setting it to 0 (no timeout). It is not configured for a virtual host.
 - **Default:** 60
 - **Values:** 0-86400
 - **Type:** int
