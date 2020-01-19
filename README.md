@@ -371,7 +371,7 @@ Contacts
 ========
 
 - E-mail: dev@wzd.dev
-- WZD website: https://wzd.dev
+- wZD website: https://wzd.dev
 - Company website: <a href="https://elta.ee">Eltaline</a>
 
 ```
