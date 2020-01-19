@@ -341,7 +341,7 @@ Notes and Q&A
 - Advanced features for using NoSQL component
 - Implementing background calculate checksums for single large files
 - Periodic checksum checks in the background to protect against bit rot
-- FUSE and / or WebDAV Mount, full support may be implemented, including recording
+- FUSE and / or WebDAV Mount, full support may be implemented, including write support
 - ~~Abandoning of SQLite in favor of a simpler solution (abandoning CGO)~~ (Completed)
 - Different types of compression (gzip, zstd, snappy) for files or values inside Bolt archives and for ordinary files
 - Different types of encryption for files or values inside Bolt archives and for regular files
