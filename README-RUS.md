@@ -375,7 +375,7 @@ HTTP Core
 - Сайт компании: <a href="https://elta.ee">Eltaline</a>
 
 ```
-Copyright (C) 2020 Andrey Kuvshinov
-Copyright (C) 2020 Eltaline OU
+Copyright © 2020 Andrey Kuvshinov
+Copyright © 2020 Eltaline OU
 All rights reserved.
 ```
