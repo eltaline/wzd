@@ -337,7 +337,11 @@ Notes and Q&A
 - Development of own replicator and distributor with geo for possible use in large systems without cluster FS
 - The ability to fully reverse restore metadata when it is completely lost (if using a distributor)
 - Native protocol for the possibility of using permanent network connections and drivers for different programming languages
+- Support for HTTPS protocol, it may be supported only in the future distributor
 - Advanced features for using NoSQL component
+- Implementing background calculate checksums for single large files
+- Periodic checksum checks in the background to protect against bit rot
+- FUSE and / or WebDAV Mount, full support may be implemented, including recording
 - ~~Abandoning of SQLite in favor of a simpler solution (abandoning CGO)~~ (Completed)
 - Different types of compression (gzip, zstd, snappy) for files or values inside Bolt archives and for ordinary files
 - Different types of encryption for files or values inside Bolt archives and for regular files
