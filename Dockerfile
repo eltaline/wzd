@@ -3,6 +3,7 @@ FROM debian:buster
 LABEL maintainer="Andrey Kuvshinov"
 
 ENV bindaddr "127.0.0.1:9699"
+ENV onlyssl false
 ENV readtimeout 60
 ENV readheadertimeout 5
 ENV writetimeout 60
