@@ -128,7 +128,7 @@ var (
 
 	defsleep time.Duration = 1 * time.Second
 
-	cmpdir = "/var/lib/wzd/"
+	cmpdir = "/var/lib/wzd"
 
 	cmpsched bool = true
 
@@ -150,9 +150,9 @@ func init() {
 	// Command Line Options
 
 	flag.StringVar(&configfile, "config", configfile, "--config=/etc/wzd/wzd.conf")
-	flag.BoolVar(&debugmode, "debug", debugmode, "--debug enable debug mode")
-	flag.BoolVar(&vprint, "version", vprint, "--version prints version")
-	flag.BoolVar(&help, "help", help, "--help prints help")
+	flag.BoolVar(&debugmode, "debug", debugmode, "--debug - debug mode")
+	flag.BoolVar(&vprint, "version", vprint, "--version - print version")
+	flag.BoolVar(&help, "help", help, "--help - displays help")
 
 	flag.Parse()
 

@@ -30,7 +30,7 @@ Features
 - Supports CRC data integrity when writing or reading
 - Support for Range and Accept-Ranges, If-None-Match and If-Modifed-Since headers
 - Store and share 10,000 times more files than there are inodes on any POSIX compatible file system, depending on the directory structure
-- Support for adding, updating, deleting files and values, and delayed compaction of Bolt archives
+- Support for adding, updating, deleting files and values, and delayed compaction/defragmentation of Bolt archives
 - Allows the server to be used as a NoSQL database, with easy sharding based on the directory structure
 - Bolt archives support for selective reading of a certain number of bytes from a value
 - Easy sharding of data over thousands or millions of Bolt archives based on the directory structure
@@ -375,7 +375,7 @@ Contacts
 - Company website: <a href="https://elta.ee">Eltaline</a>
 
 ```
-Copyright © 2020 Andrey Kuvshinov
-Copyright © 2020 Eltaline OU
+Copyright © 2020 Andrey Kuvshinov. Contacts: <syslinux@protonmail.com>
+Copyright © 2020 Eltaline OU. Contacts: <eltaline.ou@gmail.com>
 All rights reserved.
 ```
