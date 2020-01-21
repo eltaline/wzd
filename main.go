@@ -797,10 +797,6 @@ func main() {
 		TimeFormat:            "Mon, 02 Jan 2006 15:04:05 GMT",
 		Charset:               charset,
 	}))
-	if err != nil {
-		fmt.Printf("Something wrong when configuring wZD Server | %v\n", err)
-		os.Exit(1)
-	}
 
 	// Build App
 
@@ -912,8 +908,8 @@ func main() {
 
 	default:
 
-		appLogger.Errorf("| Not configured any Virtual Hosts with SSL or NON-SSL")
-		fmt.Printf("Not configured any Virtual Hosts with SSL or NON-SSL\n")
+		appLogger.Errorf("| Not configured any virtual host. Must check config [%s]", configfile)
+		fmt.Printf("Not configured any virtual host. Must check config [%s]\n", configfile)
 		os.Exit(1)
 
 	}
