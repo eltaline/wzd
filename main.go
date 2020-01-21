@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/binary"
 	"flag"
 	"fmt"
@@ -29,6 +30,8 @@ type Config struct {
 
 type global struct {
 	BINDADDR          string
+	BINDADDRSSL       string
+	ONLYSSL           bool
 	READTIMEOUT       int
 	READHEADERTIMEOUT int
 	WRITETIMEOUT      int
@@ -50,6 +53,8 @@ type global struct {
 type server struct {
 	HOST           string
 	ROOT           string
+	SSLCRT         string
+	SSLKEY         string
 	UPLOAD         bool
 	DELETE         bool
 	COMPACTION     bool
@@ -110,6 +115,8 @@ var (
 	config     Config
 	configfile string = "/etc/wzd/wzd.conf"
 	wg         sync.WaitGroup
+
+	onlyssl bool = false
 
 	readtimeout       time.Duration = 60 * time.Second
 	readheadertimeout time.Duration = 5 * time.Second
@@ -176,6 +183,10 @@ func init() {
 	}
 
 	// Check Global Options
+
+	rgxonlyssl := regexp.MustCompile("^(?i)(true|false)$")
+	mchonlyssl := rgxonlyssl.MatchString(fmt.Sprintf("%t", config.Global.ONLYSSL))
+	Check(mchonlyssl, "[global]", "onlyssl", (fmt.Sprintf("%t", config.Global.ONLYSSL)), "true or false", DoExit)
 
 	mchreadtimeout := RBInt(config.Global.READTIMEOUT, 0, 86400)
 	Check(mchreadtimeout, "[global]", "readtimeout", fmt.Sprintf("%d", config.Global.READTIMEOUT), "from 0 to 86400", DoExit)
@@ -276,6 +287,13 @@ func init() {
 	appLogger.Warnf("| Starting wZD Server [%s]", version)
 
 	switch {
+	case config.Global.ONLYSSL:
+		appLogger.Warnf("| Only SSL Mode [ENABLED]")
+	default:
+		appLogger.Warnf("| Only SSL Mode [DISABLED]")
+	}
+
+	switch {
 	case config.Global.CMPSCHED:
 		appLogger.Warnf("| Compaction Scheduler [ENABLED]")
 		appLogger.Warnf("| Compaction Time > [%d] days", config.Global.CMPTIME)
@@ -296,6 +314,8 @@ func init() {
 	var section string
 
 	rgxroot := regexp.MustCompile("^(/[^/\x00]*)+/?$")
+	rgxsslcrt := regexp.MustCompile("^(/?[^/\x00]*)+/?$")
+	rgxsslkey := regexp.MustCompile("^(/?[^/\x00]*)+/?$")
 	rgxupload := regexp.MustCompile("^(?i)(true|false)$")
 	rgxdelete := regexp.MustCompile("^(?i)(true|false)$")
 	rgxcompaction := regexp.MustCompile("^(?i)(true|false)$")
@@ -324,6 +344,42 @@ func init() {
 
 		mchroot := rgxroot.MatchString(Server.ROOT)
 		Check(mchroot, section, "root", Server.ROOT, "ex. /var/storage/localhost", DoExit)
+
+		if Server.SSLCRT != "" {
+			mchsslcrt := rgxsslcrt.MatchString(Server.SSLCRT)
+			Check(mchsslcrt, section, "sslcrt", Server.SSLCRT, "/path/to/sslcrt.pem", DoExit)
+
+			if Server.SSLKEY == "" {
+				appLogger.Errorf("| SSL key can not be empty error | File [%s]", Server.SSLKEY)
+				fmt.Printf("SSL key can not be empty error | File [%s]\n", Server.SSLKEY)
+				os.Exit(1)
+			}
+
+			//			if !FileOrLinkExists(Server.SSLCRT) {
+			//				appLogger.Errorf("| SSL certificate not exists error | File [%s]", Server.SSLCRT)
+			//				fmt.Printf("SSL certificate not exists error | File [%s]\n", Server.SSLCRT)
+			//				os.Exit(1)
+			//			}
+
+		}
+
+		if Server.SSLKEY != "" {
+			mchsslkey := rgxsslkey.MatchString(Server.SSLKEY)
+			Check(mchsslkey, section, "sslkey", Server.SSLKEY, "/path/to/sslkey.pem", DoExit)
+
+			if Server.SSLCRT == "" {
+				appLogger.Errorf("| SSL certificate can not be empty error | File [%s]", Server.SSLCRT)
+				fmt.Printf("SSL certificate can not be empty error | File [%s]\n", Server.SSLCRT)
+				os.Exit(1)
+			}
+
+			//			if !FileOrLinkExists(Server.SSLKEY) {
+			//				appLogger.Errorf("| SSL key not exists error | File [%s]", Server.SSLKEY)
+			//				fmt.Printf("SSL key not exists error | File [%s]\n", Server.SSLKEY)
+			//				os.Exit(1)
+			//			}
+
+		}
 
 		mchupload := rgxupload.MatchString(fmt.Sprintf("%t", Server.UPLOAD))
 		Check(mchupload, section, "upload", (fmt.Sprintf("%t", Server.UPLOAD)), "true or false", DoExit)
@@ -556,16 +612,17 @@ func main() {
 
 	}
 
+	// Only SSL
+
+	onlyssl = config.Global.ONLYSSL
+
+	// KeepAlive
+
+	keepalive = config.Global.KEEPALIVE
+
 	// Default Timers / Tries
 
 	defsleep = time.Duration(config.Global.DEFSLEEP) * time.Second
-
-	// Compaction Configuration
-
-	cmpdir = config.Global.CMPDIR
-
-	cmptime = config.Global.CMPTIME
-	cmpcheck = time.Duration(config.Global.CMPCHECK) * time.Second
 
 	// Pid Handling
 
@@ -589,6 +646,12 @@ func main() {
 	defer cdb.Close()
 
 	// Go Compaction Scheduler
+
+	// Compaction Configuration
+
+	cmpdir = config.Global.CMPDIR
+	cmptime = config.Global.CMPTIME
+	cmpcheck = time.Duration(config.Global.CMPCHECK) * time.Second
 
 	cmpsched = config.Global.CMPSCHED
 
@@ -669,39 +732,188 @@ func main() {
 
 	})
 
-	// Web Listen Settings
+	// TLS Configuration
 
-	bindaddr := config.Global.BINDADDR
-	switch {
-	case bindaddr == "":
-		bindaddr = "127.0.0.1:9699"
+	var sstd bool = false
+	var stls bool = false
+	var stdcount int = 0
+	var tlscount int = 0
+
+	tlsConfig := &tls.Config{}
+
+	for _, Server := range config.Server {
+
+		if Server.SSLCRT != "" && Server.SSLKEY != "" {
+			tlscount++
+		}
+
+		if !onlyssl {
+			stdcount++
+		}
+
 	}
+
+	if tlscount > 0 {
+
+		tlsConfig.Certificates = make([]tls.Certificate, tlscount)
+
+		s := 0
+
+		for _, Server := range config.Server {
+
+			if Server.SSLCRT != "" && Server.SSLKEY != "" {
+
+				tlsConfig.Certificates[s], err = tls.LoadX509KeyPair(Server.SSLCRT, Server.SSLKEY)
+				if err != nil {
+					appLogger.Errorf("| Can`t apply ssl certificate/key error | Certificate [%s] | Key [%s] | %v", Server.SSLCRT, Server.SSLKEY, err)
+					fmt.Printf("Can`t apply ssl certificate/key error | Certificate [%s] | Key [%s] | %v\n", Server.SSLCRT, Server.SSLKEY, err)
+					os.Exit(1)
+				}
+
+			}
+
+		}
+
+		tlsConfig.BuildNameToCertificate()
+
+		stls = true
+
+	}
+
+	if stdcount > 0 {
+		sstd = true
+	}
+
+	// Configure App
 
 	charset := config.Global.CHARSET
 	realheader := config.Global.REALHEADER
 
-	// Start WebServer
-
-	srv := &http.Server{
-		Addr:              bindaddr,
-		ReadTimeout:       readtimeout,
-		ReadHeaderTimeout: readheadertimeout,
-		IdleTimeout:       idletimeout,
-		WriteTimeout:      writetimeout,
-		MaxHeaderBytes:    1 << 20,
-	}
-
-	srv.SetKeepAlivesEnabled(keepalive)
-
-	err = app.Run(iris.Server(srv), iris.WithoutInterruptHandler, iris.WithoutBodyConsumptionOnUnmarshal, iris.WithCharset(charset), iris.WithRemoteAddrHeader(realheader), iris.WithOptimizations, iris.WithConfiguration(iris.Configuration{
+	app.Configure(iris.WithoutInterruptHandler, iris.WithoutBodyConsumptionOnUnmarshal, iris.WithCharset(charset), iris.WithRemoteAddrHeader(realheader), iris.WithOptimizations, iris.WithConfiguration(iris.Configuration{
 		DisablePathCorrection: false,
 		EnablePathEscape:      true,
 		TimeFormat:            "Mon, 02 Jan 2006 15:04:05 GMT",
 		Charset:               charset,
 	}))
-	if err != nil && !shutdown {
-		fmt.Printf("Something wrong when starting wZD Server | %v\n", err)
+	if err != nil {
+		fmt.Printf("Something wrong when configuring wZD Server | %v\n", err)
 		os.Exit(1)
+	}
+
+	// Build App
+
+	err = app.Build()
+	if err != nil {
+		fmt.Printf("Something wrong when building wZD Server | %v\n", err)
+		os.Exit(1)
+	}
+
+	// Start WebServer
+
+	switch {
+
+	case sstd && !stls:
+
+		bindaddr := config.Global.BINDADDR
+		switch {
+		case bindaddr == "":
+			bindaddr = "127.0.0.1:9699"
+		}
+
+		srv := &http.Server{
+			Addr:              bindaddr,
+			ReadTimeout:       readtimeout,
+			ReadHeaderTimeout: readheadertimeout,
+			IdleTimeout:       idletimeout,
+			WriteTimeout:      writetimeout,
+			MaxHeaderBytes:    1 << 20,
+		}
+
+		srv.SetKeepAlivesEnabled(keepalive)
+
+		err = app.Run(iris.Server(srv))
+		if err != nil && !shutdown {
+			fmt.Printf("Something wrong when starting wZD Server | %v\n", err)
+			os.Exit(1)
+		}
+
+	case !sstd && stls:
+
+		bindaddrssl := config.Global.BINDADDRSSL
+		switch {
+		case bindaddrssl == "":
+			bindaddrssl = "127.0.0.1:9799"
+		}
+
+		srvssl := &http.Server{
+			Addr:              bindaddrssl,
+			ReadTimeout:       readtimeout,
+			ReadHeaderTimeout: readheadertimeout,
+			IdleTimeout:       idletimeout,
+			WriteTimeout:      writetimeout,
+			MaxHeaderBytes:    1 << 20,
+			TLSConfig:         tlsConfig,
+		}
+
+		srvssl.SetKeepAlivesEnabled(keepalive)
+
+		err = app.Run(iris.Server(srvssl))
+		if err != nil && !shutdown {
+			fmt.Printf("Something wrong when starting wZD Server | %v\n", err)
+			os.Exit(1)
+		}
+
+	case sstd && stls:
+
+		bindaddr := config.Global.BINDADDR
+		switch {
+		case bindaddr == "":
+			bindaddr = "127.0.0.1:9699"
+		}
+
+		bindaddrssl := config.Global.BINDADDRSSL
+		switch {
+		case bindaddrssl == "":
+			bindaddrssl = "127.0.0.1:9799"
+		}
+
+		srv := &http.Server{
+			Handler:           app,
+			Addr:              bindaddr,
+			ReadTimeout:       readtimeout,
+			ReadHeaderTimeout: readheadertimeout,
+			IdleTimeout:       idletimeout,
+			WriteTimeout:      writetimeout,
+			MaxHeaderBytes:    1 << 20,
+		}
+
+		srvssl := &http.Server{
+			Addr:              bindaddrssl,
+			ReadTimeout:       readtimeout,
+			ReadHeaderTimeout: readheadertimeout,
+			IdleTimeout:       idletimeout,
+			WriteTimeout:      writetimeout,
+			MaxHeaderBytes:    1 << 20,
+			TLSConfig:         tlsConfig,
+		}
+
+		srv.SetKeepAlivesEnabled(keepalive)
+		srvssl.SetKeepAlivesEnabled(keepalive)
+
+		go srv.ListenAndServe()
+
+		err = app.Run(iris.Server(srvssl))
+		if err != nil && !shutdown {
+			fmt.Printf("Something wrong when starting wZD Server | %v\n", err)
+			os.Exit(1)
+		}
+
+	default:
+
+		appLogger.Errorf("| Not configured any Virtual Hosts with SSL or NON-SSL")
+		fmt.Printf("Not configured any Virtual Hosts with SSL or NON-SSL\n")
+		os.Exit(1)
+
 	}
 
 }
