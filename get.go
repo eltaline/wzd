@@ -35,7 +35,7 @@ func ZDGet() iris.Handler {
 		// Vhost / IP Client
 
 		ip := ctx.RemoteAddr()
-		vhost := ctx.Host()
+		vhost := strings.Split(ctx.Host(), ":")[0]
 
 		// Shutdown
 
