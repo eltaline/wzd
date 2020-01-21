@@ -14,6 +14,7 @@ import (
 	"os"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -35,7 +36,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		// Vhost / IP Client
 
 		ip := ctx.RemoteAddr()
-		vhost := ctx.Host()
+		vhost := strings.Split(ctx.Host(), ":")[0]
 
 		// Shutdown
 
