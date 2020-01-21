@@ -207,7 +207,7 @@ func init() {
 	Check(mchdebugmode, "[global]", "debugmode", (fmt.Sprintf("%t", config.Global.DEBUGMODE)), "true or false", DoExit)
 
 	if config.Global.PIDFILE != "" {
-		rgxpidfile := regexp.MustCompile("^(/[^/\x00]*)+/?$")
+		rgxpidfile := regexp.MustCompile("^(/?[^/\x00]*)+/?$")
 		mchpidfile := rgxpidfile.MatchString(config.Global.PIDFILE)
 		Check(mchpidfile, "[global]", "pidfile", config.Global.PIDFILE, "ex. /run/wzd/wzd.pid", DoExit)
 	} else {
@@ -215,7 +215,7 @@ func init() {
 	}
 
 	if config.Global.LOGDIR != "" {
-		rgxlogdir := regexp.MustCompile("^(/[^/\x00]*)+/?$")
+		rgxlogdir := regexp.MustCompile("^(/?[^/\x00]*)+/?$")
 		mchlogdir := rgxlogdir.MatchString(config.Global.LOGDIR)
 		Check(mchlogdir, "[global]", "logdir", config.Global.LOGDIR, "ex. /var/log/wzd", DoExit)
 	} else {
@@ -230,7 +230,7 @@ func init() {
 	Check(mchdefsleep, "[global]", "defsleep", fmt.Sprintf("%d", config.Global.DEFSLEEP), "from 1 to 5", DoExit)
 
 	if config.Global.CMPDIR != "" {
-		rgxcmpdir := regexp.MustCompile("^(/[^/\x00]*)+/?$")
+		rgxcmpdir := regexp.MustCompile("^(/?[^/\x00]*)+/?$")
 		mchcmpdir := rgxcmpdir.MatchString(config.Global.CMPDIR)
 		Check(mchcmpdir, "[global]", "cmpdir", config.Global.CMPDIR, "ex. /var/lib/wzd", DoExit)
 	} else {
