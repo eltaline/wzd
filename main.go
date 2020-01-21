@@ -31,8 +31,9 @@ type global struct {
 	BINDADDR          string
 	READTIMEOUT       int
 	READHEADERTIMEOUT int
-	IDLETIMEOUT       int
 	WRITETIMEOUT      int
+	IDLETIMEOUT       int
+	KEEPALIVE         bool
 	REALHEADER        string
 	CHARSET           string
 	DEBUGMODE         bool
@@ -111,8 +112,9 @@ var (
 
 	readtimeout       time.Duration = 60 * time.Second
 	readheadertimeout time.Duration = 5 * time.Second
-	idletimeout       time.Duration = 60 * time.Second
 	writetimeout      time.Duration = 60 * time.Second
+	idletimeout       time.Duration = 60 * time.Second
+	keepalive         bool          = false
 
 	machid string = "nomachineid"
 
@@ -180,11 +182,15 @@ func init() {
 	mchreadheadertimeout := RBInt(config.Global.READHEADERTIMEOUT, 0, 86400)
 	Check(mchreadheadertimeout, "[global]", "readheadertimeout", fmt.Sprintf("%d", config.Global.READHEADERTIMEOUT), "from 0 to 86400", DoExit)
 
+	mchwritetimeout := RBInt(config.Global.WRITETIMEOUT, 0, 86400)
+	Check(mchwritetimeout, "[global]", "writetimeout", fmt.Sprintf("%d", config.Global.WRITETIMEOUT), "from 0 to 86400", DoExit)
+
 	mchidletimeout := RBInt(config.Global.IDLETIMEOUT, 0, 86400)
 	Check(mchidletimeout, "[global]", "idletimeout", fmt.Sprintf("%d", config.Global.IDLETIMEOUT), "from 0 to 86400", DoExit)
 
-	mchwritetimeout := RBInt(config.Global.WRITETIMEOUT, 0, 86400)
-	Check(mchwritetimeout, "[global]", "writetimeout", fmt.Sprintf("%d", config.Global.WRITETIMEOUT), "from 0 to 86400", DoExit)
+	rgxkeepalive := regexp.MustCompile("^(?i)(true|false)$")
+	mchkeepalive := rgxkeepalive.MatchString(fmt.Sprintf("%t", config.Global.KEEPALIVE))
+	Check(mchkeepalive, "[global]", "keepalive", (fmt.Sprintf("%t", config.Global.KEEPALIVE)), "true or false", DoExit)
 
 	if config.Global.REALHEADER != "" {
 		rgxrealheader := regexp.MustCompile("^([a-zA-Z0-9-_]+)")
@@ -595,6 +601,7 @@ func main() {
 	app.Head("/{directory:path}", ZDGet())
 	app.Options("/{directory:path}", ZDGet())
 	app.Put("/{directory:path}", ZDPut(keymutex, cdb))
+	app.Post("/{directory:path}", ZDPut(keymutex, cdb))
 	app.Delete("/{directory:path}", ZDDel(keymutex, cdb))
 
 	// Interrupt Handler
@@ -665,7 +672,7 @@ func main() {
 		MaxHeaderBytes:    1 << 20,
 	}
 
-	srv.SetKeepAlivesEnabled(false)
+	srv.SetKeepAlivesEnabled(keepalive)
 
 	err = app.Run(iris.Server(srv), iris.WithoutInterruptHandler, iris.WithoutBodyConsumptionOnUnmarshal, iris.WithCharset(charset), iris.WithRemoteAddrHeader(realheader), iris.WithOptimizations, iris.WithConfiguration(iris.Configuration{
 		DisablePathCorrection: false,
