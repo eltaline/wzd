@@ -141,7 +141,10 @@ changelog:
   sort: asc
   filters:
     exclude:
+    - README
+    - OPTIONS
     - Readme
+    - Options
     - Image
     - Script
     - Docker
