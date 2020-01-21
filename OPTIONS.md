@@ -98,27 +98,27 @@ defsleep
 - **Section:** [global]
 
 cmpsched = true
-- **Description:** This globally enables or disables the automatic compaction manager for Bolt archives.
+- **Description:** This globally enables or disables the automatic compaction/defragmentation manager for Bolt archives.
 - **Default:** false
 - **Values:** true or false
 - **Type:** boolean
 - **Section:** [global]
 
 cmpdir
-- **Description:** This is the directory of the technical database. There is little technical data for the compaction manager.
+- **Description:** This is the directory of the technical database. There is little technical data for the compaction/defragmentation manager.
 - **Default:** /var/lib/wzd
 - **Type:** string
 - **Section:** [global]
 
 cmptime = 30 
-- **Description:** This is the compaction timeout for updated Bolt archives (days).
+- **Description:** This is the compaction/defragmentation timeout for updated Bolt archives (days).
 - **Default:** 30
 - **Values:** 1-1000
 - **Type:** int
 - **Section:** [global]
 
 cmpcheck = 5
-- **Description:** This is the start interval of the automatic compaction manager (seconds).
+- **Description:** This is the start interval of the automatic compaction/defragmentation manager (seconds).
 - **Default:** 5
 - **Values:** 1-5
 - **Type:** int
@@ -159,7 +159,7 @@ delete
 - **Section:** [server.name]
 
 compaction
-- **Description:** This enables or disables the automatic addition of tasks for the compaction manager of the Bolt archives when updating or deleting files or values in Bolt archives, if parameter cmpsched is not disabled globally.
+- **Description:** This enables or disables the automatic addition of tasks for the compaction/defragmentation manager of the Bolt archives when updating or deleting files or values in Bolt archives, if parameter cmpsched is not disabled globally.
 - **Default:** Required
 - **Values:** true or false
 - **Type:** boolean
