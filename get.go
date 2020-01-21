@@ -43,7 +43,7 @@ func ZDGet() iris.Handler {
 			ctx.StatusCode(iris.StatusInternalServerError)
 			//_, err := ctx.WriteString("Shutdown wZD server in progress\n")
 			//if err != nil {
-			//	getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+			//	getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 			//}
 			return
 		}
@@ -75,6 +75,8 @@ func ZDGet() iris.Handler {
 		bigbuffer := int64(536870912)
 
 		filemode := os.FileMode(0640)
+
+		log4xx := true
 
 		for _, Server := range config.Server {
 
@@ -110,6 +112,8 @@ func ZDGet() iris.Handler {
 					filemode = os.FileMode(cfilemode)
 				}
 
+				log4xx = Server.LOG4XX
+
 				break
 
 			}
@@ -119,13 +123,16 @@ func ZDGet() iris.Handler {
 		if badhost {
 
 			ctx.StatusCode(iris.StatusMisdirectedRequest)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Not found configured virtual host", vhost, ip)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 421 | Not found configured virtual host", vhost, ip)
+			}
 
 			if debugmode {
 
 				_, err := ctx.Writef("[ERRO] Not found configured virtual host | Virtual Host [%s]\n", vhost)
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -141,13 +148,16 @@ func ZDGet() iris.Handler {
 			if len(params) != 0 {
 
 				ctx.StatusCode(iris.StatusForbidden)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | The query arguments is not allowed during GET request", vhost, ip)
+
+				if log4xx {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | The query arguments is not allowed during GET request", vhost, ip)
+				}
 
 				if debugmode {
 
 					_, err := ctx.WriteString("[ERRO] The query arguments is not allowed during GET request\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -168,13 +178,16 @@ func ZDGet() iris.Handler {
 			if mchregbolt {
 
 				ctx.StatusCode(iris.StatusForbidden)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | The bolt request is not allowed during GET request", vhost, ip)
+
+				if log4xx {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | The direct bolt request is not allowed during GET request", vhost, ip)
+				}
 
 				if debugmode {
 
-					_, err := ctx.WriteString("[ERRO] The request is not allowed during GET request\n")
+					_, err := ctx.WriteString("[ERRO] The direct bolt request is not allowed during GET request\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -190,13 +203,16 @@ func ZDGet() iris.Handler {
 		if !getcount && hcount == "1" {
 
 			ctx.StatusCode(iris.StatusForbidden)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | The count request is not allowed during GET request", vhost, ip)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | The count request is not allowed during GET request", vhost, ip)
+			}
 
 			if debugmode {
 
-				_, err := ctx.WriteString("[ERRO] The request is not allowed during GET request\n")
+				_, err := ctx.WriteString("[ERRO] The count request is not allowed during GET request\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -211,13 +227,16 @@ func ZDGet() iris.Handler {
 		if !getkeys && (hkeys == "1" || hkeysall == "1") {
 
 			ctx.StatusCode(iris.StatusForbidden)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | The count request is not allowed during GET request", vhost, ip)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | The count request is not allowed during GET request", vhost, ip)
+			}
 
 			if debugmode {
 
-				_, err := ctx.WriteString("[ERRO] The request is not allowed during GET request\n")
+				_, err := ctx.WriteString("[ERRO] The count request is not allowed during GET request\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -229,13 +248,16 @@ func ZDGet() iris.Handler {
 		if hkeys == "1" && hkeysall == "1" {
 
 			ctx.StatusCode(iris.StatusConflict)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t serve Keys and KeysAll header together due to conflict error", vhost, ip)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 409 | Can`t serve Keys and KeysAll header together due to conflict error", vhost, ip)
+			}
 
 			if debugmode {
 
 				_, err := ctx.WriteString("[ERRO] Can`t serve Keys and KeysAll header together due to conflict error\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -265,13 +287,13 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t count files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Can`t count files in directory error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -282,7 +304,7 @@ func ZDGet() iris.Handler {
 
 				_, err = ctx.Writef("%d\n", filecount)
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 				return
@@ -295,13 +317,13 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -315,13 +337,13 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t count files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Can`t count files in directory error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -335,13 +357,13 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t count keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t count keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Can`t count keys of files in index db bucket error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -353,7 +375,7 @@ func ZDGet() iris.Handler {
 
 				_, err = ctx.Writef("%d\n", (keycount + filecount - 1))
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 				db.Close()
@@ -362,6 +384,11 @@ func ZDGet() iris.Handler {
 			}
 
 			ctx.StatusCode(iris.StatusNotFound)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
 			return
 
 		}
@@ -378,13 +405,13 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t iterate files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Can`t iterate files in directory error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -399,13 +426,13 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Write keys names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write keys names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Write keys names to keysbuffer error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -416,7 +443,11 @@ func ZDGet() iris.Handler {
 
 				_, err = ctx.Write(keysbuffer.Bytes())
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+					}
+
 				}
 
 				return
@@ -435,13 +466,13 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -455,13 +486,13 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -477,13 +508,13 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Write keys names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write keys names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Write keys names to keysbuffer error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -495,7 +526,11 @@ func ZDGet() iris.Handler {
 
 				_, err = ctx.Write(keysbuffer.Bytes())
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+					}
+
 				}
 
 				db.Close()
@@ -504,6 +539,11 @@ func ZDGet() iris.Handler {
 			}
 
 			ctx.StatusCode(iris.StatusNotFound)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
 			return
 
 		}
@@ -511,6 +551,11 @@ func ZDGet() iris.Handler {
 		if DirExists(abs) {
 
 			ctx.StatusCode(iris.StatusForbidden)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Forbidden | Path [%s]", vhost, ip, abs)
+			}
+
 			return
 
 		}
@@ -523,13 +568,13 @@ func ZDGet() iris.Handler {
 			if err != nil {
 
 				ctx.StatusCode(iris.StatusInternalServerError)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t stat file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t stat file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 				if debugmode {
 
 					_, err = ctx.WriteString("[ERRO] Can`t stat file error\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -549,13 +594,13 @@ func ZDGet() iris.Handler {
 			if err != nil {
 
 				ctx.StatusCode(iris.StatusInternalServerError)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 				if debugmode {
 
 					_, err = ctx.WriteString("[ERRO] Can`t open file error\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -571,20 +616,20 @@ func ZDGet() iris.Handler {
 			if err != nil && err != io.EOF {
 
 				ctx.StatusCode(iris.StatusInternalServerError)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | csizebuffer read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | csizebuffer read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 				err = pfile.Close()
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close during read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Close during read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 					if debugmode {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
 						_, err = ctx.WriteString("[ERRO] Close during read file error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -597,7 +642,7 @@ func ZDGet() iris.Handler {
 
 					_, err = ctx.WriteString("[ERRO] csizebuffer read file error\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -610,19 +655,19 @@ func ZDGet() iris.Handler {
 			if err != nil {
 
 				ctx.StatusCode(iris.StatusInternalServerError)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | contbuffer read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | contbuffer read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 				err = pfile.Close()
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close during contbuffer read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Close during contbuffer read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Close during contbuffer read file error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -635,7 +680,7 @@ func ZDGet() iris.Handler {
 
 					_, err = ctx.WriteString("[ERRO] contbuffer read file error\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -661,7 +706,7 @@ func ZDGet() iris.Handler {
 				err = pfile.Close()
 				if err != nil {
 					ctx.StatusCode(iris.StatusNotModified)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close after etag/modtime file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 599 | Close after etag/modtime file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 					return
 				}
 
@@ -674,7 +719,7 @@ func ZDGet() iris.Handler {
 
 				err = pfile.Close()
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close after head/options file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 599 | Close after head/options file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 					return
 				}
 
@@ -699,11 +744,15 @@ func ZDGet() iris.Handler {
 
 					ctx.StatusCode(iris.StatusRequestedRangeNotSatisfiable)
 
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 416 | Bad Range | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+					}
+
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Invalid range error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -733,19 +782,22 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusRequestedRangeNotSatisfiable)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t seek to position [%d] error | File [%s] | Path [%s] | %v", vhost, ip, rstart, file, abs, err)
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 416 | Can`t seek to position [%d] error | File [%s] | Path [%s] | %v", vhost, ip, rstart, file, abs, err)
+					}
 
 					err = pfile.Close()
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close during seek file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Close during seek file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 						if debugmode {
 
 							_, err = ctx.WriteString("[ERRO] Close during seek file error\n")
 							if err != nil {
-								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 							}
 
 						}
@@ -758,7 +810,7 @@ func ZDGet() iris.Handler {
 
 						_, err = ctx.Writef("[ERRO] Can`t seek to position [%d] error\n", rstart)
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -790,19 +842,19 @@ func ZDGet() iris.Handler {
 						}
 
 						ctx.StatusCode(iris.StatusInternalServerError)
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | sizebuffer read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | sizebuffer read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 						err = pfile.Close()
 						if err != nil {
 
 							ctx.StatusCode(iris.StatusInternalServerError)
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close during read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Close during read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 							if debugmode {
 
 								_, err = ctx.WriteString("[ERRO] Close during read file error\n")
 								if err != nil {
-									getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+									getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 								}
 
 							}
@@ -815,7 +867,7 @@ func ZDGet() iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] sizebuffer read file error\n")
 							if err != nil {
-								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 							}
 
 						}
@@ -827,19 +879,21 @@ func ZDGet() iris.Handler {
 					_, err = ctx.Write(readbuffer[:sizebuffer])
 					if err != nil {
 
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						if log4xx {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+						}
 
 						err = pfile.Close()
 						if err != nil {
 
 							ctx.StatusCode(iris.StatusInternalServerError)
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close during readbuffer send file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Close during readbuffer send file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 							if debugmode {
 
 								_, err = ctx.WriteString("[ERRO] Close during readbuffer send file error\n")
 								if err != nil {
-									getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+									getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 								}
 
 							}
@@ -862,7 +916,7 @@ func ZDGet() iris.Handler {
 
 				err = pfile.Close()
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close after send range of file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 599 | Close after send range of file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 					return
 				}
 
@@ -876,19 +930,22 @@ func ZDGet() iris.Handler {
 			if err != nil {
 
 				ctx.StatusCode(iris.StatusRequestedRangeNotSatisfiable)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t seek to position 0 error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+
+				if log4xx {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 416 | Can`t seek to position 0 error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+				}
 
 				err = pfile.Close()
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close during seek file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Close during seek file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Close during seek file error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -901,7 +958,7 @@ func ZDGet() iris.Handler {
 
 					_, err = ctx.WriteString("[ERRO] Can`t seek to position 0 error\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -935,19 +992,19 @@ func ZDGet() iris.Handler {
 					}
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | sizebuffer read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | sizebuffer read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 					err = pfile.Close()
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close during read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Close during read file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 						if debugmode {
 
 							_, err = ctx.WriteString("[ERRO] Close during read file error\n")
 							if err != nil {
-								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 							}
 
 						}
@@ -960,7 +1017,7 @@ func ZDGet() iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] sizebuffer read file error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -972,19 +1029,21 @@ func ZDGet() iris.Handler {
 				_, err = ctx.Write(readbuffer[:sizebuffer])
 				if err != nil {
 
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+					}
 
 					err = pfile.Close()
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close during readbuffer send file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Close during readbuffer send file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 
 						if debugmode {
 
 							_, err = ctx.WriteString("[ERRO] Close during readbuffer send file error\n")
 							if err != nil {
-								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 							}
 
 						}
@@ -1007,7 +1066,7 @@ func ZDGet() iris.Handler {
 
 			err = pfile.Close()
 			if err != nil {
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Close after send file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 599 | Close after send file error | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
 				return
 			}
 
@@ -1019,25 +1078,37 @@ func ZDGet() iris.Handler {
 
 		if dir == "/" && dbn == "/" {
 			ctx.StatusCode(iris.StatusNotFound)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
 			return
+
 		}
 
 		if !FileExists(dbf) {
 			ctx.StatusCode(iris.StatusNotFound)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
 			return
+
 		}
 
 		db, err := BoltOpenRead(dbf, filemode, timeout, opentries)
 		if err != nil {
 
 			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 			if debugmode {
 
 				_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -1051,13 +1122,13 @@ func ZDGet() iris.Handler {
 		if err != nil {
 
 			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 			if debugmode {
 
 				_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -1070,7 +1141,13 @@ func ZDGet() iris.Handler {
 		if keyexists == "" {
 			ctx.StatusCode(iris.StatusNotFound)
 			db.Close()
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
 			return
+
 		}
 
 		bucket = keyexists
@@ -1095,13 +1172,13 @@ func ZDGet() iris.Handler {
 		if err != nil {
 
 			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t get data header by key from db error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t get data header by key from db error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 			if debugmode {
 
 				_, err = ctx.WriteString("[ERRO] Can`t get data header by key from db error\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -1121,13 +1198,13 @@ func ZDGet() iris.Handler {
 		if err != nil {
 
 			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Read header data from db error | File [%s] | DB [%s] | Header Buffer [%p] | %v", vhost, ip, file, dbf, headbuffer, err)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Read header data from db error | File [%s] | DB [%s] | Header Buffer [%p] | %v", vhost, ip, file, dbf, headbuffer, err)
 
 			if debugmode {
 
 				_, err = ctx.WriteString("[ERRO] Read header data from db error\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -1143,13 +1220,13 @@ func ZDGet() iris.Handler {
 		if err != nil {
 
 			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Read binary header data from db error | File [%s] | DB [%s] | Header Buffer [%p] | %v", vhost, ip, file, dbf, hread, err)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Read binary header data from db error | File [%s] | DB [%s] | Header Buffer [%p] | %v", vhost, ip, file, dbf, hread, err)
 
 			if debugmode {
 
 				_, err = ctx.WriteString("[ERRO] Read binary header data from db error\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -1174,13 +1251,13 @@ func ZDGet() iris.Handler {
 		if err != nil && err != io.EOF {
 
 			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | csizebuffer read file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | csizebuffer read file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 			if debugmode {
 
 				_, err = ctx.WriteString("[ERRO] csizebuffer read file error\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -1194,13 +1271,13 @@ func ZDGet() iris.Handler {
 		if err != nil {
 
 			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | contbuffer read file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | contbuffer read file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 			if debugmode {
 
 				_, err = ctx.WriteString("[ERRO] contbuffer read file error\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -1251,11 +1328,15 @@ func ZDGet() iris.Handler {
 
 				ctx.StatusCode(iris.StatusRequestedRangeNotSatisfiable)
 
+				if log4xx {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 416 | Bad Range | File [%s] | Path [%s] | %v", vhost, ip, file, abs, err)
+				}
+
 				if debugmode {
 
 					_, err = ctx.WriteString("[ERRO] Invalid range error\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -1293,13 +1374,13 @@ func ZDGet() iris.Handler {
 			if err != nil {
 
 				ctx.StatusCode(iris.StatusInternalServerError)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t get data by key from db error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t get data by key from db error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 				if debugmode {
 
 					_, err = ctx.WriteString("[ERRO] Can`t get data by key from db error\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -1339,13 +1420,13 @@ func ZDGet() iris.Handler {
 					}
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | sizebuffer read file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | sizebuffer read file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] sizebuffer read file error\n")
 						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 						}
 
 					}
@@ -1357,7 +1438,11 @@ func ZDGet() iris.Handler {
 
 				_, err = ctx.Write(readbuffer[:sizebuffer])
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+					}
+
 					db.Close()
 					return
 
@@ -1394,13 +1479,13 @@ func ZDGet() iris.Handler {
 		if err != nil {
 
 			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t get data by key from db error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t get data by key from db error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 			if debugmode {
 
 				_, err = ctx.WriteString("[ERRO] Can`t get data by key from db error\n")
 				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
 
 			}
@@ -1420,13 +1505,13 @@ func ZDGet() iris.Handler {
 			if err != nil && err != io.EOF {
 
 				ctx.StatusCode(iris.StatusInternalServerError)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t read data to fullbuffer error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t read data to fullbuffer error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 				if debugmode {
 
 					_, err = ctx.WriteString("[ERRO] Can`t read data to fullbuffer error\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -1442,13 +1527,13 @@ func ZDGet() iris.Handler {
 			if rcrc != crc {
 
 				ctx.StatusCode(iris.StatusInternalServerError)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | CRC read file error | File [%s] | DB [%s] | Have CRC [%v] | Awaiting CRC [%v]", vhost, ip, file, dbf, rcrc, crc)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | CRC read file error | File [%s] | DB [%s] | Have CRC [%v] | Awaiting CRC [%v]", vhost, ip, file, dbf, rcrc, crc)
 
 				if debugmode {
 
 					_, err = ctx.WriteString("[ERRO] CRC read file error\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -1460,9 +1545,14 @@ func ZDGet() iris.Handler {
 
 			_, err = ctx.Write(fullbuffer.Bytes())
 			if err != nil {
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+
+				if log4xx {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+				}
+
 				db.Close()
 				return
+
 			}
 
 			db.Close()
@@ -1495,13 +1585,13 @@ func ZDGet() iris.Handler {
 				}
 
 				ctx.StatusCode(iris.StatusInternalServerError)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | sizebuffer read file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | sizebuffer read file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 				if debugmode {
 
 					_, err = ctx.WriteString("[ERRO] sizebuffer read file error\n")
 					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
 
 				}
@@ -1513,9 +1603,14 @@ func ZDGet() iris.Handler {
 
 			_, err = ctx.Write(readbuffer[:sizebuffer])
 			if err != nil {
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | Can`t complete response to client", vhost, ip)
+
+				if log4xx {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+				}
+
 				db.Close()
 				return
+
 			}
 
 			rlength = rlength - int64(sizebuffer)

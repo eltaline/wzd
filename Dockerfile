@@ -46,6 +46,7 @@ ENV filemode 0640
 ENV dirmode 0750
 ENV delbolt false
 ENV deldir false
+ENV log4xx true
 
 RUN groupadd wzd
 RUN useradd wzd -g wzd
