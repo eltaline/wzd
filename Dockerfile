@@ -7,6 +7,7 @@ ENV readtimeout 60
 ENV readheadertimeout 5
 ENV writetimeout 60
 ENV idletimeout 60
+ENV keepalive false
 ENV realheader "X-Real-IP"
 ENV charset "UTF-8"
 ENV debugmode false
