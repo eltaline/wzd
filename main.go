@@ -73,6 +73,7 @@ type server struct {
 	DIRMODE        uint32
 	DELBOLT        bool
 	DELDIR         bool
+	LOG4XX         bool
 }
 
 type Header struct {
@@ -283,6 +284,13 @@ func init() {
 		appLogger.Warnf("| Compaction Scheduler [DISABLED]")
 	}
 
+	switch {
+	case config.Global.KEEPALIVE:
+		appLogger.Warnf("| KeepAlive [ENABLED]")
+	default:
+		appLogger.Warnf("| KeepAlive [DISABLED]")
+	}
+
 	// Check Server Options
 
 	var section string
@@ -302,6 +310,7 @@ func init() {
 	rgxdirmode := regexp.MustCompile("^([0-7]{3})")
 	rgxdelbolt := regexp.MustCompile("^(?i)(true|false)$")
 	rgxdeldir := regexp.MustCompile("^(?i)(true|false)$")
+	rgxlog4xx := regexp.MustCompile("^(?i)(true|false)$")
 
 	for _, Server := range config.Server {
 
@@ -384,6 +393,9 @@ func init() {
 
 		mchdeldir := rgxdeldir.MatchString(fmt.Sprintf("%t", Server.DELDIR))
 		Check(mchdeldir, section, "deldir", (fmt.Sprintf("%t", Server.DELDIR)), "true or false", DoExit)
+
+		mchlog4xx := rgxlog4xx.MatchString(fmt.Sprintf("%t", Server.LOG4XX))
+		Check(mchlog4xx, section, "log4xx", (fmt.Sprintf("%t", Server.LOG4XX)), "true or false", DoExit)
 
 		// Output Important Server Configuration Options
 
@@ -473,6 +485,13 @@ func init() {
 			appLogger.Warnf("| Host [%s] | Delete Directory [ENABLED]", Server.HOST)
 		default:
 			appLogger.Warnf("| Host [%s] | Delete Directory [DISABLED]", Server.HOST)
+		}
+
+		switch {
+		case Server.LOG4XX:
+			appLogger.Warnf("| Host [%s] | Logging 4XX Errors [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Logging 4XX Errors [DISABLED]", Server.HOST)
 		}
 
 	}
