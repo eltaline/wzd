@@ -7,9 +7,11 @@
 name="wzd"
 rcvar="wzd_enable"
 
-command="/usr/local/wzd/sbin/wzd"
+command="/usr/local/wzd/sbin/wzd --config=/usr/local/wzd/etc/wzd.conf"
 
 wzd_user="wzd"
+
+wzd_cnfdir="/usr/local/wzd/etc"
 wzd_libdir="/usr/local/wzd/lib"
 wzd_logdir="/usr/local/wzd/log"
 
@@ -31,6 +33,10 @@ wzd_check()
 
     if [ -z `getent passwd wzd` ]; then
 	pw useradd wzd -g wzd
+    fi
+
+    if [ ! -d ${wzd_cnfdir} ] ; then
+	install -d -o wzd -g wzd -m 755 ${wzd_cnfdir}
     fi
 
     if [ ! -d ${wzd_libdir} ] ; then

@@ -92,7 +92,7 @@ func ZDGet() iris.Handler {
 
 				base = Server.ROOT
 
-				for _, Vhost := range allow {
+				for _, Vhost := range getallow {
 
 					if vhost == Vhost.Vhost {
 

@@ -57,7 +57,9 @@ type server struct {
 	ROOT           string
 	SSLCRT         string
 	SSLKEY         string
-	ALLOW          string
+	GETALLOW       string
+	PUTALLOW       string
+	DELALLOW       string
 	OPTIONS        string
 	HEADORIGIN     string
 	UPLOAD         bool
@@ -132,7 +134,9 @@ var (
 
 	onlyssl bool = false
 
-	allow []Allow
+	getallow []Allow
+	putallow []Allow
+	delallow []Allow
 
 	readtimeout       time.Duration = 60 * time.Second
 	readheadertimeout time.Duration = 5 * time.Second
@@ -397,54 +401,144 @@ func init() {
 
 		}
 
-		if Server.ALLOW == "" {
-			appLogger.Errorf("| Allow file option can not be empty error | %s | File [%s]", section, Server.ALLOW)
-			fmt.Printf("Allow file option can not be empty error | %s | File [%s]\n", section, Server.ALLOW)
-			os.Exit(1)
-		} else {
+		if Server.GETALLOW != "" {
 
-			var a Allow
+			var get Allow
 
-			alfile, err := os.OpenFile(Server.ALLOW, os.O_RDONLY, os.ModePerm)
+			getfile, err := os.OpenFile(Server.GETALLOW, os.O_RDONLY, os.ModePerm)
 			if err != nil {
-				appLogger.Errorf("Can`t open allow file error | %s | File [%s] | %v", section, Server.ALLOW, err)
-				fmt.Printf("Can`t open allow file error | %s | File [%s] | %v\n", section, Server.ALLOW, err)
+				appLogger.Errorf("Can`t open get allow file error | %s | File [%s] | %v", section, Server.GETALLOW, err)
+				fmt.Printf("Can`t open get allow file error | %s | File [%s] | %v\n", section, Server.GETALLOW, err)
 				os.Exit(1)
 			}
-			defer alfile.Close()
+			defer getfile.Close()
 
-			a.Vhost = Server.HOST
+			get.Vhost = Server.HOST
 
-			scanallow := bufio.NewScanner(alfile)
-			for scanallow.Scan() {
+			sgetallow := bufio.NewScanner(getfile)
+			for sgetallow.Scan() {
 
-				line := scanallow.Text()
+				line := sgetallow.Text()
 
 				_, _, err := net.ParseCIDR(line)
 				if err != nil {
-					appLogger.Errorf("| Bad CIDR line format in allow file error | %s | File [%s] | Line [%s]", section, Server.ALLOW, line)
-					fmt.Printf("Bad CIDR line format in allow file error | %s | File [%s] | Line [%s]\n", section, Server.ALLOW, line)
+					appLogger.Errorf("| Bad CIDR line format in get allow file error | %s | File [%s] | Line [%s]", section, Server.GETALLOW, line)
+					fmt.Printf("Bad CIDR line format in get allow file error | %s | File [%s] | Line [%s]\n", section, Server.GETALLOW, line)
 					os.Exit(1)
 				}
 
-				a.CIDR = append(a.CIDR, struct{ Addr string }{line})
+				get.CIDR = append(get.CIDR, struct{ Addr string }{line})
 
 			}
 
-			err = alfile.Close()
+			err = getfile.Close()
 			if err != nil {
-				appLogger.Errorf("Close after read allow file error | %s | File [%s] | %v\n", section, Server.ALLOW, err)
-				fmt.Printf("Close after read allow file error | %s | File [%s] | %v\n", section, Server.ALLOW, err)
+				appLogger.Errorf("Close after read get allow file error | %s | File [%s] | %v\n", section, Server.GETALLOW, err)
+				fmt.Printf("Close after read get allow file error | %s | File [%s] | %v\n", section, Server.GETALLOW, err)
 				os.Exit(1)
 			}
 
-			err = scanallow.Err()
+			err = sgetallow.Err()
 			if err != nil {
-				fmt.Printf("Read lines from allow file error | %s | File [%s] | %v\n", section, Server.ALLOW, err)
+				fmt.Printf("Read lines from get allow file error | %s | File [%s] | %v\n", section, Server.GETALLOW, err)
 				return
 			}
 
-			allow = append(allow, a)
+			getallow = append(getallow, get)
+
+		}
+
+		if Server.PUTALLOW != "" {
+
+			var put Allow
+
+			putfile, err := os.OpenFile(Server.PUTALLOW, os.O_RDONLY, os.ModePerm)
+			if err != nil {
+				appLogger.Errorf("Can`t open put allow file error | %s | File [%s] | %v", section, Server.PUTALLOW, err)
+				fmt.Printf("Can`t open put allow file error | %s | File [%s] | %v\n", section, Server.PUTALLOW, err)
+				os.Exit(1)
+			}
+			defer putfile.Close()
+
+			put.Vhost = Server.HOST
+
+			sputallow := bufio.NewScanner(putfile)
+			for sputallow.Scan() {
+
+				line := sputallow.Text()
+
+				_, _, err := net.ParseCIDR(line)
+				if err != nil {
+					appLogger.Errorf("| Bad CIDR line format in put allow file error | %s | File [%s] | Line [%s]", section, Server.PUTALLOW, line)
+					fmt.Printf("Bad CIDR line format in put allow file error | %s | File [%s] | Line [%s]\n", section, Server.PUTALLOW, line)
+					os.Exit(1)
+				}
+
+				put.CIDR = append(put.CIDR, struct{ Addr string }{line})
+
+			}
+
+			err = putfile.Close()
+			if err != nil {
+				appLogger.Errorf("Close after read put allow file error | %s | File [%s] | %v\n", section, Server.PUTALLOW, err)
+				fmt.Printf("Close after read put allow file error | %s | File [%s] | %v\n", section, Server.PUTALLOW, err)
+				os.Exit(1)
+			}
+
+			err = sputallow.Err()
+			if err != nil {
+				fmt.Printf("Read lines from put allow file error | %s | File [%s] | %v\n", section, Server.PUTALLOW, err)
+				return
+			}
+
+			putallow = append(putallow, put)
+
+		}
+
+		if Server.DELALLOW != "" {
+
+			var del Allow
+
+			delfile, err := os.OpenFile(Server.DELALLOW, os.O_RDONLY, os.ModePerm)
+			if err != nil {
+				appLogger.Errorf("Can`t open del allow file error | %s | File [%s] | %v", section, Server.DELALLOW, err)
+				fmt.Printf("Can`t open del allow file error | %s | File [%s] | %v\n", section, Server.DELALLOW, err)
+				os.Exit(1)
+			}
+			defer delfile.Close()
+
+			del.Vhost = Server.HOST
+
+			sdelallow := bufio.NewScanner(delfile)
+			for sdelallow.Scan() {
+
+				line := sdelallow.Text()
+
+				_, _, err := net.ParseCIDR(line)
+				if err != nil {
+					appLogger.Errorf("| Bad CIDR line format in del allow file error | %s | File [%s] | Line [%s]", section, Server.DELALLOW, line)
+					fmt.Printf("Bad CIDR line format in del allow file error | %s | File [%s] | Line [%s]\n", section, Server.DELALLOW, line)
+					os.Exit(1)
+				}
+
+				del.CIDR = append(del.CIDR, struct{ Addr string }{line})
+
+			}
+
+			err = delfile.Close()
+			if err != nil {
+				appLogger.Errorf("Close after read del allow file error | %s | File [%s] | %v\n", section, Server.DELALLOW, err)
+				fmt.Printf("Close after read del allow file error | %s | File [%s] | %v\n", section, Server.DELALLOW, err)
+				os.Exit(1)
+			}
+
+			err = sdelallow.Err()
+			if err != nil {
+				fmt.Printf("Read lines from del allow file error | %s | File [%s] | %v\n", section, Server.DELALLOW, err)
+				return
+			}
+
+			delallow = append(delallow, del)
 
 		}
 

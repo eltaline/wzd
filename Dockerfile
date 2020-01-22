@@ -27,7 +27,9 @@ ENV host "localhost"
 ENV root "/var/storage"
 ENV sslcrt ""
 ENV sslkey ""
-ENV allow "/etc/wzd/allow-localhost.conf"
+ENV getallow "/etc/wzd/get-localhost.conf"
+ENV putallow "/etc/wzd/put-localhost.conf"
+ENV delallow "/etc/wzd/del-localhost.conf"
 ENV options "GET, HEAD, OPTIONS, PUT, POST, DELETE"
 ENV headorigin "*"
 ENV upload true
@@ -73,7 +75,9 @@ RUN apt-get -y install sed util-linux
 
 COPY wzd /usr/bin/
 COPY conf/wzd/wzd-docker.conf /etc/wzd/wzd.conf
-COPY conf/wzd/allow-localhost.conf /etc/wzd/allow-localhost.conf
+COPY conf/wzd/get-localhost.conf /etc/wzd/get-localhost.conf
+COPY conf/wzd/put-localhost.conf /etc/wzd/put-localhost.conf
+COPY conf/wzd/del-localhost.conf /etc/wzd/del-localhost.conf
 COPY scripts/docker/start.sh /
 COPY LICENSE /
 
