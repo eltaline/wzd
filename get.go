@@ -60,6 +60,8 @@ func ZDGet() iris.Handler {
 
 		base := "/notfound"
 
+		options := ""
+
 		getbolt := false
 		getcount := false
 		getkeys := false
@@ -106,6 +108,8 @@ func ZDGet() iris.Handler {
 					}
 
 				}
+
+				options = Server.OPTIONS
 
 				getbolt = Server.GETBOLT
 				getcount = Server.GETCOUNT
@@ -765,6 +769,10 @@ func ZDGet() iris.Handler {
 					return
 				}
 
+				if method == "OPTIONS" && options != "" {
+					ctx.Header("Access-Control-Allow-Methods", options)
+				}
+
 				ctx.StatusCode(iris.StatusOK)
 
 				return
@@ -1348,6 +1356,11 @@ func ZDGet() iris.Handler {
 		}
 
 		if method == "HEAD" || method == "OPTIONS" {
+
+			if method == "OPTIONS" && options != "" {
+				ctx.Header("Access-Control-Allow-Methods", options)
+			}
+
 			ctx.StatusCode(iris.StatusOK)
 			db.Close()
 			return
