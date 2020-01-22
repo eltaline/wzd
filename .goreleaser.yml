@@ -149,3 +149,5 @@ changelog:
     - Script
     - Docker
     - Typo
+    - "via upload"
+    - goreleaser
