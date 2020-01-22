@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"crypto/tls"
 	"encoding/binary"
@@ -13,6 +14,7 @@ import (
 	"github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"os"
 	"regexp"
@@ -55,6 +57,8 @@ type server struct {
 	ROOT           string
 	SSLCRT         string
 	SSLKEY         string
+	ALLOW          string
+	OPTIONS        string
 	UPLOAD         bool
 	DELETE         bool
 	COMPACTION     bool
@@ -104,6 +108,15 @@ type Compact struct {
 	Time   time.Time
 }
 
+type StrCIDR struct {
+	Addr string
+}
+
+type Allow struct {
+	Vhost string
+	CIDR  []StrCIDR
+}
+
 // Global Variables
 
 var (
@@ -117,6 +130,8 @@ var (
 	wg         sync.WaitGroup
 
 	onlyssl bool = false
+
+	allow []Allow
 
 	readtimeout       time.Duration = 60 * time.Second
 	readheadertimeout time.Duration = 5 * time.Second
@@ -338,7 +353,7 @@ func init() {
 		section = fmt.Sprintf("%s%s%s", section, Server.HOST, "]")
 
 		if Server.HOST == "" {
-			fmt.Printf("Empty server host error | %s%s%s\n", section, "]", " | ex. host=\"localhost\"")
+			fmt.Printf("Server host can not be empty error | %s%s\n", section, " | ex. host=\"localhost\"")
 			os.Exit(1)
 		}
 
@@ -350,16 +365,16 @@ func init() {
 			Check(mchsslcrt, section, "sslcrt", Server.SSLCRT, "/path/to/sslcrt.pem", DoExit)
 
 			if Server.SSLKEY == "" {
-				appLogger.Errorf("| SSL key can not be empty error | File [%s]", Server.SSLKEY)
-				fmt.Printf("SSL key can not be empty error | File [%s]\n", Server.SSLKEY)
+				appLogger.Errorf("| SSL key can not be empty error | %s | File [%s]", section, Server.SSLKEY)
+				fmt.Printf("SSL key can not be empty error | %s | File [%s]\n", section, Server.SSLKEY)
 				os.Exit(1)
 			}
 
-			//			if !FileOrLinkExists(Server.SSLCRT) {
-			//				appLogger.Errorf("| SSL certificate not exists error | File [%s]", Server.SSLCRT)
-			//				fmt.Printf("SSL certificate not exists error | File [%s]\n", Server.SSLCRT)
-			//				os.Exit(1)
-			//			}
+			if !FileOrLinkExists(Server.SSLCRT) {
+				appLogger.Errorf("| SSL certificate not exists/permission denied error | %s | File [%s]", section, Server.SSLCRT)
+				fmt.Printf("SSL certificate not exists/permission denied error | %s | File [%s]\n", section, Server.SSLCRT)
+				os.Exit(1)
+			}
 
 		}
 
@@ -368,16 +383,67 @@ func init() {
 			Check(mchsslkey, section, "sslkey", Server.SSLKEY, "/path/to/sslkey.pem", DoExit)
 
 			if Server.SSLCRT == "" {
-				appLogger.Errorf("| SSL certificate can not be empty error | File [%s]", Server.SSLCRT)
-				fmt.Printf("SSL certificate can not be empty error | File [%s]\n", Server.SSLCRT)
+				appLogger.Errorf("| SSL certificate can not be empty error | %s | File [%s]", section, Server.SSLCRT)
+				fmt.Printf("SSL certificate can not be empty error | %s | File [%s]\n", section, Server.SSLCRT)
 				os.Exit(1)
 			}
 
-			//			if !FileOrLinkExists(Server.SSLKEY) {
-			//				appLogger.Errorf("| SSL key not exists error | File [%s]", Server.SSLKEY)
-			//				fmt.Printf("SSL key not exists error | File [%s]\n", Server.SSLKEY)
-			//				os.Exit(1)
-			//			}
+			if !FileOrLinkExists(Server.SSLKEY) {
+				appLogger.Errorf("| SSL key not exists/permission denied error | %s | File [%s]", section, Server.SSLKEY)
+				fmt.Printf("SSL key not exists/permission denied error | %s | File [%s]\n", section, Server.SSLKEY)
+				os.Exit(1)
+			}
+
+		}
+
+		if Server.ALLOW == "" {
+			appLogger.Errorf("| Allow file option can not be empty error | %s | File [%s]", section, Server.ALLOW)
+			fmt.Printf("Allow file option can not be empty error | %s | File [%s]\n", section, Server.ALLOW)
+			os.Exit(1)
+		} else {
+
+			var a Allow
+
+			alfile, err := os.OpenFile(Server.ALLOW, os.O_RDONLY, os.ModePerm)
+			if err != nil {
+				appLogger.Errorf("Can`t open allow file error | %s | File [%s] | %v", section, Server.ALLOW, err)
+				fmt.Printf("Can`t open allow file error | %s | File [%s] | %v\n", section, Server.ALLOW, err)
+				os.Exit(1)
+			}
+			defer alfile.Close()
+
+			a.Vhost = Server.HOST
+
+			scanallow := bufio.NewScanner(alfile)
+			for scanallow.Scan() {
+
+				line := scanallow.Text()
+
+				_, _, err := net.ParseCIDR(line)
+				if err != nil {
+					appLogger.Errorf("| Bad CIDR line format in allow file error | %s | File [%s] | Line [%s]", section, Server.ALLOW, line)
+					fmt.Printf("Bad CIDR line format in allow file error | %s | File [%s] | Line [%s]\n", section, Server.ALLOW, line)
+					os.Exit(1)
+				}
+
+				a.CIDR = append(a.CIDR, struct{ Addr string }{line})
+
+			}
+
+			err = alfile.Close()
+			if err != nil {
+				appLogger.Errorf("Close after read allow file error | %s | File [%s] | %v\n", section, Server.ALLOW, err)
+				fmt.Printf("Close after read allow file error | %s | File [%s] | %v\n", section, Server.ALLOW, err)
+				os.Exit(1)
+			}
+
+			err = scanallow.Err()
+			if err != nil {
+				fmt.Printf("Read lines from allow file error | %s | File [%s] | %v\n", section, Server.ALLOW, err)
+				return
+			}
+
+			allow = append(allow, a)
 
 		}
 
