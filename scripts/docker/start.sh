@@ -9,12 +9,6 @@ VARVAL=`echo $X | awk -F "=" '{print $2}'`
 
 sed -i -e "s#var_$VARKEY#$VARVAL#" /etc/wzd/wzd.conf
 
-if [ "$VARKEY" == "bindaddr" ] ; then
-
-sed -i -e "s#var_$VARKEY#$VARVAL#" /etc/nginx/sites-available/localhost.conf
-
-fi
-
 if [ "$VARKEY" == "root" ] ; then
 
 chown -R wzd.wzd $VARVAL
@@ -25,7 +19,6 @@ done
 
 ulimit -n 131072
 
-nginx -c /etc/nginx/nginx.conf
 su wzd -c 'ulimit -n 131072 ; /usr/bin/wzd --config /etc/wzd/wzd.conf'
 
 #END

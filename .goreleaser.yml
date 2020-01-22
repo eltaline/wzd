@@ -113,7 +113,6 @@ dockers:
     # and use wildcards when you `COPY`/`ADD` in your Dockerfile.
     extra_files:
     - conf/wzd/wzd-docker.conf
-    - conf/nginx/localhost-docker.conf
     - scripts/docker/start.sh
     - LICENSE
 

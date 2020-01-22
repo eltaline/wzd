@@ -3,6 +3,7 @@ FROM debian:buster
 LABEL maintainer="Andrey Kuvshinov"
 
 ENV bindaddr "127.0.0.1:9699"
+ENV bindaddrssl "127.0.0.1:9799"
 ENV onlyssl false
 ENV readtimeout 60
 ENV readheadertimeout 5
@@ -24,6 +25,8 @@ ENV cmpcheck 5
 
 ENV host "localhost"
 ENV root "/var/storage"
+ENV sslcrt ""
+ENV sslkey ""
 ENV upload true
 ENV delete true
 ENV compaction true
@@ -63,18 +66,12 @@ RUN chown wzd.wzd ${cmpdir}
 RUN chown wzd.wzd `dirname ${pidfile}`
 
 RUN apt-get update
-RUN apt-get -y install nginx sed util-linux
-
-RUN rm -f /etc/nginx/sites-available/*
-RUN rm -f /etc/nginx/sites-enabled/*
+RUN apt-get -y install sed util-linux
 
 COPY wzd /usr/bin/
 COPY conf/wzd/wzd-docker.conf /etc/wzd/wzd.conf
-COPY conf/nginx/localhost-docker.conf /etc/nginx/sites-available/localhost.conf
 COPY scripts/docker/start.sh /
 COPY LICENSE /
-
-RUN test -L /etc/nginx/sites-enabled/localhost.conf || ln -s /etc/nginx/sites-available/localhost.conf /etc/nginx/sites-enabled/localhost.conf
 
 EXPOSE 80/tcp
 
