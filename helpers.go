@@ -172,6 +172,26 @@ func FileExists(filename string) bool {
 
 }
 
+// File Or Link Exists Handler
+
+func FileOrLinkExists(filename string) bool {
+
+	if fi, err := os.Stat(filename); err == nil {
+
+		if fi.Mode().IsRegular() {
+			return true
+		}
+
+	}
+
+	if _, err := filepath.EvalSymlinks(filename); err == nil {
+		return true
+	}
+
+	return false
+
+}
+
 // Dir Exists Handler
 
 func DirExists(filename string) bool {

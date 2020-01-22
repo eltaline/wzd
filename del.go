@@ -7,6 +7,7 @@ import (
 	"github.com/eltaline/bolt"
 	"github.com/eltaline/mmutex"
 	"github.com/kataras/iris"
+	"net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -32,6 +33,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		// Vhost / IP Client
 
 		ip := ctx.RemoteAddr()
+		cip := net.ParseIP(ip)
 		vhost := strings.Split(ctx.Host(), ":")[0]
 
 		// Shutdown
@@ -49,6 +51,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		params := ctx.URLParams()
 
 		badhost := true
+		badip := true
 
 		delete := false
 
@@ -74,6 +77,24 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				badhost = false
 
 				base = Server.ROOT
+
+				for _, Vhost := range allow {
+
+					if vhost == Vhost.Vhost {
+
+						for _, CIDR := range Vhost.CIDR {
+							_, ipnet, _ := net.ParseCIDR(CIDR.Addr)
+							if ipnet.Contains(cip) {
+								badip = false
+								break
+							}
+						}
+
+						break
+
+					}
+
+				}
 
 				delete = Server.DELETE
 
@@ -113,6 +134,27 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 			if debugmode {
 
 				_, err := ctx.Writef("[ERRO] Not found configured virtual host | Virtual Host [%s]\n", vhost)
+				if err != nil {
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+				}
+
+			}
+
+			return
+
+		}
+
+		if badip {
+
+			ctx.StatusCode(iris.StatusForbidden)
+
+			if log4xx {
+				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Forbidden", vhost, ip)
+			}
+
+			if debugmode {
+
+				_, err := ctx.Writef("[ERRO] Not found allowed ip | Virtual Host [%s]\n", vhost)
 				if err != nil {
 					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}

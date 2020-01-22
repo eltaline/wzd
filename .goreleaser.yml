@@ -73,6 +73,7 @@ nfpms:
 
     config_files:
       "conf/wzd/wzd.conf": "/etc/wzd/wzd.conf"
+      "conf/wzd/allow-localhost.conf": "/etc/wzd/allow-localhost.conf"
 
     scripts:
       postinstall: "scripts/postinstall.sh"
@@ -113,6 +114,7 @@ dockers:
     # and use wildcards when you `COPY`/`ADD` in your Dockerfile.
     extra_files:
     - conf/wzd/wzd-docker.conf
+    - conf/wzd/allow-localhost.conf
     - scripts/docker/start.sh
     - LICENSE
 

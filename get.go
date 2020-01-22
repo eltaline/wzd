@@ -9,6 +9,7 @@ import (
 	"github.com/kataras/iris"
 	"hash/crc32"
 	"io"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -35,6 +36,7 @@ func ZDGet() iris.Handler {
 		// Vhost / IP Client
 
 		ip := ctx.RemoteAddr()
+		cip := net.ParseIP(ip)
 		vhost := strings.Split(ctx.Host(), ":")[0]
 
 		// Shutdown
@@ -54,6 +56,7 @@ func ZDGet() iris.Handler {
 		ifms := ctx.GetHeader("If-Modified-Since")
 
 		badhost := true
+		badip := true
 
 		base := "/notfound"
 
@@ -85,6 +88,24 @@ func ZDGet() iris.Handler {
 				badhost = false
 
 				base = Server.ROOT
+
+				for _, Vhost := range allow {
+
+					if vhost == Vhost.Vhost {
+
+						for _, CIDR := range Vhost.CIDR {
+							_, ipnet, _ := net.ParseCIDR(CIDR.Addr)
+							if ipnet.Contains(cip) {
+								badip = false
+								break
+							}
+						}
+
+						break
+
+					}
+
+				}
 
 				getbolt = Server.GETBOLT
 				getcount = Server.GETCOUNT
@@ -131,6 +152,27 @@ func ZDGet() iris.Handler {
 			if debugmode {
 
 				_, err := ctx.Writef("[ERRO] Not found configured virtual host | Virtual Host [%s]\n", vhost)
+				if err != nil {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+				}
+
+			}
+
+			return
+
+		}
+
+		if badip {
+
+			ctx.StatusCode(iris.StatusForbidden)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Forbidden", vhost, ip)
+			}
+
+			if debugmode {
+
+				_, err := ctx.Writef("[ERRO] Not found allowed ip | Virtual Host [%s]\n", vhost)
 				if err != nil {
 					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 				}
