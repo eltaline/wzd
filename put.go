@@ -98,7 +98,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				base = Server.ROOT
 
-				for _, Vhost := range allow {
+				for _, Vhost := range putallow {
 
 					if vhost == Vhost.Vhost {
 

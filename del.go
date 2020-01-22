@@ -78,7 +78,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				base = Server.ROOT
 
-				for _, Vhost := range allow {
+				for _, Vhost := range delallow {
 
 					if vhost == Vhost.Vhost {
 
