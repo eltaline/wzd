@@ -74,10 +74,10 @@ RUN apt-get update
 RUN apt-get -y install sed util-linux
 
 COPY wzd /usr/bin/
-COPY conf/wzd/wzd-docker.conf /etc/wzd/wzd.conf
-COPY conf/wzd/get-localhost.conf /etc/wzd/get-localhost.conf
-COPY conf/wzd/put-localhost.conf /etc/wzd/put-localhost.conf
-COPY conf/wzd/del-localhost.conf /etc/wzd/del-localhost.conf
+COPY conf/wzd/docker/wzd-docker.conf /etc/wzd/wzd.conf
+COPY conf/wzd/docker/get-localhost.conf /etc/wzd/get-localhost.conf
+COPY conf/wzd/docker/put-localhost.conf /etc/wzd/put-localhost.conf
+COPY conf/wzd/docker/del-localhost.conf /etc/wzd/del-localhost.conf
 COPY scripts/docker/start.sh /
 COPY LICENSE /
 
