@@ -29,6 +29,7 @@ ENV sslcrt ""
 ENV sslkey ""
 ENV allow "/etc/wzd/allow-localhost.conf"
 ENV options "GET, HEAD, OPTIONS, PUT, POST, DELETE"
+ENV headorigin "*"
 ENV upload true
 ENV delete true
 ENV compaction true
