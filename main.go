@@ -967,6 +967,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Timeouts
+
+	readtimeout = time.Duration(config.Global.READTIMEOUT) * time.Second
+	readheadertimeout = time.Duration(config.Global.READHEADERTIMEOUT) * time.Second
+	writetimeout = time.Duration(config.Global.WRITETIMEOUT) * time.Second
+	idletimeout = time.Duration(config.Global.IDLETIMEOUT) * time.Second
+
 	// Start WebServer
 
 	switch {
