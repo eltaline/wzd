@@ -900,6 +900,16 @@ func main() {
 
 		go srv.ListenAndServe()
 
+		if debugmode {
+			appLogger.Debugf("Application: running using 1 host(s)")
+			appLogger.Debugf("Host: addr is %s", bindaddr)
+			appLogger.Debugf("Host: virtual host is %s", bindaddr)
+			appLogger.Debugf("Host: register startup notifier")
+			appLogger.Debugf("Now listening on: http://%s", bindaddr)
+		} else {
+			appLogger.Warnf("Now listening on: http://%s", bindaddr)
+		}
+
 		err = app.Run(iris.Server(srvssl))
 		if err != nil && !shutdown {
 			fmt.Printf("Something wrong when starting wZD Server | %v\n", err)
