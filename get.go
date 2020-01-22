@@ -61,6 +61,7 @@ func ZDGet() iris.Handler {
 		base := "/notfound"
 
 		options := ""
+		headorigin := ""
 
 		getbolt := false
 		getcount := false
@@ -110,6 +111,7 @@ func ZDGet() iris.Handler {
 				}
 
 				options = Server.OPTIONS
+				headorigin = Server.HEADORIGIN
 
 				getbolt = Server.GETBOLT
 				getcount = Server.GETCOUNT
@@ -747,6 +749,10 @@ func ZDGet() iris.Handler {
 			ctx.Header("Cache-Control", scctrl)
 			ctx.Header("Accept-Ranges", "bytes")
 
+			if headorigin != "" {
+				ctx.Header("Access-Control-Allow-Origin", headorigin)
+			}
+
 			if ifnm == etag || ifms == hmodt {
 
 				err = pfile.Close()
@@ -1349,6 +1355,10 @@ func ZDGet() iris.Handler {
 		ctx.Header("Cache-Control", scctrl)
 		ctx.Header("Accept-Ranges", "bytes")
 
+		if headorigin != "" {
+			ctx.Header("Access-Control-Allow-Origin", headorigin)
+		}
+
 		if ifnm == etag || ifms == hmodt {
 			ctx.StatusCode(iris.StatusNotModified)
 			db.Close()
@@ -1364,6 +1374,7 @@ func ZDGet() iris.Handler {
 			ctx.StatusCode(iris.StatusOK)
 			db.Close()
 			return
+
 		}
 
 		var pdata []byte

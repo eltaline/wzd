@@ -59,6 +59,7 @@ type server struct {
 	SSLKEY         string
 	ALLOW          string
 	OPTIONS        string
+	HEADORIGIN     string
 	UPLOAD         bool
 	DELETE         bool
 	COMPACTION     bool
