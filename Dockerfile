@@ -13,6 +13,7 @@ ENV keepalive false
 ENV realheader "X-Real-IP"
 ENV charset "UTF-8"
 ENV debugmode false
+ENV freelist "hashmap"
 ENV pidfile "/run/wzd/wzd.pid"
 ENV logdir "/var/log/wzd"
 ENV logmode 0640

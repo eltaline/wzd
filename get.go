@@ -361,7 +361,7 @@ func ZDGet() iris.Handler {
 
 			if FileExists(dbk) {
 
-				db, err := BoltOpenRead(dbk, filemode, timeout, opentries)
+				db, err := BoltOpenRead(dbk, filemode, timeout, opentries, freelist)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
@@ -510,7 +510,7 @@ func ZDGet() iris.Handler {
 					uniq = false
 				}
 
-				db, err := BoltOpenRead(dbk, filemode, timeout, opentries)
+				db, err := BoltOpenRead(dbk, filemode, timeout, opentries, freelist)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
@@ -1154,7 +1154,7 @@ func ZDGet() iris.Handler {
 
 		}
 
-		db, err := BoltOpenRead(dbf, filemode, timeout, opentries)
+		db, err := BoltOpenRead(dbf, filemode, timeout, opentries, freelist)
 		if err != nil {
 
 			ctx.StatusCode(iris.StatusInternalServerError)

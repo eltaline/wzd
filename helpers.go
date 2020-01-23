@@ -22,15 +22,24 @@ import (
 
 // Bolt Open Handlers
 
-func BoltOpenWrite(dbpath string, fmode os.FileMode, timeout time.Duration, opentries int) (*bolt.DB, error) {
+func BoltOpenWrite(dbpath string, fmode os.FileMode, timeout time.Duration, opentries int, freelist string) (*bolt.DB, error) {
 
 	i := 0
+
+	flist := bolt.FreelistMapType
+
+	switch {
+	case freelist == "hashmap":
+		flist = bolt.FreelistMapType
+	case freelist == "array":
+		flist = bolt.FreelistArrayType
+	}
 
 	for {
 
 		i++
 
-		db, err := bolt.Open(dbpath, fmode, &bolt.Options{Timeout: timeout})
+		db, err := bolt.Open(dbpath, fmode, &bolt.Options{Timeout: timeout, FreelistType: flist})
 		if err == nil {
 			return db, err
 		}
@@ -45,15 +54,24 @@ func BoltOpenWrite(dbpath string, fmode os.FileMode, timeout time.Duration, open
 
 }
 
-func BoltOpenRead(dbpath string, fmode os.FileMode, timeout time.Duration, opentries int) (*bolt.DB, error) {
+func BoltOpenRead(dbpath string, fmode os.FileMode, timeout time.Duration, opentries int, list string) (*bolt.DB, error) {
 
 	i := 0
+
+	flist := bolt.FreelistMapType
+
+	switch {
+	case freelist == "hashmap":
+		flist = bolt.FreelistMapType
+	case freelist == "array":
+		flist = bolt.FreelistArrayType
+	}
 
 	for {
 
 		i++
 
-		db, err := bolt.Open(dbpath, fmode, &bolt.Options{Timeout: timeout, ReadOnly: true})
+		db, err := bolt.Open(dbpath, fmode, &bolt.Options{Timeout: timeout, ReadOnly: true, FreelistType: flist})
 		if err == nil {
 			return db, err
 		}

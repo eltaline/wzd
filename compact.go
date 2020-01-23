@@ -89,7 +89,7 @@ func CompactScheduler(cdb *badgerhold.Store) {
 
 			filemode := infile.Mode()
 
-			db, err := BoltOpenWrite(dbf.Path, filemode, timeout, opentries)
+			db, err := BoltOpenWrite(dbf.Path, filemode, timeout, opentries, freelist)
 			if err != nil {
 
 				appLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
