@@ -397,6 +397,28 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		if archive != "1" || clength > fmaxsize {
 
+			mchregbolt := rgxbolt.MatchString(file)
+			mchregcrcbolt := rgxcrcbolt.MatchString(file)
+
+			if mchregbolt || mchregcrcbolt {
+
+				ctx.StatusCode(iris.StatusForbidden)
+
+				if log4xx {
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Restricted to upload .bolt or .crcbolt as standart file error | File [%s]", vhost, ip, file)
+				}
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Restricted to upload .bolt or .crcbolt as standart file error\n")
+					if err != nil {
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+					}
+
+				}
+
+			}
+
 			if FileExists(dbf) && nonunique {
 
 				db, err := BoltOpenRead(dbf, filemode, timeout, opentries, freelist)
@@ -877,6 +899,28 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				}
 
 				return
+
+			}
+
+			mchregbolt := rgxbolt.MatchString(file)
+			mchregcrcbolt := rgxcrcbolt.MatchString(file)
+
+			if mchregbolt || mchregcrcbolt {
+
+				ctx.StatusCode(iris.StatusForbidden)
+
+				if log4xx {
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Restricted to upload .bolt or .crcbolt as bolt-in-bolt archive error | File [%s]", vhost, ip, file)
+				}
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Restricted to upload .bolt or .crcbolt as bolt-in-bolt archive error file error\n")
+					if err != nil {
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+					}
+
+				}
 
 			}
 

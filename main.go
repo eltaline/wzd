@@ -48,9 +48,21 @@ type global struct {
 	LOGMODE           uint32
 	DEFSLEEP          int
 	CMPSCHED          bool
+	CMPTHREADS        int
 	CMPDIR            string
 	CMPTIME           int
 	CMPCHECK          int
+	TTLSCHED          bool
+	TTLTHREADS        int
+	TTLDIR            string
+	TTLTIME           int
+	TTLCHECK          int
+	CRCSCHED          bool
+	CRCTHREADS        int
+	CRCSMALL          bool
+	CRCLARGE          bool
+	CRCTIME           int
+	CRCCHECK          int
 }
 
 type server struct {
@@ -161,15 +173,28 @@ var (
 
 	defsleep time.Duration = 1 * time.Second
 
-	cmpdir = "/var/lib/wzd"
+	cmpsched   bool          = true
+	cmpthreads int           = 1
+	cmpdir                   = "/var/lib/wzd"
+	cmptime    int           = 30
+	cmpcheck   time.Duration = 300 * time.Second
 
-	cmpsched bool = true
+	ttlsched   bool          = true
+	ttlthreads int           = 1
+	ttldir                   = "/var/lib/wzd/ttl"
+	ttltime    time.Duration = 30 * time.Second
+	ttlcheck   time.Duration = 300 * time.Second
 
-	cmptime  int           = 30
-	cmpcheck time.Duration = 5 * time.Second
+	crcsched   bool          = true
+	crcthreads int           = 1
+	crcsmall   bool          = true
+	crclarge   bool          = true
+	crctime    int           = 0
+	crccheck   time.Duration = 7 * 86400 * time.Second
 
-	rgxbolt  = regexp.MustCompile(`(\.bolt$)`)
-	rgxctype = regexp.MustCompile("(multipart)")
+	rgxbolt    = regexp.MustCompile(`(\.bolt$)`)
+	rgxcrcbolt = regexp.MustCompile(`(\.__wzd__.crcbolt$)`)
+	rgxctype   = regexp.MustCompile("(multipart)")
 )
 
 // Init Function
