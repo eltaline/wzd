@@ -915,7 +915,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				if debugmode {
 
-					_, err = ctx.WriteString("[ERRO] Restricted to upload .bolt or .crcbolt as bolt-in-bolt archive error file error\n")
+					_, err = ctx.WriteString("[ERRO] Restricted to upload .bolt or .crcbolt as bolt-in-bolt archive error\n")
 					if err != nil {
 						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
 					}
