@@ -210,6 +210,27 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		dir := filepath.Dir(uri)
 		file := filepath.Base(uri)
 
+		mchregcrcbolt := rgxcrcbolt.MatchString(file)
+
+		if mchregcrcbolt {
+
+			ctx.StatusCode(iris.StatusForbidden)
+
+			if log4xx {
+				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Restricted to delete .crcbolt file error | File [%s]", vhost, ip, file)
+			}
+
+			if debugmode {
+
+				_, err := ctx.WriteString("[ERRO] Restricted to delete .crcbolt file error\n")
+				if err != nil {
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+				}
+
+			}
+
+		}
+
 		if !delbolt {
 
 			mchregbolt := rgxbolt.MatchString(file)

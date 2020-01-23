@@ -219,6 +219,27 @@ func ZDGet() iris.Handler {
 		dir := filepath.Dir(uri)
 		file := filepath.Base(uri)
 
+		mchregcrcbolt := rgxcrcbolt.MatchString(file)
+
+		if mchregcrcbolt {
+
+			ctx.StatusCode(iris.StatusForbidden)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Restricted to download .crcbolt file error | File [%s]", vhost, ip, file)
+			}
+
+			if debugmode {
+
+				_, err := ctx.WriteString("[ERRO] Restricted to download .crcbolt file error\n")
+				if err != nil {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+				}
+
+			}
+
+		}
+
 		if !getbolt {
 
 			mchregbolt := rgxbolt.MatchString(file)
