@@ -377,7 +377,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		if key {
 
-			db, err := BoltOpenWrite(dbf, filemode, timeout, opentries)
+			db, err := BoltOpenWrite(dbf, filemode, timeout, opentries, freelist)
 			if err != nil {
 
 				ctx.StatusCode(iris.StatusInternalServerError)

@@ -399,7 +399,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if FileExists(dbf) && nonunique {
 
-				db, err := BoltOpenRead(dbf, filemode, timeout, opentries)
+				db, err := BoltOpenRead(dbf, filemode, timeout, opentries, freelist)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
@@ -912,7 +912,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				wcrc := uint32(0)
 				rcrc := uint32(0)
 
-				db, err := BoltOpenWrite(dbf, filemode, timeout, opentries)
+				db, err := BoltOpenWrite(dbf, filemode, timeout, opentries, freelist)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)

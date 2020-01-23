@@ -42,6 +42,7 @@ type global struct {
 	REALHEADER        string
 	CHARSET           string
 	DEBUGMODE         bool
+	FREELIST          string
 	PIDFILE           string
 	LOGDIR            string
 	LOGMODE           uint32
@@ -151,6 +152,8 @@ var (
 
 	debugmode bool = false
 
+	freelist string = "hashmap"
+
 	pidfile string = "/run/wzd/wzd.pid"
 
 	logdir  string = "/var/log/wzd"
@@ -244,6 +247,14 @@ func init() {
 	mchdebugmode := rgxdebugmode.MatchString(fmt.Sprintf("%t", config.Global.DEBUGMODE))
 	Check(mchdebugmode, "[global]", "debugmode", (fmt.Sprintf("%t", config.Global.DEBUGMODE)), "true or false", DoExit)
 
+	if config.Global.FREELIST != "" {
+		rgxfreelist := regexp.MustCompile("^(?i)(hashmap|array)$")
+		mchfreelist := rgxfreelist.MatchString(config.Global.FREELIST)
+		Check(mchfreelist, "[global]", "freelist", config.Global.FREELIST, "hashmap or array", DoExit)
+	} else {
+		config.Global.FREELIST = "hashmap"
+	}
+
 	if config.Global.PIDFILE != "" {
 		rgxpidfile := regexp.MustCompile("^(/?[^/\x00]*)+/?$")
 		mchpidfile := rgxpidfile.MatchString(config.Global.PIDFILE)
@@ -305,6 +316,13 @@ func init() {
 	defer applogfile.Close()
 
 	appLogger.Warnf("| Starting wZD Server [%s]", version)
+
+	switch {
+	case config.Global.FREELIST == "hashmap":
+		appLogger.Warnf("| Freelist Mode [HASHMAP]")
+	case config.Global.FREELIST == "array":
+		appLogger.Warnf("| Freelist Mode [ARRAY]")
+	}
 
 	switch {
 	case config.Global.ONLYSSL:
@@ -781,6 +799,10 @@ func main() {
 
 	keepalive = config.Global.KEEPALIVE
 
+	// Freelist
+
+	freelist = config.Global.FREELIST
+
 	// Default Timers / Tries
 
 	defsleep = time.Duration(config.Global.DEFSLEEP) * time.Second
@@ -795,6 +817,11 @@ func main() {
 
 	// Open Compaction DB
 
+	cmpsched = config.Global.CMPSCHED
+	cmpdir = config.Global.CMPDIR
+	cmptime = config.Global.CMPTIME
+	cmpcheck = time.Duration(config.Global.CMPCHECK) * time.Second
+
 	options := badgerhold.DefaultOptions
 	options.Dir = cmpdir
 	options.ValueDir = cmpdir
@@ -807,14 +834,6 @@ func main() {
 	defer cdb.Close()
 
 	// Go Compaction Scheduler
-
-	// Compaction Configuration
-
-	cmpdir = config.Global.CMPDIR
-	cmptime = config.Global.CMPTIME
-	cmpcheck = time.Duration(config.Global.CMPCHECK) * time.Second
-
-	cmpsched = config.Global.CMPSCHED
 
 	if cmpsched {
 		go CompactScheduler(cdb)
