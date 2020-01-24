@@ -62,6 +62,7 @@ func ZDGet() iris.Handler {
 
 		options := ""
 		headorigin := ""
+		xframe := ""
 
 		getbolt := false
 		getcount := false
@@ -81,6 +82,8 @@ func ZDGet() iris.Handler {
 		bigbuffer := int64(536870912)
 
 		filemode := os.FileMode(0640)
+
+		gzstatic := false
 
 		log4xx := true
 
@@ -112,6 +115,7 @@ func ZDGet() iris.Handler {
 
 				options = Server.OPTIONS
 				headorigin = Server.HEADORIGIN
+				xframe = Server.XFRAME
 
 				getbolt = Server.GETBOLT
 				getcount = Server.GETCOUNT
@@ -138,6 +142,8 @@ func ZDGet() iris.Handler {
 				default:
 					filemode = os.FileMode(cfilemode)
 				}
+
+				gzstatic = Server.GZSTATIC
 
 				log4xx = Server.LOG4XX
 
@@ -336,10 +342,17 @@ func ZDGet() iris.Handler {
 		fromarchive := ctx.GetHeader("FromArchive")
 
 		abs := fmt.Sprintf("%s%s/%s", base, dir, file)
+		gzabs := fmt.Sprintf("%s%s/%s.gz", base, dir, file)
+		gzfile := fmt.Sprintf("%s.gz", file)
 
 		dbn := filepath.Base(dir)
 		dbf := fmt.Sprintf("%s%s/%s.bolt", base, dir, dbn)
 		dbk := fmt.Sprintf("%s%s/%s.bolt", base, uri, file)
+
+		if gzstatic && FileExists(gzabs) {
+			abs = gzabs
+			file = gzfile
+		}
 
 		bucket := ""
 		ibucket := "index"
@@ -770,8 +783,16 @@ func ZDGet() iris.Handler {
 			ctx.Header("Cache-Control", scctrl)
 			ctx.Header("Accept-Ranges", "bytes")
 
+			if strings.Contains(ctx.GetHeader("Accept-Encoding"), "gzip") && (strings.Contains(conttype, "x-compressed") || strings.Contains(conttype, "gzip")) {
+				ctx.Header("Content-Encoding", "gzip")
+			}
+
 			if headorigin != "" {
 				ctx.Header("Access-Control-Allow-Origin", headorigin)
+			}
+
+			if xframe != "" {
+				ctx.Header("X-Frame-Options", xframe)
 			}
 
 			if ifnm == etag || ifms == hmodt {
@@ -1215,6 +1236,40 @@ func ZDGet() iris.Handler {
 
 		}
 
+		if gzstatic {
+
+			gzkeyexists := ""
+			gzabs := fmt.Sprintf("%s%s/%s.gz", base, dir, file)
+			gzfile := fmt.Sprintf("%s.gz", file)
+
+			gzkeyexists, err = KeyExists(db, ibucket, gzfile)
+			if err != nil {
+
+			ctx.StatusCode(iris.StatusInternalServerError)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, gzfile, dbf, err)
+
+			if debugmode {
+
+				_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
+				if err != nil {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+				}
+
+			}
+
+			db.Close()
+			return
+
+			}
+
+			if gzkeyexists != "" {
+				keyexists = gzkeyexists
+				abs = gzabs
+				file = gzfile
+			}
+
+		}
+
 		if keyexists == "" {
 			ctx.StatusCode(iris.StatusNotFound)
 			db.Close()
@@ -1376,8 +1431,16 @@ func ZDGet() iris.Handler {
 		ctx.Header("Cache-Control", scctrl)
 		ctx.Header("Accept-Ranges", "bytes")
 
+		if strings.Contains(ctx.GetHeader("Accept-Encoding"), "gzip") && (strings.Contains(conttype, "x-compressed") || strings.Contains(conttype, "gzip")) {
+			ctx.Header("Content-Encoding", "gzip")
+		}
+
 		if headorigin != "" {
 			ctx.Header("Access-Control-Allow-Origin", headorigin)
+		}
+
+		if xframe != "" {
+			ctx.Header("X-Frame-Options", xframe)
 		}
 
 		if ifnm == etag || ifms == hmodt {

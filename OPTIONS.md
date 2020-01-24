@@ -24,6 +24,19 @@ bindaddr
 - **Type:** string
 - **Section:** [global]
 
+bindaddrssl
+- **Description:** This is the primary SSL address and TCP port. The value is ": 9699" for all addresses.
+- **Default:** "127.0.0.1:9799"
+- **Type:** string
+- **Section:** [global]
+
+onlyssl
+- **Description:** This globally disables standart HTTP address and port fro all vrtual hosts. It is not configured for virtual host.
+- **Default:** false
+- **Values:** true or false
+- **Type:** bool
+- **Section:** [global]
+
 readtimeout
 - **Description:** This sets the timeout for the maximum data transfer time from the client to the server. It should be increased to transfer large files. If the wZD server is installed behind Nginx or HAProxy, this timeout can be disabled by setting it to 0 (no timeout). It is not configured for a virtual host.
 - **Default:** 60
@@ -38,6 +51,13 @@ readheadertimeout
 - **Type:** int
 - **Section:** [global]
 
+writetimeout
+- **Description:** This sets the timeout for the maximum data transfer time to the client. The transfer of large files should be significantly increased. If the wZD server is installed behind Nginx or HAProxy, this timeout can be disabled by setting it to 0 (no timeout). It is not configured for a virtual host.
+- **Default:** 60
+- **Values:** 0-86400
+- **Type:** int
+- **Section:** [global]
+
 idletimeout
 - **Description:** This sets the timeout for the maximum lifetime of keep alive connections. If the parameter = 0, the readtimeout parameter value is taken. If the readtimeout = 0, the idletimeout timeout is not used (no timeout). It is not configured for a virtual host.
 - **Default:** 60
@@ -45,11 +65,11 @@ idletimeout
 - **Type:** int
 - **Section:** [global]
 
-writetimeout
-- **Description:** This sets the timeout for the maximum data transfer time to the client. The transfer of large files should be significantly increased. If the wZD server is installed behind Nginx or HAProxy, this timeout can be disabled by setting it to 0 (no timeout). It is not configured for a virtual host.
-- **Default:** 60
-- **Values:** 0-86400
-- **Type:** int
+keepalive
+- **Description:** This gloablly enables or disables keep alive. It is not configured for virtual host.
+- **Default:** false
+- **Values:** true or false
+- **Type:** bool
 - **Section:** [global]
 
 realheader
@@ -65,10 +85,17 @@ charset
 - **Section:** [global]
 
 debugmode
-- **Description:** This is the debug mode.
+- **Description:** This is the debug mode. It is not configured for virtual host.
 - **Default:** false
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
+- **Section:** [global]
+
+freelist
+- **Description:** This globally sets the type of page release algorithm in BoltDB. The hashmap algorithm is faster. It is not configured for virtual host.
+- **Default:** hashmap
+- **Values:** hashmap or array
+- **Type:** string
 - **Section:** [global]
 
 pidfile
@@ -101,7 +128,7 @@ cmpsched = true
 - **Description:** This globally enables or disables the automatic compaction/defragmentation manager for Bolt archives.
 - **Default:** false
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [global]
 
 cmpdir
@@ -144,39 +171,87 @@ root
 - **Type:** string
 - **Section:** [server.name]
 
+sslcrt
+- **Description:** This is the path to the file with SSL certificate of virtual host.
+- **Default:** ""
+- **Type:** string
+- **Section:** [server.name]
+
+sslkey
+- **Description:** This is the path to the file with SSL key of virtual host.
+- **Default:** ""
+- **Type:** string
+- **Section:** [server.name]
+
+getallow
+- **Description:** This is the path to the file of allowed IP addresses of the GET/HEAD/OPTIONS methods for the virtual host. If the file is not specified, a 403 error will always be returned.
+- **Default:** ""
+- **Type:** string
+- **Section:** [server.name]
+
+putallow
+- **Description:** This is the path to the file of allowed IP addresses of the PUT/POST/PATCH methods for the virtual host. If the file is not specified, a 403 error will always be returned.
+- **Default:** ""
+- **Type:** string
+- **Section:** [server.name]
+
+delallow
+- **Description:** This is the path to the file of allowed IP addresses of the DELETE method for the virtual host. If the file is not specified, a 403 error will always be returned.
+- **Default:** ""
+- **Type:** string
+- **Section:** [server.name]
+
+options
+- **Description:** Sets the Access-Control-Allow-Methods header with the available methods for the virtual host.
+- **Default:** "GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE"
+- **Type:** string
+- **Section:** [server.name]
+
+headorigin
+- **Description:** Sets the Access-Control-Allow-Origin header.
+- **Default:** "*"
+- **Type:** string
+- **Section:** [server.name]
+
+xframe
+- **Description:** Sets the X-Frame-Options header.
+- **Default:** "sameorigin"
+- **Type:** string
+- **Section:** [server.name]
+
 upload
 - **Description:** This enables or disables the PUT method for the virtual host.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]
 
 delete
 - **Description:** This enables or disables the DELETE method for the virtual host.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]
 
 compaction
 - **Description:** This enables or disables the automatic addition of tasks for the compaction/defragmentation manager of the Bolt archives when updating or deleting files or values in Bolt archives, if parameter cmpsched is not disabled globally.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]
 
 writeintegrity
 - **Description:** This enables or disables the calculation and recording of the checksum in the binary header while uploading files or values through the wZD server to Bolt archives. It is recommended that this be enabled.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]
 
 readintegrity
 - **Description:** This enables or disables checksum verification from the binary header during the output of files or values to the client. It is recommended that this be enabled.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]
 
 trytimes
@@ -204,35 +279,35 @@ args
 - **Description:** If this is disabled, query arguments will be denied for GET requests. It is recommended that this be enabled if using Vary header on a reverse proxy server, or if versioning through query arguments.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]
 
 getbolt
 - **Description:**  If this is disabled, direct download of Bolt archives will be forbidden.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]
 
 getcount
 - **Description:** If this is disabled, getting a count of the total number of files or values (including individual files) in the directory will be forbidden.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]
 
 getkeys
 - **Description:** If this is disabled, getting file or key names (including individual files) from the directory will be forbidden.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]
 
 nonunique
 - **Description:** If this is enabled, it is then possible to upload a file with a non-unique name to a directory where there is already a Bolt archive, and where the Bolt archive includes a file or value with the same key name as the separate file to be uploaded. If this parameter is turned off, the reverse will be possible. That is, it will be possible to upload a file or value to the Bolt archive, even if there is already a separate file in the same directory with the same name as the name of the key loaded into the Bolt file archive or value.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]  
 
 cctrl
@@ -271,12 +346,26 @@ delbolt
 - **Description:** If this is enabled, direct deletion of Bolt archives will be allowed.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
 - **Section:** [server.name]
 
 deldir
-- **Description:** If this is enabled, the wZD server will delete the last empty directory, provided there really are no files or subdirectories and the number of keys in the Bolt archive = 0. Only the current directory is deleted. Recursive traversal is not implemented for security reasons.
+- **Description:** If this is enabled, then the wZD server will delete the last empty directory, provided there really are no files or subdirectories and the number of keys in the Bolt archive = 0. Only the current directory is deleted. Recursive traversal is not implemented for security reasons.
 - **Default:** Required
 - **Values:** true or false
-- **Type:** boolean
+- **Type:** bool
+- **Section:** [server.name]
+
+gzstatic
+- **Description:** If this is enabled, then the wZD server will output the compressed contents of files with the .gz extension, if they exist, with a GET request that does not initially include the gz extension. Sets the Content-Encoding: gzip header if the client sends Accept-Encoding header with the gzip type. Content-Encoding: gzip is affixed even without the gzstatic option enabled for the corresponding files. For files from Bolt archives, the logic is the same. Priority of issuing gzip files.
+- **Default:** Required
+- **Values:** true or false
+- **Type:** bool
+- **Section:** [server.name]
+
+log4xx
+- **Description:** If this is enabled, then the wZD server will log all requests with 4XX codes.
+- **Default:** Required
+- **Values:** true or false
+- **Type:** bool
 - **Section:** [server.name]

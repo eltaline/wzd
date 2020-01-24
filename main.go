@@ -52,17 +52,6 @@ type global struct {
 	CMPDIR            string
 	CMPTIME           int
 	CMPCHECK          int
-	TTLSCHED          bool
-	TTLTHREADS        int
-	TTLDIR            string
-	TTLTIME           int
-	TTLCHECK          int
-	CRCSCHED          bool
-	CRCTHREADS        int
-	CRCSMALL          bool
-	CRCLARGE          bool
-	CRCTIME           int
-	CRCCHECK          int
 }
 
 type server struct {
@@ -75,6 +64,7 @@ type server struct {
 	DELALLOW       string
 	OPTIONS        string
 	HEADORIGIN     string
+	XFRAME         string
 	UPLOAD         bool
 	DELETE         bool
 	COMPACTION     bool
@@ -98,6 +88,7 @@ type server struct {
 	DIRMODE        uint32
 	DELBOLT        bool
 	DELDIR         bool
+	GZSTATIC       bool
 	LOG4XX         bool
 }
 
@@ -174,26 +165,12 @@ var (
 	defsleep time.Duration = 1 * time.Second
 
 	cmpsched   bool          = true
-	cmpthreads int           = 1
 	cmpdir                   = "/var/lib/wzd"
 	cmptime    int           = 30
 	cmpcheck   time.Duration = 300 * time.Second
 
-	ttlsched   bool          = true
-	ttlthreads int           = 1
-	ttldir                   = "/var/lib/wzd/ttl"
-	ttltime    time.Duration = 30 * time.Second
-	ttlcheck   time.Duration = 300 * time.Second
-
-	crcsched   bool          = true
-	crcthreads int           = 1
-	crcsmall   bool          = true
-	crclarge   bool          = true
-	crctime    int           = 0
-	crccheck   time.Duration = 7 * 86400 * time.Second
-
 	rgxbolt    = regexp.MustCompile(`(\.bolt$)`)
-	rgxcrcbolt = regexp.MustCompile(`(\.__wzd__.crcbolt$)`)
+	rgxcrcbolt = regexp.MustCompile(`(\.crcbolt$)`)
 	rgxctype   = regexp.MustCompile("(multipart)")
 )
 
@@ -393,6 +370,7 @@ func init() {
 	rgxdirmode := regexp.MustCompile("^([0-7]{3})")
 	rgxdelbolt := regexp.MustCompile("^(?i)(true|false)$")
 	rgxdeldir := regexp.MustCompile("^(?i)(true|false)$")
+	rgxgzstatic := regexp.MustCompile("^(?i)(true|false)$")
 	rgxlog4xx := regexp.MustCompile("^(?i)(true|false)$")
 
 	for _, Server := range config.Server {
@@ -654,6 +632,9 @@ func init() {
 		mchdeldir := rgxdeldir.MatchString(fmt.Sprintf("%t", Server.DELDIR))
 		Check(mchdeldir, section, "deldir", (fmt.Sprintf("%t", Server.DELDIR)), "true or false", DoExit)
 
+		mchgzstatic := rgxgzstatic.MatchString(fmt.Sprintf("%t", Server.GZSTATIC))
+		Check(mchgzstatic, section, "gzstatic", (fmt.Sprintf("%t", Server.GZSTATIC)), "true or false", DoExit)
+
 		mchlog4xx := rgxlog4xx.MatchString(fmt.Sprintf("%t", Server.LOG4XX))
 		Check(mchlog4xx, section, "log4xx", (fmt.Sprintf("%t", Server.LOG4XX)), "true or false", DoExit)
 
@@ -745,6 +726,13 @@ func init() {
 			appLogger.Warnf("| Host [%s] | Delete Directory [ENABLED]", Server.HOST)
 		default:
 			appLogger.Warnf("| Host [%s] | Delete Directory [DISABLED]", Server.HOST)
+		}
+
+		switch {
+		case Server.GZSTATIC:
+			appLogger.Warnf("| Host [%s] | Static GZIP [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Static GZIP [DISABLED]", Server.HOST)
 		}
 
 		switch {
@@ -840,7 +828,7 @@ func main() {
 
 	keymutex := mmutex.NewMMutex()
 
-	// Open Compaction DB
+	// Open CMP DB
 
 	cmpsched = config.Global.CMPSCHED
 	cmpdir = config.Global.CMPDIR
@@ -858,10 +846,10 @@ func main() {
 	}
 	defer cdb.Close()
 
-	// Go Compaction Scheduler
+	// Go CMP Scheduler
 
 	if cmpsched {
-		go CompactScheduler(cdb)
+		go CMPScheduler(cdb)
 	}
 
 	// Web Server

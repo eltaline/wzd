@@ -21,7 +21,6 @@ ENV defsleep 1
 ENV cmpsched true
 ENV cmpdir "/var/lib/wzd"
 ENV cmptime 30
-ENV cmpcount 100
 ENV cmpcheck 5
 
 ENV host "localhost"
@@ -31,8 +30,9 @@ ENV sslkey ""
 ENV getallow "/etc/wzd/get-localhost.conf"
 ENV putallow "/etc/wzd/put-localhost.conf"
 ENV delallow "/etc/wzd/del-localhost.conf"
-ENV options "GET, HEAD, OPTIONS, PUT, POST, DELETE"
+ENV options "GET, HEAD, OPTIONS, PUT, POST, PATCH, DELETE"
 ENV headorigin "*"
+ENV xframe "sameorigin"
 ENV upload true
 ENV delete true
 ENV compaction true
@@ -56,6 +56,7 @@ ENV filemode 0640
 ENV dirmode 0750
 ENV delbolt false
 ENV deldir false
+ENV gzstatic false
 ENV log4xx true
 
 RUN groupadd wzd
