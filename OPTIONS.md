@@ -138,7 +138,7 @@ cmpdir
 - **Section:** [global]
 
 cmptime = 30 
-- **Description:** This is the compaction/defragmentation delay timeout for updated Bolt archives (days).
+- **Description:** This is the compaction/defragmentation delay timeout for the updated Bolt archives (days).
 - **Default:** 30
 - **Values:** 1-1000
 - **Type:** int
