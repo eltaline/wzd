@@ -23,7 +23,7 @@ Added in version 1.1.0:
 - Choice of free page algorithm in BoltDB (freelist parameter)
 - Keepalive (keepalive parameter)
 - POST method (binary data protocol only)
-- OPTIONS method (options parameter)
+- OPTIONS method (parameter options)
 - Access-Control-Allow-Origin header (parameter headorigin)
 - X-Frame-Options header (parameter xframe)
 - Content-Encoding header for pre-compressed gzip files (automatic + parameter gzstatic)
