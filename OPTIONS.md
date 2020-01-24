@@ -31,7 +31,7 @@ bindaddrssl
 - **Section:** [global]
 
 onlyssl
-- **Description:** This globally disables standart HTTP address and port fro all vrtual hosts. It is not configured for virtual host.
+- **Description:** This globally disables standart HTTP address and port for all vrtual hosts. It is not configured for virtual host.
 - **Default:** false
 - **Values:** true or false
 - **Type:** bool
