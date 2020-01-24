@@ -13,16 +13,38 @@ Architecture
 
 <img align="center" src="/images/wzd-arch.png" alt="wZD Arch"/>
 
-Current stable version: 1.0.0
+Current stable version: 1.1.0
 ========
+
+Added in version 1.1.0:
+
+- HTTPS (parameters bindaddrssl, onlyssl, sslcrt, sslkey)
+- IP authorization (parameters getallow, putallow, delallow)
+- Choice of free page algorithm in BoltDB (freelist parameter)
+- Keepalive (keepalive parameter)
+- POST method (binary data protocol only)
+- OPTIONS method (options parameter)
+- Access-Control-Allow-Origin header (parameter headorigin)
+- X-Frame-Options header (parameter xframe)
+- Content-Encoding header for pre-compressed gzip files (automatic + parameter gzstatic)
+- Logging 4xx (parameter log4xx)
+
+Fixed in version 1.1.0:
+
+- Fix set of HTTP timeouts
+- Exclusion of the ability to download files with the extension .bolt
+- Fix some regular expressions
+- Ability to use server without reverse proxy servers
+
+**Version 1.0.0 is deprecated and removed from public access, because this is first design-release without important features**
 
 Features
 ========
 
 - Multithreading
 - Multi servers for fault tolerance and load balancing
-- Maximum transparency for the user or developer
-- Supported HTTP methods: GET, HEAD, PUT and DELETE
+- Supports HTTPS and IP authorization
+- Supported HTTP methods: GET, HEAD, OPTIONS, PUT, POST and DELETE
 - Manage read and write behavior through client headers
 - Support for customizable virtual hosts
 - Linear scaling of read and write using clustered file systems
@@ -43,8 +65,6 @@ Incompatibilities
 ========
 
 - Multipart is not supported
-- The POST method is not yet supported
-- The HTTPS protocol is not yet supported
 - There is no native protocol and drivers for different programming languages
 - There is no way to transparently mount the structure as a file system via WebDAV or FUSE
 - For security reasons, the server does not support recursive deletion of directories
@@ -59,11 +79,15 @@ Use only binary data transfer protocol to write files or values.
 Requirements
 ========
 
-- **Only use with reverse proxy servers like Nginx or HAProxy**
 - Operating Systems: Linux, BSD, Solaris, OSX
 - Architectures: amd64, arm64, ppc64 and mips64, with only amd64 tested
 - Supported Byte Order: Little or Big Endian
 - Any POSIX compatible file system with full locking support (preferred clustered MooseFS)
+
+Recommendations
+========
+
+- It is recommended to upload large files directly to the wZD server, bypassing reverse proxy servers
 
 Real application
 ========
@@ -256,7 +280,7 @@ Data migration guide:
 
 The path to be migrated: /var/storage. Here are jpg files in the 1 million subdirectories of various depths that need to be archived in Bolt archives, but only those files that are no larger than 1 MB.
 
-- Nginx or HAProxy and wZD server should be configured with a virtual host and with a root in the /var/storage directory
+- wZD server should be configured with a virtual host and with a root in the /var/storage directory
 
 - Perform a recursive search:
 
@@ -301,8 +325,6 @@ Notes and Q&A
 
 - Bolt archives are automatically named with the name of the directory in which they are created
 
-- The OPTIONS method is not currently configured and does not send the Access-Control-Allow-Methods header. Use Nginx or HAProxy to specify the allowed methods
-
 - Effective reduction of the number of files within the data instance depends on the selected directory structure and the planned number of file uploads in these directories
 
 - It is not recommended to upload 100,000+ files to one directory (one Bolt archive); this would be a large overhead. If possible, plan your directory structure correctly.
@@ -336,7 +358,7 @@ Notes and Q&A
 - Development of own replicator and distributor with geo for possible use in large systems without cluster FS
 - The ability to fully reverse restore metadata when it is completely lost (if using a distributor)
 - Native protocol for the possibility of using permanent network connections and drivers for different programming languages
-- Support for HTTPS protocol, it may be supported only in the future distributor
+- ~~Support for HTTPS protocol, it may be supported only in the future distributor~~ (Completed in standart version)
 - Advanced features for using NoSQL component
 - Implementing background calculate checksums for single large files
 - Periodic checksum checks in the background to protect against bit rot
