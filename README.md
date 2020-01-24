@@ -109,7 +109,7 @@ Mixed use
 
 The wZD server was designed for mixed use. One can write not only ordinary files, but even html or json generated documents, and one can even simply use NoSQL as a sharding database consisting of a large number of small BoltDB databases, and carry out all sharding through the structure of directories and subdirectories.
 
-Performance tests
+Performance tests (Updated v1.1.0)
 ========
 
 **Testing shows the read or write difference between working with regular files and with Bolt archives. The writeintegrity and readintegrity options are enabled; that is, when writing or reading files in Bolt archives, CRC is used.**
