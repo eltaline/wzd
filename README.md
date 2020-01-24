@@ -32,7 +32,7 @@ Added in version 1.1.0:
 Fixed in version 1.1.0:
 
 - Fix set of HTTP timeouts
-- Exclusion of the ability to download files with the extension .bolt
+- Exclusion of the ability to upload files with the extension .bolt
 - Fix some regular expressions
 - Ability to use server without reverse proxy servers
 
