@@ -327,9 +327,9 @@ Notes and Q&A
 
 - Effective reduction of the number of files within the data instance depends on the selected directory structure and the planned number of file uploads in these directories
 
-- It is not recommended to upload 100,000+ files to one directory (one Bolt archive); this would be a large overhead. If possible, plan your directory structure correctly.
+- It is not recommended to upload 100,000+ files to one directory (one Bolt archive); this would be a large overhead. If possible, plan your directory structure correctly
 
-- It is not recommended to upload files or values larger than 16MB to Bolt archives. By default, the parameter fmaxsize = 1048576 bytes.
+- It is not recommended to upload files or values larger than 16MB to Bolt archives. By default, the parameter fmaxsize = 1048576 bytes
 
 - If the fmaxsize parameter is exceeded, even with the "Archive: 1" client header set, the data will be loaded into a separate regular file without notification. The maximum possible size of the parameter is fmaxsize = 33554432 bytes
 
