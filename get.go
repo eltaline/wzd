@@ -1245,20 +1245,20 @@ func ZDGet() iris.Handler {
 			gzkeyexists, err = KeyExists(db, ibucket, gzfile)
 			if err != nil {
 
-			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, gzfile, dbf, err)
+				ctx.StatusCode(iris.StatusInternalServerError)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, gzfile, dbf, err)
 
-			if debugmode {
+				if debugmode {
 
-				_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
-				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+					_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
+					if err != nil {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client", vhost, ip)
+					}
+
 				}
 
-			}
-
-			db.Close()
-			return
+				db.Close()
+				return
 
 			}
 

@@ -164,10 +164,10 @@ var (
 
 	defsleep time.Duration = 1 * time.Second
 
-	cmpsched   bool          = true
-	cmpdir                   = "/var/lib/wzd"
-	cmptime    int           = 30
-	cmpcheck   time.Duration = 300 * time.Second
+	cmpsched bool          = true
+	cmpdir                 = "/var/lib/wzd"
+	cmptime  int           = 30
+	cmpcheck time.Duration = 300 * time.Second
 
 	rgxbolt    = regexp.MustCompile(`(\.bolt$)`)
 	rgxcrcbolt = regexp.MustCompile(`(\.crcbolt$)`)
