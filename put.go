@@ -46,7 +46,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 			ctx.StatusCode(iris.StatusInternalServerError)
 			//_, err := ctx.WriteString("Shutdown wZD server in progress\n")
 			//if err != nil {
-			//	putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+			//	putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 			//}
 			return
 		}
@@ -175,7 +175,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				_, err := ctx.Writef("[ERRO] Not found configured virtual host | Virtual Host [%s]\n", vhost)
 				if err != nil {
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 				}
 
 			}
@@ -196,7 +196,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				_, err := ctx.Writef("[ERRO] Not found allowed ip | Virtual Host [%s]\n", vhost)
 				if err != nil {
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 				}
 
 			}
@@ -217,7 +217,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				_, err := ctx.Writef("[ERRO] Upload disabled | Virtual Host [%s]\n", vhost)
 				if err != nil {
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 				}
 
 			}
@@ -238,7 +238,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				_, err := ctx.WriteString("[ERRO] The query arguments is not allowed during PUT request\n")
 				if err != nil {
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 				}
 
 			}
@@ -261,7 +261,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				_, err := ctx.WriteString("[ERRO] The multipart query is not allowed during PUT request\n")
 				if err != nil {
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 				}
 
 			}
@@ -283,7 +283,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				_, err = ctx.WriteString("Content length error during PUT request\n")
 				if err != nil {
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 				}
 
 			}
@@ -304,7 +304,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				_, err = ctx.WriteString("[ERRO] The body was empty during PUT request\n")
 				if err != nil {
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 				}
 
 			}
@@ -343,7 +343,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				_, err = ctx.WriteString("[ERRO] No given file name error\n")
 				if err != nil {
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 				}
 
 			}
@@ -363,7 +363,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					_, err = ctx.WriteString("[ERRO] Can`t create directory error\n")
 					if err != nil {
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 					}
 
 				}
@@ -382,7 +382,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					_, err = ctx.WriteString("[ERRO] Can`t chmod directory error\n")
 					if err != nil {
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 					}
 
 				}
@@ -412,7 +412,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					_, err = ctx.WriteString("[ERRO] Restricted to upload .bolt or .crcbolt as standart file error\n")
 					if err != nil {
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 					}
 
 				}
@@ -431,7 +431,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -451,7 +451,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -473,7 +473,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t upload standart file due to conflict with duplicate key/file name in index db bucket error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -511,7 +511,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t open/create file error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -532,7 +532,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t chmod file error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -584,7 +584,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 											_, err = ctx.WriteString("[ERRO] Close during write file error\n")
 											if err != nil {
-												putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+												putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 											}
 
 										}
@@ -598,7 +598,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 										_, err = ctx.WriteString("[ERRO] Write sizebuffer during write to file error\n")
 										if err != nil {
-											putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+											putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 										}
 
 									}
@@ -619,7 +619,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 								_, err = ctx.WriteString("[ERRO] sizebuffer write file error\n")
 								if err != nil {
-									putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+									putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 								}
 
 							}
@@ -644,7 +644,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 									_, err = ctx.WriteString("[ERRO] Close last write file error\n")
 									if err != nil {
-										putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+										putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 									}
 
 								}
@@ -658,7 +658,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 								_, err = ctx.WriteString("[ERRO] Write sizebuffer last write to file error\n")
 								if err != nil {
-									putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+									putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 								}
 
 							}
@@ -686,7 +686,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Can`t stat uploaded file error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -710,7 +710,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] The body length != real length during PUT request\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -725,7 +725,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 									_, err = ctx.WriteString("[ERRO] Can`t remove bad uploaded file error\n")
 									if err != nil {
-										putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+										putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 									}
 
 								}
@@ -759,7 +759,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t read request body data error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -783,7 +783,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] The body was empty during PUT request\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -805,7 +805,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] The body length != real length during PUT request\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -831,7 +831,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Close full write file error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -845,7 +845,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Write full buffer to file error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -867,7 +867,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					_, err = ctx.WriteString("[ERRO] Timeout mmutex lock error\n")
 					if err != nil {
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 					}
 
 				}
@@ -893,7 +893,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					_, err := ctx.WriteString("[ERRO] Can`t upload file to virtual host root error\n")
 					if err != nil {
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 					}
 
 				}
@@ -917,7 +917,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					_, err = ctx.WriteString("[ERRO] Restricted to upload .bolt or .crcbolt as bolt-in-bolt archive error\n")
 					if err != nil {
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 					}
 
 				}
@@ -966,7 +966,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t open/create db file error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -987,7 +987,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t chmod db error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1015,7 +1015,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t create index db bucket error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1036,7 +1036,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1064,7 +1064,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t create count db bucket error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1085,7 +1085,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t count buckets in count db bucket error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1110,7 +1110,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Can`t count keys of files in last db bucket error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1131,7 +1131,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Can`t count bytes of files in last db bucket error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1176,7 +1176,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 								_, err = ctx.WriteString("[ERRO] Can`t write bucket counter to count db bucket error\n")
 								if err != nil {
-									putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+									putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 								}
 
 							}
@@ -1227,7 +1227,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Can`t write bucket counter to count db bucket error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1257,7 +1257,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t create db bucket error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1279,7 +1279,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t read request body data error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1304,7 +1304,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] The body was empty during PUT request\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1327,7 +1327,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] The body length != real length during PUT request\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1359,7 +1359,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Can`t read tee crc data error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1386,7 +1386,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Write binary header data to db error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1407,7 +1407,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Can`t read readbuffer data error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1434,7 +1434,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Write binary header data to db error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1455,7 +1455,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Can`t read rawbuffer data error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1495,7 +1495,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t write file to db bucket error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1533,7 +1533,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						_, err = ctx.WriteString("[ERRO] Can`t write key to index db bucket error\n")
 						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 						}
 
 					}
@@ -1570,7 +1570,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Can`t get data by key from db error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1597,7 +1597,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Read binary header data from db error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1620,7 +1620,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Read binary header data from db error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1645,7 +1645,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] Can`t read pread data error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1670,7 +1670,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							_, err = ctx.WriteString("[ERRO] CRC read file error\n")
 							if err != nil {
-								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 							}
 
 						}
@@ -1728,7 +1728,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					_, err = ctx.WriteString("[ERRO] Timeout mmutex lock error\n")
 					if err != nil {
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can` complete response to client | %v", vhost, ip , err)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 					}
 
 				}
