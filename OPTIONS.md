@@ -31,7 +31,7 @@ bindaddrssl
 - **Section:** [global]
 
 onlyssl
-- **Description:** This globally disables standart HTTP address and port for all vrtual hosts. It is not configured for virtual host.
+- **Description:** This globally disables standart HTTP address and port for all virtual hosts. It is not configured for virtual host.
 - **Default:** false
 - **Values:** true or false
 - **Type:** bool
@@ -66,7 +66,7 @@ idletimeout
 - **Section:** [global]
 
 keepalive
-- **Description:** This gloablly enables or disables keep alive. It is not configured for virtual host.
+- **Description:** This globally enables or disables keep alive. It is not configured for virtual host.
 - **Default:** false
 - **Values:** true or false
 - **Type:** bool

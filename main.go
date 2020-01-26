@@ -432,7 +432,7 @@ func init() {
 				fmt.Printf("Can`t open get allow file error | %s | File [%s] | %v\n", section, Server.GETALLOW, err)
 				os.Exit(1)
 			}
-			defer getfile.Close()
+			// No need to defer in loop
 
 			get.Vhost = Server.HOST
 
@@ -479,7 +479,7 @@ func init() {
 				fmt.Printf("Can`t open put allow file error | %s | File [%s] | %v\n", section, Server.PUTALLOW, err)
 				os.Exit(1)
 			}
-			defer putfile.Close()
+			// No need to defer in loop
 
 			put.Vhost = Server.HOST
 
@@ -526,7 +526,7 @@ func init() {
 				fmt.Printf("Can`t open del allow file error | %s | File [%s] | %v\n", section, Server.DELALLOW, err)
 				os.Exit(1)
 			}
-			defer delfile.Close()
+			// No need to defer in loop
 
 			del.Vhost = Server.HOST
 
@@ -856,7 +856,7 @@ func main() {
 
 	app := iris.New()
 
-	// Iris Satrtup Log Debug Options
+	// Iris Startup Log Debug Options
 
 	switch debugmode {
 	case true:

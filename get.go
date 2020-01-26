@@ -43,10 +43,10 @@ func ZDGet() iris.Handler {
 
 		if wshutdown {
 			ctx.StatusCode(iris.StatusInternalServerError)
-			//_, err := ctx.WriteString("Shutdown wZD server in progress\n")
-			//if err != nil {
+			// _, err := ctx.WriteString("Shutdown wZD server in progress\n")
+			// if err != nil {
 			//	getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
-			//}
+			// }
 			return
 		}
 
@@ -777,8 +777,8 @@ func ZDGet() iris.Handler {
 			ctx.Header("Content-Type", conttype)
 			ctx.Header("Content-Length", hsize)
 			ctx.Header("Last-Modified", hmodt)
-			//ctx.Header("Transfer-Encoding", "chunked")
-			//ctx.Header("Connection", "keep-alive")
+			// ctx.Header("Transfer-Encoding", "chunked")
+			// ctx.Header("Connection", "keep-alive")
 			ctx.Header("ETag", etag)
 			ctx.Header("Cache-Control", scctrl)
 			ctx.Header("Accept-Ranges", "bytes")
@@ -935,7 +935,7 @@ func ZDGet() iris.Handler {
 					sizebuffer, err := pfile.Read(readbuffer)
 					if err != nil {
 						if err == io.EOF {
-							//getLogger.Infof("| sizebuffer end of file | File [%s] | Path [%s] | %v", file, abs, err)
+							// getLogger.Infof("| sizebuffer end of file | File [%s] | Path [%s] | %v", file, abs, err)
 							break
 						}
 
@@ -1085,7 +1085,7 @@ func ZDGet() iris.Handler {
 				sizebuffer, err := pfile.Read(readbuffer)
 				if err != nil {
 					if err == io.EOF {
-						//getLogger.Infof("| sizebuffer end of file | File [%s] | Path [%s] | %v", file, abs, err)
+						// getLogger.Infof("| sizebuffer end of file | File [%s] | Path [%s] | %v", file, abs, err)
 						break
 					}
 
@@ -1369,7 +1369,7 @@ func ZDGet() iris.Handler {
 		}
 
 		size := int64(readhead.Size)
-		hsize := strconv.FormatUint(uint64(readhead.Size), 10)
+		hsize := strconv.FormatUint(readhead.Size, 10)
 
 		tmst := int64(readhead.Date)
 		modt := time.Unix(tmst, 0)
@@ -1425,8 +1425,8 @@ func ZDGet() iris.Handler {
 		ctx.Header("Content-Type", conttype)
 		ctx.Header("Content-Length", hsize)
 		ctx.Header("Last-Modified", hmodt)
-		//ctx.Header("Transfer-Encoding", "chunked")
-		//ctx.Header("Connection", "keep-alive")
+		// ctx.Header("Transfer-Encoding", "chunked")
+		// ctx.Header("Connection", "keep-alive")
 		ctx.Header("ETag", etag)
 		ctx.Header("Cache-Control", scctrl)
 		ctx.Header("Accept-Ranges", "bytes")
@@ -1565,7 +1565,7 @@ func ZDGet() iris.Handler {
 				sizebuffer, err := pread.Read(readbuffer)
 				if err != nil {
 					if err == io.EOF {
-						//getLogger.Infof("| sizebuffer end of file | File [%s] | DB [%s] | %v", file, dbf, err)
+						// getLogger.Infof("| sizebuffer end of file | File [%s] | DB [%s] | %v", file, dbf, err)
 						break
 					}
 
@@ -1730,7 +1730,7 @@ func ZDGet() iris.Handler {
 			sizebuffer, err := pread.Read(readbuffer)
 			if err != nil {
 				if err == io.EOF {
-					//getLogger.Infof("| sizebuffer end of file | File [%s] | DB [%s] | %v", file, dbf, err)
+					// getLogger.Infof("| sizebuffer end of file | File [%s] | DB [%s] | %v", file, dbf, err)
 					break
 				}
 

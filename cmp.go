@@ -101,7 +101,7 @@ func CMPScheduler(cdb *badgerhold.Store) {
 				continue
 
 			}
-			defer db.Close()
+			// No need to defer in loop
 
 			err = db.CompactQuietly()
 			if err != nil {
