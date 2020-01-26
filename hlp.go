@@ -54,7 +54,7 @@ func BoltOpenWrite(dbpath string, fmode os.FileMode, timeout time.Duration, open
 
 }
 
-func BoltOpenRead(dbpath string, fmode os.FileMode, timeout time.Duration, opentries int, list string) (*bolt.DB, error) {
+func BoltOpenRead(dbpath string, fmode os.FileMode, timeout time.Duration, opentries int, freelist string) (*bolt.DB, error) {
 
 	i := 0
 
@@ -109,19 +109,19 @@ func DetectEndian() {
 
 func DetectUser() {
 
-	user, err := user.Current()
+	cuser, err := user.Current()
 	if err != nil {
 		fmt.Printf("Can`t determine current user error | %v\n", err)
 		os.Exit(1)
 	}
 
-	Uid, err = strconv.ParseInt(user.Uid, 10, 16)
+	Uid, err = strconv.ParseInt(cuser.Uid, 10, 16)
 	if err != nil {
 		fmt.Printf("Can`t int convert current user uid error | %v\n", err)
 		os.Exit(1)
 	}
 
-	Gid, err = strconv.ParseInt(user.Gid, 10, 16)
+	Gid, err = strconv.ParseInt(cuser.Gid, 10, 16)
 	if err != nil {
 		fmt.Printf("Can`t int convert current user gid error | %v\n", err)
 		os.Exit(1)

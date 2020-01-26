@@ -178,7 +178,7 @@ var (
 
 func init() {
 
-	var version string = "1.1.0"
+	var version string = "1.1.1"
 	var vprint bool = false
 	var help bool = false
 
@@ -211,7 +211,7 @@ func init() {
 
 	rgxonlyssl := regexp.MustCompile("^(?i)(true|false)$")
 	mchonlyssl := rgxonlyssl.MatchString(fmt.Sprintf("%t", config.Global.ONLYSSL))
-	Check(mchonlyssl, "[global]", "onlyssl", (fmt.Sprintf("%t", config.Global.ONLYSSL)), "true or false", DoExit)
+	Check(mchonlyssl, "[global]", "onlyssl", fmt.Sprintf("%t", config.Global.ONLYSSL), "true or false", DoExit)
 
 	mchreadtimeout := RBInt(config.Global.READTIMEOUT, 0, 86400)
 	Check(mchreadtimeout, "[global]", "readtimeout", fmt.Sprintf("%d", config.Global.READTIMEOUT), "from 0 to 86400", DoExit)
@@ -227,7 +227,7 @@ func init() {
 
 	rgxkeepalive := regexp.MustCompile("^(?i)(true|false)$")
 	mchkeepalive := rgxkeepalive.MatchString(fmt.Sprintf("%t", config.Global.KEEPALIVE))
-	Check(mchkeepalive, "[global]", "keepalive", (fmt.Sprintf("%t", config.Global.KEEPALIVE)), "true or false", DoExit)
+	Check(mchkeepalive, "[global]", "keepalive", fmt.Sprintf("%t", config.Global.KEEPALIVE), "true or false", DoExit)
 
 	if config.Global.REALHEADER != "" {
 		rgxrealheader := regexp.MustCompile("^([a-zA-Z0-9-_]+)")
@@ -247,7 +247,7 @@ func init() {
 
 	rgxdebugmode := regexp.MustCompile("^(?i)(true|false)$")
 	mchdebugmode := rgxdebugmode.MatchString(fmt.Sprintf("%t", config.Global.DEBUGMODE))
-	Check(mchdebugmode, "[global]", "debugmode", (fmt.Sprintf("%t", config.Global.DEBUGMODE)), "true or false", DoExit)
+	Check(mchdebugmode, "[global]", "debugmode", fmt.Sprintf("%t", config.Global.DEBUGMODE), "true or false", DoExit)
 
 	if config.Global.FREELIST != "" {
 		rgxfreelist := regexp.MustCompile("^(?i)(hashmap|array)$")
@@ -290,7 +290,7 @@ func init() {
 
 	rgxcmpsched := regexp.MustCompile("^(?i)(true|false)$")
 	mchcmpsched := rgxcmpsched.MatchString(fmt.Sprintf("%t", config.Global.CMPSCHED))
-	Check(mchcmpsched, "[global]", "cmpsched", (fmt.Sprintf("%t", config.Global.CMPSCHED)), "true or false", DoExit)
+	Check(mchcmpsched, "[global]", "cmpsched", fmt.Sprintf("%t", config.Global.CMPSCHED), "true or false", DoExit)
 
 	if config.Global.CMPSCHED {
 
@@ -564,79 +564,79 @@ func init() {
 		}
 
 		mchupload := rgxupload.MatchString(fmt.Sprintf("%t", Server.UPLOAD))
-		Check(mchupload, section, "upload", (fmt.Sprintf("%t", Server.UPLOAD)), "true or false", DoExit)
+		Check(mchupload, section, "upload", fmt.Sprintf("%t", Server.UPLOAD), "true or false", DoExit)
 
 		mchdelete := rgxdelete.MatchString(fmt.Sprintf("%t", Server.DELETE))
-		Check(mchdelete, section, "delete", (fmt.Sprintf("%t", Server.DELETE)), "true or false", DoExit)
+		Check(mchdelete, section, "delete", fmt.Sprintf("%t", Server.DELETE), "true or false", DoExit)
 
 		mchcompaction := rgxcompaction.MatchString(fmt.Sprintf("%t", Server.COMPACTION))
-		Check(mchcompaction, section, "compaction", (fmt.Sprintf("%t", Server.COMPACTION)), "true or false", DoExit)
+		Check(mchcompaction, section, "compaction", fmt.Sprintf("%t", Server.COMPACTION), "true or false", DoExit)
 
 		mchgetbolt := rgxgetbolt.MatchString(fmt.Sprintf("%t", Server.GETBOLT))
-		Check(mchgetbolt, section, "getbolt", (fmt.Sprintf("%t", Server.GETBOLT)), "true or false", DoExit)
+		Check(mchgetbolt, section, "getbolt", fmt.Sprintf("%t", Server.GETBOLT), "true or false", DoExit)
 
 		mchgetcount := rgxgetcount.MatchString(fmt.Sprintf("%t", Server.GETCOUNT))
-		Check(mchgetcount, section, "getcount", (fmt.Sprintf("%t", Server.GETCOUNT)), "true or false", DoExit)
+		Check(mchgetcount, section, "getcount", fmt.Sprintf("%t", Server.GETCOUNT), "true or false", DoExit)
 
 		mchgetkeys := rgxgetkeys.MatchString(fmt.Sprintf("%t", Server.GETKEYS))
-		Check(mchgetkeys, section, "getkeys", (fmt.Sprintf("%t", Server.GETKEYS)), "true or false", DoExit)
+		Check(mchgetkeys, section, "getkeys", fmt.Sprintf("%t", Server.GETKEYS), "true or false", DoExit)
 
 		mchnonunique := rgxnonunique.MatchString(fmt.Sprintf("%t", Server.NONUNIQUE))
-		Check(mchnonunique, section, "nonunique", (fmt.Sprintf("%t", Server.NONUNIQUE)), "true or false", DoExit)
+		Check(mchnonunique, section, "nonunique", fmt.Sprintf("%t", Server.NONUNIQUE), "true or false", DoExit)
 
 		mchwriteintegrity := rgxwriteintegrity.MatchString(fmt.Sprintf("%t", Server.WRITEINTEGRITY))
-		Check(mchwriteintegrity, section, "writeintegrity", (fmt.Sprintf("%t", Server.WRITEINTEGRITY)), "true or false", DoExit)
+		Check(mchwriteintegrity, section, "writeintegrity", fmt.Sprintf("%t", Server.WRITEINTEGRITY), "true or false", DoExit)
 
 		mchreadintegrity := rgxreadintegrity.MatchString(fmt.Sprintf("%t", Server.READINTEGRITY))
-		Check(mchreadintegrity, section, "readintegrity", (fmt.Sprintf("%t", Server.READINTEGRITY)), "true or false", DoExit)
+		Check(mchreadintegrity, section, "readintegrity", fmt.Sprintf("%t", Server.READINTEGRITY), "true or false", DoExit)
 
 		mchtrytimes := RBInt(Server.TRYTIMES, 1, 1000)
-		Check(mchtrytimes, section, "trytimes", (fmt.Sprintf("%d", Server.TRYTIMES)), "from 1 to 1000", DoExit)
+		Check(mchtrytimes, section, "trytimes", fmt.Sprintf("%d", Server.TRYTIMES), "from 1 to 1000", DoExit)
 
 		mchopentries := RBInt(Server.OPENTRIES, 1, 1000)
-		Check(mchopentries, section, "opentries", (fmt.Sprintf("%d", Server.OPENTRIES)), "from 1 to 1000", DoExit)
+		Check(mchopentries, section, "opentries", fmt.Sprintf("%d", Server.OPENTRIES), "from 1 to 1000", DoExit)
 
 		mchlocktimeout := RBInt(Server.LOCKTIMEOUT, 1, 3600)
-		Check(mchlocktimeout, section, "locktimeout", (fmt.Sprintf("%d", Server.LOCKTIMEOUT)), "from 1 to 3600", DoExit)
+		Check(mchlocktimeout, section, "locktimeout", fmt.Sprintf("%d", Server.LOCKTIMEOUT), "from 1 to 3600", DoExit)
 
 		mchfmaxsize := RBInt64(Server.FMAXSIZE, 1, 33554432)
-		Check(mchfmaxsize, section, "fmaxsize", (fmt.Sprintf("%d", Server.FMAXSIZE)), "from 1 to 33554432", DoExit)
+		Check(mchfmaxsize, section, "fmaxsize", fmt.Sprintf("%d", Server.FMAXSIZE), "from 1 to 33554432", DoExit)
 
 		mchargs := rgxargs.MatchString(fmt.Sprintf("%t", Server.ARGS))
-		Check(mchargs, section, "args", (fmt.Sprintf("%t", Server.ARGS)), "true or false", DoExit)
+		Check(mchargs, section, "args", fmt.Sprintf("%t", Server.ARGS), "true or false", DoExit)
 
 		mchcctrl := RBInt(Server.CCTRL, 0, 2147483647)
-		Check(mchcctrl, section, "cctrl", (fmt.Sprintf("%d", Server.CCTRL)), "from 0 to 2147483647", DoExit)
+		Check(mchcctrl, section, "cctrl", fmt.Sprintf("%d", Server.CCTRL), "from 0 to 2147483647", DoExit)
 
 		mchminbuffer := RBInt64(Server.MINBUFFER, 4096, 524288)
-		Check(mchminbuffer, section, "minbuffer", (fmt.Sprintf("%d", Server.MINBUFFER)), "from 4096 to 524288", DoExit)
+		Check(mchminbuffer, section, "minbuffer", fmt.Sprintf("%d", Server.MINBUFFER), "from 4096 to 524288", DoExit)
 
 		mchlowbuffer := RBInt64(Server.LOWBUFFER, 1048576, 33554432)
-		Check(mchlowbuffer, section, "lowbuffer", (fmt.Sprintf("%d", Server.LOWBUFFER)), "from 1048576 to 33554432", DoExit)
+		Check(mchlowbuffer, section, "lowbuffer", fmt.Sprintf("%d", Server.LOWBUFFER), "from 1048576 to 33554432", DoExit)
 
 		mchmedbuffer := RBInt64(Server.MEDBUFFER, 67108864, 268169216)
-		Check(mchmedbuffer, section, "medbuffer", (fmt.Sprintf("%d", Server.MEDBUFFER)), "from 67108864 to 268169216", DoExit)
+		Check(mchmedbuffer, section, "medbuffer", fmt.Sprintf("%d", Server.MEDBUFFER), "from 67108864 to 268169216", DoExit)
 
 		mchbigbuffer := RBInt64(Server.BIGBUFFER, 536870912, 2147483647)
-		Check(mchbigbuffer, section, "bigbuffer", (fmt.Sprintf("%d", Server.BIGBUFFER)), "from 536870912 to 2147483647", DoExit)
+		Check(mchbigbuffer, section, "bigbuffer", fmt.Sprintf("%d", Server.BIGBUFFER), "from 536870912 to 2147483647", DoExit)
 
 		mchfilemode := rgxfilemode.MatchString(fmt.Sprintf("%d", Server.FILEMODE))
-		Check(mchfilemode, section, "filemode", (fmt.Sprintf("%d", Server.FILEMODE)), "from 0600 to 0666", DoExit)
+		Check(mchfilemode, section, "filemode", fmt.Sprintf("%d", Server.FILEMODE), "from 0600 to 0666", DoExit)
 
 		mchdirmode := rgxdirmode.MatchString(fmt.Sprintf("%d", Server.DIRMODE))
-		Check(mchdirmode, section, "dirmode", (fmt.Sprintf("%d", Server.DIRMODE)), "from 0700 to 0777", DoExit)
+		Check(mchdirmode, section, "dirmode", fmt.Sprintf("%d", Server.DIRMODE), "from 0700 to 0777", DoExit)
 
 		mchdelbolt := rgxdelbolt.MatchString(fmt.Sprintf("%t", Server.DELBOLT))
-		Check(mchdelbolt, section, "delbolt", (fmt.Sprintf("%t", Server.DELBOLT)), "true or false", DoExit)
+		Check(mchdelbolt, section, "delbolt", fmt.Sprintf("%t", Server.DELBOLT), "true or false", DoExit)
 
 		mchdeldir := rgxdeldir.MatchString(fmt.Sprintf("%t", Server.DELDIR))
-		Check(mchdeldir, section, "deldir", (fmt.Sprintf("%t", Server.DELDIR)), "true or false", DoExit)
+		Check(mchdeldir, section, "deldir", fmt.Sprintf("%t", Server.DELDIR), "true or false", DoExit)
 
 		mchgzstatic := rgxgzstatic.MatchString(fmt.Sprintf("%t", Server.GZSTATIC))
-		Check(mchgzstatic, section, "gzstatic", (fmt.Sprintf("%t", Server.GZSTATIC)), "true or false", DoExit)
+		Check(mchgzstatic, section, "gzstatic", fmt.Sprintf("%t", Server.GZSTATIC), "true or false", DoExit)
 
 		mchlog4xx := rgxlog4xx.MatchString(fmt.Sprintf("%t", Server.LOG4XX))
-		Check(mchlog4xx, section, "log4xx", (fmt.Sprintf("%t", Server.LOG4XX)), "true or false", DoExit)
+		Check(mchlog4xx, section, "log4xx", fmt.Sprintf("%t", Server.LOG4XX), "true or false", DoExit)
 
 		// Output Important Server Configuration Options
 
