@@ -44,10 +44,10 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		if wshutdown {
 			ctx.StatusCode(iris.StatusInternalServerError)
-			//_, err := ctx.WriteString("Shutdown wZD server in progress\n")
-			//if err != nil {
+			// _, err := ctx.WriteString("Shutdown wZD server in progress\n")
+			// if err != nil {
 			//	putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
-			//}
+			// }
 			return
 		}
 
@@ -564,7 +564,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 							if err == io.EOF {
 
 								if sizebuffer == 0 {
-									//putLogger.Infof("| sizebuffer end of file | File [%s] | Path [%s] | %v", file, abs, err)
+									// putLogger.Infof("| sizebuffer end of file | File [%s] | Path [%s] | %v", file, abs, err)
 									break
 								}
 
@@ -1155,7 +1155,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 							b := tx.Bucket([]byte(cbucket))
 							if b != nil {
-								err = b.Put([]byte("counter"), []byte(nb))
+								err = b.Put([]byte("counter"), nb)
 								if err != nil {
 									return err
 								}
@@ -1206,7 +1206,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 						b := tx.Bucket([]byte(cbucket))
 						if b != nil {
-							err = b.Put([]byte("counter"), []byte(nb))
+							err = b.Put([]byte("counter"), nb)
 							if err != nil {
 								return err
 							}
@@ -1474,7 +1474,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					b := tx.Bucket([]byte(bucket))
 					if b != nil {
-						err = b.Put([]byte(file), []byte(endbuffer.Bytes()))
+						err = b.Put([]byte(file), endbuffer.Bytes())
 						if err != nil {
 							return err
 						}

@@ -40,10 +40,10 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		if wshutdown {
 			ctx.StatusCode(iris.StatusInternalServerError)
-			//_, err := ctx.WriteString("Shutdown wZD server in progress\n")
-			//if err != nil {
+			// _, err := ctx.WriteString("Shutdown wZD server in progress\n")
+			// if err != nil {
 			//	delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
-			//}
+			// }
 			return
 		}
 

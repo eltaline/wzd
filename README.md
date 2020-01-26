@@ -41,7 +41,7 @@ Fixed in version 1.1.0:
 Features
 ========
 
-- Multithreading
+- Multi threading
 - Multi servers for fault tolerance and load balancing
 - Supports HTTPS and IP authorization
 - Supported HTTP methods: GET, HEAD, OPTIONS, PUT, POST and DELETE
@@ -50,7 +50,7 @@ Features
 - Linear scaling of read and write using clustered file systems
 - Effective methods of reading and writing data
 - Supports CRC data integrity when writing or reading
-- Support for Range and Accept-Ranges, If-None-Match and If-Modifed-Since headers
+- Support for Range and Accept-Ranges, If-None-Match and If-Modified-Since headers
 - Store and share 10,000 times more files than there are inodes on any POSIX compatible file system, depending on the directory structure
 - Support for adding, updating, deleting files and values, and delayed compaction/defragmentation of Bolt archives
 - Allows the server to be used as a NoSQL database, with easy sharding based on the directory structure
@@ -59,7 +59,7 @@ Features
 - Mixed mode support, with ability to save large files separately from Bolt archives
 - Support for obtaining a list or number of keys in a directory, including non-unique ones
 - Semi-dynamic buffers for minimal memory consumption and optimal network performance tuning
-- Includes multithreaded <a href=https://github.com/eltaline/wza>wZA</a> archiver for migrating files without stopping the service
+- Includes multi threaded <a href=https://github.com/eltaline/wza>wZA</a> archiver for migrating files without stopping the service
 
 Incompatibilities
 ========
@@ -96,7 +96,7 @@ Our cluster used has about 250,000,000 small pictures and 15,000,000 directories
 
 With a fragmented directory structure, an average of 10 to 1000 files are stored in most directories. After installing wZD and archiving the files in Bolt archives, it turned out about 25 times less files, about 10,000,000. With proper planning of the structure, a smaller number of files could have been achieved, but this is not possible if the already existing structure remains unchanged. Proper planning would result in very large inodes savings, low memory consumption of the cluster FS, significant acceleration of the MooseFS operation itself, and a reduction in the actual space occupied on the MooseFS cluster FS. The fact is, MooseFS always allocates a block of 64KB for each file, that is, even if a file has a size of 3KB, will still be allocated 64KB.
 
-The multithreaded <a href=https://github.com/eltaline/wza>wZA</a> archiver has already been tested on real data.
+The multi threaded <a href=https://github.com/eltaline/wza>wZA</a> archiver has already been tested on real data.
 
 Our cluster used (10 servers) is an Origin server installed behind a CDN network and served by only 2 wZD servers.
 
@@ -309,8 +309,8 @@ This guide provides an example of a single-threaded start, stopping at any error
 
 Restarting archiving without the --overwrite option will not overwrite files in Bolt archives. The same is true when unpacking.
 
-The archiver also supports the multithreaded version --threads= and also other options.
-In the multithreaded version, the --ignore option is automatically applied so as not to stop running threads when any errors occur. In case of an error with the --delete option turned on, the source file will not be deleted.
+The archiver also supports the multi threaded version --threads= and also other options.
+In the multi threaded version, the --ignore option is automatically applied so as not to stop running threads when any errors occur. In case of an error with the --delete option turned on, the source file will not be deleted.
 
 A full description of all product parameters is available here: <a href="/OPTIONS.md">Options</a>
 

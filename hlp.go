@@ -439,7 +439,7 @@ func BucketStats(db *bolt.DB, bucket string) (cnt int, err error) {
 
 func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool) (keys []string, err error) {
 
-	allkeys := []string{}
+	var allkeys []string
 	compare := map[string]bool{}
 	keys = []string{}
 	var k string
