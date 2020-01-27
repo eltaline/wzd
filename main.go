@@ -135,9 +135,9 @@ var (
 	// Endian global variable
 	Endian binary.ByteOrder
 
-	// Uid System user UID
+	// Uid : System user UID
 	Uid int64
-	// Gid System user GID
+	// Gid : System user GID
 	Gid int64
 
 	config     Config
