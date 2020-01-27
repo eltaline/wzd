@@ -190,7 +190,7 @@ func FileExists(filename string) bool {
 
 }
 
-// FileExists : check existence of requested file or symlink
+// FileOrLinkExists : check existence of requested file or symlink
 func FileOrLinkExists(filename string) bool {
 
 	if fi, err := os.Stat(filename); err == nil {
