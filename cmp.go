@@ -85,6 +85,7 @@ func CMPScheduler(cdb *badgerhold.Store, keymutex *mmutex.Mutex) {
 						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
 					}
 
+					keymutex.Unlock(dbf.Path)
 					continue
 
 				}
@@ -98,6 +99,7 @@ func CMPScheduler(cdb *badgerhold.Store, keymutex *mmutex.Mutex) {
 						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
 					}
 
+					keymutex.Unlock(dbf.Path)
 					continue
 
 				}
@@ -113,6 +115,7 @@ func CMPScheduler(cdb *badgerhold.Store, keymutex *mmutex.Mutex) {
 						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
 					}
 
+					keymutex.Unlock(dbf.Path)
 					continue
 
 				}
@@ -121,13 +124,14 @@ func CMPScheduler(cdb *badgerhold.Store, keymutex *mmutex.Mutex) {
 				err = db.CompactQuietly()
 				if err != nil {
 					appLogger.Errorf("| Scheduled compaction task error | DB [%s] | %v", dbf.Path, err)
-					db.Close()
 
 					err = cdb.Delete(dbf.Path, sdts)
 					if err != nil {
 						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
 					}
 
+					db.Close()
+					keymutex.Unlock(dbf.Path)
 					continue
 
 				}
@@ -135,13 +139,14 @@ func CMPScheduler(cdb *badgerhold.Store, keymutex *mmutex.Mutex) {
 				err = os.Chmod(dbf.Path, filemode)
 				if err != nil {
 					appLogger.Errorf("Can`t chmod db error | DB [%s] | %v", dbf.Path, err)
-					db.Close()
 
 					err = cdb.Delete(dbf.Path, sdts)
 					if err != nil {
 						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
 					}
 
+					db.Close()
+					keymutex.Unlock(dbf.Path)
 					continue
 
 				}
@@ -150,10 +155,12 @@ func CMPScheduler(cdb *badgerhold.Store, keymutex *mmutex.Mutex) {
 				if err != nil {
 					appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
 					db.Close()
+					keymutex.Unlock(dbf.Path)
 					continue
 				}
 
 				db.Close()
+				keymutex.Unlock(dbf.Path)
 
 			} else {
 

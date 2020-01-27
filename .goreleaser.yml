@@ -110,10 +110,9 @@ dockers:
     # Note that goreleaser will create the same structure inside the temporary
     # folder, so if you add `foo/bar.json` here, on your Dockerfile you can
     # `COPY foo/bar.json /whatever.json`.
-    # Also note that the paths here are relative to the folder in which
+    # Also, note that the paths here are relative to the folder in which
     # goreleaser is being run.
-    # This field does not support wildcards, you can add an entire folder here
-    # and use wildcards when you `COPY`/`ADD` in your Dockerfile.
+    # This field does not support wildcards, you can add an entire folder here and use wildcards when you `COPY`/`ADD` in your Dockerfile.
     extra_files:
     - conf/wzd/docker/wzd-docker.conf
     - conf/wzd/docker/get-localhost.conf

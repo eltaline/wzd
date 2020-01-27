@@ -379,7 +379,7 @@ func init() {
 		section = fmt.Sprintf("%s%s%s", section, Server.HOST, "]")
 
 		if Server.HOST == "" {
-			fmt.Printf("Server host can not be empty error | %s%s\n", section, " | ex. host=\"localhost\"")
+			fmt.Printf("Server host cannot be empty error | %s%s\n", section, " | ex. host=\"localhost\"")
 			os.Exit(1)
 		}
 
@@ -391,8 +391,8 @@ func init() {
 			Check(mchsslcrt, section, "sslcrt", Server.SSLCRT, "/path/to/sslcrt.pem", DoExit)
 
 			if Server.SSLKEY == "" {
-				appLogger.Errorf("| SSL key can not be empty error | %s | File [%s]", section, Server.SSLKEY)
-				fmt.Printf("SSL key can not be empty error | %s | File [%s]\n", section, Server.SSLKEY)
+				appLogger.Errorf("| SSL key cannot be empty error | %s | File [%s]", section, Server.SSLKEY)
+				fmt.Printf("SSL key cannot be empty error | %s | File [%s]\n", section, Server.SSLKEY)
 				os.Exit(1)
 			}
 
@@ -409,8 +409,8 @@ func init() {
 			Check(mchsslkey, section, "sslkey", Server.SSLKEY, "/path/to/sslkey.pem", DoExit)
 
 			if Server.SSLCRT == "" {
-				appLogger.Errorf("| SSL certificate can not be empty error | %s | File [%s]", section, Server.SSLCRT)
-				fmt.Printf("SSL certificate can not be empty error | %s | File [%s]\n", section, Server.SSLCRT)
+				appLogger.Errorf("| SSL certificate cannot be empty error | %s | File [%s]", section, Server.SSLCRT)
+				fmt.Printf("SSL certificate cannot be empty error | %s | File [%s]\n", section, Server.SSLCRT)
 				os.Exit(1)
 			}
 
@@ -443,8 +443,8 @@ func init() {
 
 				_, _, err := net.ParseCIDR(line)
 				if err != nil {
-					appLogger.Errorf("| Bad CIDR line format in get allow file error | %s | File [%s] | Line [%s]", section, Server.GETALLOW, line)
-					fmt.Printf("Bad CIDR line format in get allow file error | %s | File [%s] | Line [%s]\n", section, Server.GETALLOW, line)
+					appLogger.Errorf("| Bad CIDR line format in a get allow file error | %s | File [%s] | Line [%s]", section, Server.GETALLOW, line)
+					fmt.Printf("Bad CIDR line format in a get allow file error | %s | File [%s] | Line [%s]\n", section, Server.GETALLOW, line)
 					os.Exit(1)
 				}
 
@@ -461,7 +461,7 @@ func init() {
 
 			err = sgetallow.Err()
 			if err != nil {
-				fmt.Printf("Read lines from get allow file error | %s | File [%s] | %v\n", section, Server.GETALLOW, err)
+				fmt.Printf("Read lines from a get allow file error | %s | File [%s] | %v\n", section, Server.GETALLOW, err)
 				return
 			}
 
@@ -537,8 +537,8 @@ func init() {
 
 				_, _, err := net.ParseCIDR(line)
 				if err != nil {
-					appLogger.Errorf("| Bad CIDR line format in del allow file error | %s | File [%s] | Line [%s]", section, Server.DELALLOW, line)
-					fmt.Printf("Bad CIDR line format in del allow file error | %s | File [%s] | Line [%s]\n", section, Server.DELALLOW, line)
+					appLogger.Errorf("| Bad CIDR line format in a del allow file error | %s | File [%s] | Line [%s]", section, Server.DELALLOW, line)
+					fmt.Printf("Bad CIDR line format in a del allow file error | %s | File [%s] | Line [%s]\n", section, Server.DELALLOW, line)
 					os.Exit(1)
 				}
 
@@ -555,7 +555,7 @@ func init() {
 
 			err = sdelallow.Err()
 			if err != nil {
-				fmt.Printf("Read lines from del allow file error | %s | File [%s] | %v\n", section, Server.DELALLOW, err)
+				fmt.Printf("Read lines from a del allow file error | %s | File [%s] | %v\n", section, Server.DELALLOW, err)
 				return
 			}
 
@@ -822,7 +822,7 @@ func main() {
 
 	// Pid Handling
 
-	appLogger.Warnf("wZD server running with pid: %s", gpid)
+	appLogger.Warnf("wZD server running with a pid: %s", gpid)
 
 	// Map Mutex
 

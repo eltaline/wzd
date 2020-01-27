@@ -31,7 +31,7 @@ bindaddrssl
 - **Section:** [global]
 
 onlyssl
-- **Description:** This globally disables standart HTTP address and port for all virtual hosts. It is not configured for virtual host.
+- **Description:** This globally disables standart HTTP address and port for all virtual hosts. It is not configured for a virtual host.
 - **Default:** false
 - **Values:** true or false
 - **Type:** bool
@@ -66,7 +66,7 @@ idletimeout
 - **Section:** [global]
 
 keepalive
-- **Description:** This globally enables or disables keep alive. It is not configured for virtual host.
+- **Description:** This globally enables or disables keep alive. It is not configured for a virtual host.
 - **Default:** false
 - **Values:** true or false
 - **Type:** bool
@@ -85,14 +85,14 @@ charset
 - **Section:** [global]
 
 debugmode
-- **Description:** This is the debug mode. It is not configured for virtual host.
+- **Description:** This globally enables debug mode. It is not configured for a virtual host.
 - **Default:** false
 - **Values:** true or false
 - **Type:** bool
 - **Section:** [global]
 
 freelist
-- **Description:** This globally sets the type of page release algorithm in BoltDB. The hashmap algorithm is faster. It is not configured for virtual host.
+- **Description:** This globally sets the type of page release algorithm in BoltDB. The hashmap algorithm is faster. It is not configured for a virtual host.
 - **Default:** hashmap
 - **Values:** hashmap or array
 - **Type:** string
@@ -269,7 +269,7 @@ opentries
 - **Section:** [server.name]
 
 fmaxsize
-- **Description:** This is the maximum size of the uploaded file or value in the Bolt archive. If this parameter is exceeded, the file or value will be loaded as a separate file with the same path. The recommended size is not more than 1048576 (1MB). It is not recommended to upload files or values to Bolt archives that are larger than 16MB. Such files or values must be stored separately (bytes).
+- **Description:** This is the maximum size of the uploaded file or value in the Bolt archive. If this parameter is exceeded, the file or value will be loaded as a separate file with the same path. The recommended size is not more than 1048576 (1 MB). It is not recommended uploading files or values to Bolt archives that are larger than 16 MB. Such files or values must be stored separately (bytes).
 - **Default:** Required
 - **Values:** 1-33554432
 - **Type:** int64
@@ -350,7 +350,7 @@ delbolt
 - **Section:** [server.name]
 
 deldir
-- **Description:** If this is enabled, then the wZD server will delete the last empty directory, provided there really are no files or subdirectories and the number of keys in the Bolt archive = 0. Only the current directory is deleted. Recursive traversal is not implemented for security reasons.
+- **Description:** If this is enabled, then the wZD server will delete the last empty directory, provided there really are no files or subdirectories and the number of keys in the Bolt archive = 0. Only the current directory is deleted. A recursive traversal is not implemented for security reasons.
 - **Default:** Required
 - **Values:** true or false
 - **Type:** bool
