@@ -119,15 +119,14 @@ type Compact struct {
 	Time   time.Time
 }
 
-// StrCIDR: type for CIDR networks
-type StrCIDR struct {
-	Addr string
-}
-
 // Allow: type for key and slice pairs of a virtual host and CIDR allowable networks
 type Allow struct {
 	Vhost string
-	CIDR  []StrCIDR
+	CIDR  []strCIDR
+}
+
+type strCIDR struct {
+	Addr string
 }
 
 // Global Variables
