@@ -186,7 +186,7 @@ var (
 
 func init() {
 
-	var version string = "1.1.1"
+	var version string = "1.1.2"
 	var vprint bool = false
 	var help bool = false
 
