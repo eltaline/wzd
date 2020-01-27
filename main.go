@@ -849,7 +849,7 @@ func main() {
 	// Go CMP Scheduler
 
 	if cmpsched {
-		go CMPScheduler(cdb)
+		go CMPScheduler(cdb, keymutex)
 	}
 
 	// Web Server

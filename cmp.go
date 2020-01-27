@@ -2,13 +2,13 @@ package main
 
 import (
 	"github.com/eltaline/badgerhold"
+	"github.com/eltaline/mmutex"
 	"os"
 	"time"
 )
 
-// CMP Scheduler
-
-func CMPScheduler(cdb *badgerhold.Store) {
+// CMPScheduler: Compaction/Defragmentation scheduler
+func CMPScheduler(cdb *badgerhold.Store, keymutex *mmutex.Mutex) {
 	defer wg.Done()
 
 	// Wait Group
@@ -18,6 +18,7 @@ func CMPScheduler(cdb *badgerhold.Store) {
 	// Variables
 
 	opentries := 30
+	trytimes := 30
 	timeout := time.Duration(60) * time.Second
 
 	// Struct
@@ -60,85 +61,105 @@ func CMPScheduler(cdb *badgerhold.Store) {
 
 		for _, dbf := range pathsSlice {
 
-			sdts := &Compact{}
+			key := false
 
-			if !FileExists(dbf.Path) {
+			for i := 0; i < trytimes; i++ {
 
-				appLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
-				err = cdb.Delete(dbf.Path, sdts)
-				if err != nil {
-					appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
+				if key = keymutex.TryLock(dbf.Path); key {
+					break
 				}
 
-				continue
+				time.Sleep(defsleep)
 
 			}
 
-			infile, err := os.Stat(dbf.Path)
-			if err != nil {
+			if key {
 
-				appLogger.Errorf("| Can`t stat file error | File [%s] | %v", dbf.Path, err)
+				sdts := &Compact{}
+
+				if !FileExists(dbf.Path) {
+
+					appLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
+					err = cdb.Delete(dbf.Path, sdts)
+					if err != nil {
+						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
+					}
+
+					continue
+
+				}
+
+				infile, err := os.Stat(dbf.Path)
+				if err != nil {
+
+					appLogger.Errorf("| Can`t stat file error | File [%s] | %v", dbf.Path, err)
+					err = cdb.Delete(dbf.Path, sdts)
+					if err != nil {
+						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
+					}
+
+					continue
+
+				}
+
+				filemode := infile.Mode()
+
+				db, err := BoltOpenWrite(dbf.Path, filemode, timeout, opentries, freelist)
+				if err != nil {
+
+					appLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
+					err = cdb.Delete(dbf.Path, sdts)
+					if err != nil {
+						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
+					}
+
+					continue
+
+				}
+				// No need to defer in loop
+
+				err = db.CompactQuietly()
+				if err != nil {
+					appLogger.Errorf("| Scheduled compaction task error | DB [%s] | %v", dbf.Path, err)
+					db.Close()
+
+					err = cdb.Delete(dbf.Path, sdts)
+					if err != nil {
+						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
+					}
+
+					continue
+
+				}
+
+				err = os.Chmod(dbf.Path, filemode)
+				if err != nil {
+					appLogger.Errorf("Can`t chmod db error | DB [%s] | %v", dbf.Path, err)
+					db.Close()
+
+					err = cdb.Delete(dbf.Path, sdts)
+					if err != nil {
+						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
+					}
+
+					continue
+
+				}
+
 				err = cdb.Delete(dbf.Path, sdts)
 				if err != nil {
 					appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
+					db.Close()
+					continue
 				}
 
-				continue
-
-			}
-
-			filemode := infile.Mode()
-
-			db, err := BoltOpenWrite(dbf.Path, filemode, timeout, opentries, freelist)
-			if err != nil {
-
-				appLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
-				err = cdb.Delete(dbf.Path, sdts)
-				if err != nil {
-					appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-				}
-
-				continue
-
-			}
-			// No need to defer in loop
-
-			err = db.CompactQuietly()
-			if err != nil {
-				appLogger.Errorf("| Scheduled compaction task error | DB [%s] | %v", dbf.Path, err)
 				db.Close()
 
-				err = cdb.Delete(dbf.Path, sdts)
-				if err != nil {
-					appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-				}
+			} else {
 
-				continue
-
-			}
-
-			err = os.Chmod(dbf.Path, filemode)
-			if err != nil {
-				appLogger.Errorf("Can`t chmod db error | DB [%s] | %v", dbf.Path, err)
-				db.Close()
-
-				err = cdb.Delete(dbf.Path, sdts)
-				if err != nil {
-					appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-				}
-
-				continue
-
-			}
-
-			err = cdb.Delete(dbf.Path, sdts)
-			if err != nil {
-				appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-				db.Close()
+				appLogger.Errorf("| Timeout mmutex lock error | DB [%s]", dbf.Path)
 				continue
 			}
-
-			db.Close()
 
 		}
 
