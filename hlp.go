@@ -251,8 +251,6 @@ func FileKeys(dirpath string) (keys []string, err error) {
 
 }
 
-// Remove File Handler
-
 // RemoveFile: remove requested file and/or empty dir
 func RemoveFile(file string, directory string, deldir bool) error {
 
