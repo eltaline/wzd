@@ -21,6 +21,7 @@ import (
 
 // Put
 
+// ZDPut: PUT/POST/PATCH methods
 func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 	return func(ctx iris.Context) {
 		defer wg.Done()
