@@ -20,7 +20,7 @@ import (
 
 // Get
 
-// ZDGet: GET/HEAD/OPTIONS methods
+// ZDGet : GET/HEAD/OPTIONS methods
 func ZDGet() iris.Handler {
 	return func(ctx iris.Context) {
 		defer wg.Done()
