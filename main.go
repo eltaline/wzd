@@ -25,7 +25,7 @@ import (
 
 // Global Configuration
 
-// Config: Global configuration type
+// Config : Global configuration type
 type Config struct {
 	Global global
 	Server map[string]server
@@ -93,7 +93,7 @@ type server struct {
 	LOG4XX         bool
 }
 
-// Header: type contains binary header fields
+// Header : type contains binary header fields
 type Header struct {
 	Size uint64
 	Date uint32
@@ -106,20 +106,20 @@ type Header struct {
 	Rsvr uint64
 }
 
-// ReqRange: type contains start and length number of bytes for range GET requests
+// ReqRange : type contains start and length number of bytes for range GET requests
 type ReqRange struct {
 	start  int64
 	length int64
 }
 
-// Compact: type contains information about db files for compaction/defragmentation
+// Compact : type contains information about db files for compaction/defragmentation
 type Compact struct {
 	Path   string
 	MachID string
 	Time   time.Time
 }
 
-// Allow: type for key and slice pairs of a virtual host and CIDR allowable networks
+// Allow : type for key and slice pairs of a virtual host and CIDR allowable networks
 type Allow struct {
 	Vhost string
 	CIDR  []strCIDR
@@ -135,9 +135,9 @@ var (
 	// Endian global variable
 	Endian binary.ByteOrder
 
-	// System user UID
+	// Uid System user UID
 	Uid int64
-	// System user GID
+	// Gid System user GID
 	Gid int64
 
 	config     Config

@@ -17,7 +17,7 @@ import (
 
 // Delete
 
-// ZDDel: DELETE method
+// ZDDel : DELETE method
 func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 	return func(ctx iris.Context) {
 		defer wg.Done()

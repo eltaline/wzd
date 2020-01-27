@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// CMPScheduler: Compaction/Defragmentation scheduler
+// CMPScheduler : Compaction/Defragmentation scheduler
 func CMPScheduler(cdb *badgerhold.Store, keymutex *mmutex.Mutex) {
 	defer wg.Done()
 

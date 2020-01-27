@@ -8,7 +8,7 @@ import (
 
 // Loggers
 
-// AppLogger
+// AppLogger : logger
 func AppLogger() (*golog.Logger, *os.File) {
 
 	appLogger := golog.New()
@@ -27,7 +27,7 @@ func AppLogger() (*golog.Logger, *os.File) {
 
 }
 
-// GetLogger
+// GetLogger : logger
 func GetLogger() (*golog.Logger, *os.File) {
 
 	getLogger := golog.New()
@@ -46,7 +46,7 @@ func GetLogger() (*golog.Logger, *os.File) {
 
 }
 
-// PutLogger
+// PutLogger : logger
 func PutLogger() (*golog.Logger, *os.File) {
 
 	putLogger := golog.New()
@@ -65,7 +65,7 @@ func PutLogger() (*golog.Logger, *os.File) {
 
 }
 
-// DelLogger
+// DelLogger : logger
 func DelLogger() (*golog.Logger, *os.File) {
 
 	delLogger := golog.New()
