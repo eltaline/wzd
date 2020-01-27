@@ -94,7 +94,7 @@ Real application
 
 Our cluster used has about 250,000,000 small pictures and 15,000,000 directories on separate SATA drives. It utilizes the MooseFS cluster file system. This works well with so many files, but at the same time, its Master servers consume 75 gigabytes of RAM, and since frequent dumps of a large amount of metadata occur, this is bad for SSD disks. Accordingly, there is also a limit of about 1 billion files in MooseFS itself with the one replica of each file.
 
-With a fragmented directory structure, an average of 10 to 1000 files are stored in most directories. After installing wZD and archiving the files in Bolt archives, it turned out about 25 times less files, about 10,000,000. With proper planning of the structure, a smaller number of files could have been achieved, but this is not possible if the already existing structure remains unchanged. Proper planning would result in very large inodes savings, low memory consumption of the cluster FS, significant acceleration of the MooseFS operation itself, and a reduction in the actual space occupied on the MooseFS cluster FS. The fact is, MooseFS always allocates a block of 64KB for each file, that is, even if a file has a size of 3KB, will still be allocated 64KB.
+With a fragmented directory structure, an average of 10 to 1000 files are stored in most directories. After installing wZD and archiving the files in Bolt archives, it turned out about 25 times less files, about 10,000,000. With proper planning of the structure, a smaller number of files could have been achieved, but this is not possible if the already existing structure remains unchanged. Proper planning would result in very large inodes savings, low memory consumption of the cluster FS, significant acceleration of the MooseFS operation itself, and a reduction in the actual space occupied on the MooseFS cluster FS. The fact is, MooseFS always allocates a block of 64 KB for each file, that is, even if a file has a size of 3 KB, will still be allocated 64 KB.
 
 The multi threaded <a href=https://github.com/eltaline/wza>wZA</a> archiver has already been tested on real data.
 
@@ -118,7 +118,7 @@ Performance tests (Updated v1.1.0)
 
 Tests were carried out on SSD disks, since on SATA disks the tests are not very objective, and there is no clear difference between working with Bolt archives and ordinary files.
 
-The test involved 32KB, 256KB, 1024KB, 4096KB, and 32768KB files.
+The test involved 32 KB, 256 KB, 1024 KB, 4096 KB, and 32768 KB files.
 
 - <b>GET 1000 files and GET 1000 files from 1000 Bolt archives</b>
 
@@ -130,7 +130,7 @@ The test involved 32KB, 256KB, 1024KB, 4096KB, and 32768KB files.
 
 As can be seen from the graphs, the difference is practically insignificant.
 
-Below is a more visual test done with files of 32 megabytes in size. In this case, writing to Bolt archives becomes slower compared to writing to regular files. Although this is a count, writing 32MB for 250ms is generally quite fast. Reading such files works quite quickly, and if one wants to store large files in Bolt archives and the write speed is not critical, such use is allowed but not recommended, and not more than 32MB per uploaded file.
+Below is a more visual test done with files of 32 megabytes in size. In this case, writing to Bolt archives becomes slower compared to writing to regular files. Although this is a count, writing 32 MB for 250ms is generally quite fast. Reading such files works quite quickly, and if one wants to store large files in Bolt archives, and the write speed is not critical, such use is allowed but not recommended, and not more than 32 MB per uploaded file.
 
 <b>GET 32M 1000 files and files from Bolt archives and PUT 32M 1000 files and files in Bolt archives</b>
 
@@ -272,9 +272,9 @@ Data migration in 3 steps without stopping the service
 
 This server was developed not only for use from scratch but also for use on current real production systems. To do this, the <a href=https://github.com/eltaline/wza>wZA</a> archiver is proposed for use with the wZD server.
 
-The archiver allows for converting current files to Bolt archives without deletion and with deletion, and also allows for unpacking them back. It supports overwrite and other functions.
+The archiver allows for converting current files to Bolt archives without deletion and with deletion, and allows for unpacking them back. It supports overwrite and other functions.
 
-**The archiver, as far as possible, is safe. It does not support recursive traversal, only works on a pre-prepared list of files or Bolt archives, and provides for repeated reading of the file after packing and CRC verification of the checksum on the fly.**
+**The archiver, as far as possible, is safe. It does not support a recursive traversal, only works on a pre-prepared list of files or Bolt archives, and provides for repeated reading of the file after packing and CRC verification of the checksum on the fly.**
 
 Data migration guide:
 
@@ -309,7 +309,7 @@ This guide provides an example of a single-threaded start, stopping at any error
 
 Restarting archiving without the --overwrite option will not overwrite files in Bolt archives. The same is true when unpacking.
 
-The archiver also supports the multi threaded version --threads= and also other options.
+The archiver also supports the multi threaded version --threads= and other options.
 In the multi threaded version, the --ignore option is automatically applied so as not to stop running threads when any errors occur. In case of an error with the --delete option turned on, the source file will not be deleted.
 
 A full description of all product parameters is available here: <a href="/OPTIONS.md">Options</a>
@@ -325,17 +325,17 @@ Notes and Q&A
 
 - Bolt archives are automatically named with the name of the directory in which they are created
 
-- Effective reduction of the number of files within the data instance depends on the selected directory structure and the planned number of file uploads in these directories
+- Effective reduction of the number of files within the data instance depends on the selected directory structure, and the planned number of file uploads in these directories
 
-- It is not recommended to upload 100,000+ files to one directory (one Bolt archive); this would be a large overhead. If possible, plan your directory structure correctly
+- It is not recommended uploading 100,000+ files to one directory (one Bolt archive); this would be a large overhead. If possible, plan your directory structure correctly
 
-- It is not recommended to upload files or values larger than 16MB to Bolt archives. By default, the parameter fmaxsize = 1048576 bytes
+- It is not recommended uploading files or values larger than 16 MB to Bolt archives. By default, the parameter fmaxsize = 1048576 bytes
 
 - If the fmaxsize parameter is exceeded, even with the "Archive: 1" client header set, the data will be loaded into a separate regular file without notification. The maximum possible size of the parameter is fmaxsize = 33554432 bytes
 
 - If the nonunique = true parameter is turned on in the virtual host, this means that the wZD server will allow uploading of individual files with the same name, even if the Bolt archive in this directory already contains data with the same key name as the uploaded file
 
-- Despite the fact that the nonunique = false parameter is disabled in the virtual host, the wZD server will upload the file or value to the new Bolt archive, even if the key name matches the already existing file name in this directory. This is required for non-stop operation of the service and working in mixed mode during data migration to Bolt archives, including when adding new files non-stop through the PUT method or deleting them through the DELETE method
+- Despite the fact that the nonunique = false parameter is disabled in the virtual host, the wZD server will upload the file or value to the new Bolt archive, even if the key name matches the already existing file name in this directory. This is required for non-stop operation of the service and working in a mixed mode during data migration to Bolt archives, including when adding new files non-stop through the PUT method or deleting them through the DELETE method
 
 - When using the writeintegrity = true and readintegrity = true parameters, the downloaded file or value is completely written to RAM, but no more than 32 MB per request, with the maximum parameter fmaxsize set. It is highly recommended that these options be enabled as true. These parameters affect only files or values in Bolt archives
 
@@ -345,7 +345,7 @@ Notes and Q&A
 
 - The server does not allow uploading files to the root directory of the virtual host. This is prohibited only when trying to upload a file or value to the root of the virtual host with the "Archive: 1" header set. Regular files without packing can be uploaded to the root of the virtual host
 
-- The server uses an extended version of BoltDB by the current developer of wZD. Added functions are GetLimit(), GetOffset(), GetRange(). This allows as much data to be read as is needed by byte from files or values, for example, using the headers "Range: bytes = ...", If-None-Match, If-Modified-Since, or the HEAD and OPTIONS methods, which allows the same significant saving of disk subsystem resources as simply reading the entire file or value using the standard Get() function
+- The server uses an extended version of BoltDB by the current developer of wZD. Added functions are GetLimit(), GetOffset(), GetRange(). This allows as much data to be read as is needed by a byte from files or values, for example, using the headers "Range: bytes = ...", If-None-Match, If-Modified-Since, or the HEAD and OPTIONS methods, which allows the same significant saving of disk subsystem resources as simply reading the entire file or value using the standard Get() function
 
 - The server does not create any temporary files during its operation, and at the same time it consumes little RAM. Large files are transferred through customizable, semi-dynamic, small-sized buffers on the fly. The wZD server does not use the simple function ctx.SendFile() or ctx.ServeContent()
 
@@ -355,7 +355,7 @@ Notes and Q&A
  ToDo
  ========
  
-- Development of own replicator and distributor with geo for possible use in large systems without cluster FS
+- Development of own replicator and distributor with a geo for possible use in large systems without cluster FS
 - The ability to fully reverse restore metadata when it is completely lost (if using a distributor)
 - Native protocol for the possibility of using permanent network connections and drivers for different programming languages
 - ~~Support for HTTPS protocol, it may be supported only in the future distributor~~ (Completed in standart version)
@@ -366,7 +366,7 @@ Notes and Q&A
 - ~~Abandoning of SQLite in favor of a simpler solution (abandoning CGO)~~ (Completed)
 - Different types of compression (gzip, zstd, snappy) for files or values inside Bolt archives and for ordinary files
 - Different types of encryption for files or values inside Bolt archives and for regular files
-- Delayed server video conversion, including on GPU
+- Server-side delayed video conversion, including on GPU
 
 Parameters
 ========

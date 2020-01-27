@@ -20,8 +20,9 @@ import (
 	"unsafe"
 )
 
-// Bolt Open Handlers
+// BoltDB Handlers
 
+// BoltOpenWrite: open BoltDB for write operations
 func BoltOpenWrite(dbpath string, fmode os.FileMode, timeout time.Duration, opentries int, freelist string) (*bolt.DB, error) {
 
 	i := 0
@@ -54,6 +55,7 @@ func BoltOpenWrite(dbpath string, fmode os.FileMode, timeout time.Duration, open
 
 }
 
+// BoltOpenRead: open BoltDB for readonly operations
 func BoltOpenRead(dbpath string, fmode os.FileMode, timeout time.Duration, opentries int, freelist string) (*bolt.DB, error) {
 
 	i := 0
@@ -86,8 +88,9 @@ func BoltOpenRead(dbpath string, fmode os.FileMode, timeout time.Duration, opent
 
 }
 
-// Determine Endianess Handler
+// System Helpers
 
+// DetectEndian: determine system endianess function
 func DetectEndian() {
 
 	buf := [2]byte{}
@@ -105,8 +108,7 @@ func DetectEndian() {
 
 }
 
-// Detect Daemon User/Group Handler
-
+// DetectUser: determine current system user and group
 func DetectUser() {
 
 	cuser, err := user.Current()
@@ -129,8 +131,7 @@ func DetectUser() {
 
 }
 
-// Get PID
-
+// GetPID: get current pid number and return int and string representation of pid
 func GetPID() (gpid string, fpid string) {
 
 	gpid = fmt.Sprintf("%d", os.Getpid())
@@ -140,8 +141,7 @@ func GetPID() (gpid string, fpid string) {
 
 }
 
-// Get Machine ID Helper
-
+// MachineID: set globally machine identity
 func MachineID() {
 
 	var err error
@@ -153,8 +153,9 @@ func MachineID() {
 
 }
 
-// Files Count Handler
+// File Helpers
 
+// FileCount: count files in requested directory
 func FileCount(dirpath string) (cnt int, err error) {
 
 	cnt = 0
@@ -174,8 +175,7 @@ func FileCount(dirpath string) (cnt int, err error) {
 
 }
 
-// File Exists Handler
-
+// FileExists: check existence of requested file
 func FileExists(filename string) bool {
 
 	if fi, err := os.Stat(filename); err == nil {
@@ -190,8 +190,7 @@ func FileExists(filename string) bool {
 
 }
 
-// File Or Link Exists Handler
-
+// FileExists: check existence of requested file or symlink
 func FileOrLinkExists(filename string) bool {
 
 	if fi, err := os.Stat(filename); err == nil {
@@ -210,8 +209,7 @@ func FileOrLinkExists(filename string) bool {
 
 }
 
-// Dir Exists Handler
-
+// DirExists: check existence of requested directory
 func DirExists(filename string) bool {
 
 	if fi, err := os.Stat(filename); err == nil {
@@ -226,8 +224,7 @@ func DirExists(filename string) bool {
 
 }
 
-// Files Keys Iterator Handler
-
+// FileKeys: iterate file names through requested directory
 func FileKeys(dirpath string) (keys []string, err error) {
 
 	keys = []string{}
@@ -256,6 +253,7 @@ func FileKeys(dirpath string) (keys []string, err error) {
 
 // Remove File Handler
 
+// RemoveFile: remove requested file and/or empty dir
 func RemoveFile(file string, directory string, deldir bool) error {
 
 	err := os.Remove(file)
@@ -293,8 +291,9 @@ func RemoveFile(file string, directory string, deldir bool) error {
 
 }
 
-// DB Key Exists Handler
+// DB Helpers
 
+// KeyExists: check existence of requested key
 func KeyExists(db *bolt.DB, ibucket string, file string) (data string, err error) {
 
 	err = db.View(func(tx *bolt.Tx) error {
@@ -321,8 +320,7 @@ func KeyExists(db *bolt.DB, ibucket string, file string) (data string, err error
 
 }
 
-// DB Keys Count Handler
-
+// KeyCount: count keys in an index bucket for requested directory
 func KeyCount(db *bolt.DB, ibucket string) (cnt int, err error) {
 
 	cnt = 1
@@ -349,8 +347,7 @@ func KeyCount(db *bolt.DB, ibucket string) (cnt int, err error) {
 
 }
 
-// DB Keys In Bucket Count Handler
-
+// KeyCountBucket: count keys in a requested bucket
 func KeyCountBucket(db *bolt.DB, bucket string) (cnt int, err error) {
 
 	cnt = 1
@@ -377,8 +374,7 @@ func KeyCountBucket(db *bolt.DB, bucket string) (cnt int, err error) {
 
 }
 
-// DB Bucket Count Handler
-
+// BucketCount: get count of buckets from count bucket in requested directory
 func BucketCount(db *bolt.DB, cbucket string) (cnt uint64, err error) {
 
 	cnt = uint64(0)
@@ -407,8 +403,7 @@ func BucketCount(db *bolt.DB, cbucket string) (cnt uint64, err error) {
 
 }
 
-// DB Bucket Stats Handler
-
+// BucketStats: get current size of requested bucket
 func BucketStats(db *bolt.DB, bucket string) (cnt int, err error) {
 
 	cnt = 0
@@ -435,8 +430,7 @@ func BucketStats(db *bolt.DB, bucket string) (cnt int, err error) {
 
 }
 
-// DB/File Unique Keys Iterator Helper
-
+// AllKeys: get summary list of keys for requested directory
 func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool) (keys []string, err error) {
 
 	var allkeys []string
@@ -510,8 +504,7 @@ func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool) (keys []str
 
 }
 
-// DB Remove File Handler
-
+// RemoveFileDB: remove requested BoltDB file and/or empty dir
 func RemoveFileDB(file string, directory string, deldir bool) error {
 
 	err := os.Remove(file)
@@ -549,8 +542,9 @@ func RemoveFileDB(file string, directory string, deldir bool) error {
 
 }
 
-// Content Type Helper
+// Working helpers
 
+// ContentType: get a content type of requested file/value
 func ContentType(filename string, filesize int64, contbuffer []byte, csizebuffer int) (conttype string, err error) {
 
 	conttype = mime.TypeByExtension(filepath.Ext(filename))
@@ -566,8 +560,7 @@ func ContentType(filename string, filesize int64, contbuffer []byte, csizebuffer
 
 }
 
-// Accept Ranges Helper
-
+// ParseByRange: Accept-Ranges helper
 func ParseByRange(rngs string, size int64) ([]ReqRange, error) {
 
 	rngerr := errors.New("bad range")
@@ -649,6 +642,7 @@ func ParseByRange(rngs string, size int64) ([]ReqRange, error) {
 
 // Check Options With Boolean/Int Functions
 
+// Check: if received value is false, then run DoExit function
 func Check(bvar bool, sec string, name string, val string, perm string, ferr func(string, string, string, string)) {
 
 	if !bvar {
@@ -657,11 +651,13 @@ func Check(bvar bool, sec string, name string, val string, perm string, ferr fun
 
 }
 
+// DoExit: exit program function
 func DoExit(sec string, name string, val string, perm string) {
 	fmt.Printf("Bad option value error | Section [%s] | Name [%s] | Value [%v] | Permissible Value [%s]\n", sec, name, val, perm)
 	os.Exit(1)
 }
 
+// RBInt: check int32 acceptable range function and then return true or false
 func RBInt(i int, min int, max int) bool {
 
 	switch {
@@ -673,6 +669,7 @@ func RBInt(i int, min int, max int) bool {
 
 }
 
+// RBInt64: check int64 acceptable range function and return true or false
 func RBInt64(i int64, min int64, max int64) bool {
 
 	switch {

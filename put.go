@@ -1489,11 +1489,11 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t write file to db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t write a file to db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t write file to db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t write a file to db bucket error\n")
 						if err != nil {
 							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}

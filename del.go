@@ -240,12 +240,12 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				ctx.StatusCode(iris.StatusForbidden)
 
 				if log4xx {
-					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | The delete bolt request is not allowed during DELETE request", vhost, ip)
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Delete bolt request is not allowed during DELETE request", vhost, ip)
 				}
 
 				if debugmode {
 
-					_, err := ctx.WriteString("[ERRO] The delete bolt request is not allowed during DELETE request\n")
+					_, err := ctx.WriteString("[ERRO] Delete bolt request is not allowed during DELETE request\n")
 					if err != nil {
 						delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
