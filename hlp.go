@@ -638,6 +638,24 @@ func ParseByRange(rngs string, size int64) ([]ReqRange, error) {
 
 }
 
+// StringOne : function returns true and sequence of received value if value == 1
+func StringOne(values ...interface{}) (bool, int) {
+
+	c := 0
+
+	for _, value := range values {
+		c++
+
+		if value == "1" {
+			return true, c
+		}
+
+	}
+
+	return false, 0
+
+}
+
 // Check Options With Boolean/Int Functions
 
 // Check : if received value is false, then run DoExit function
