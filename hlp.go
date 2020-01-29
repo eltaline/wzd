@@ -496,7 +496,7 @@ func FileKeysInfo(dirpath string, limit int64, offset int64) (ikeys []KeysInfo, 
 
 	for _, file := range allfiles {
 
-			k = file.Name()
+		k = file.Name()
 
 		bname := rgxbolt.MatchString(k)
 		cname := rgxcrcbolt.MatchString(k)
@@ -737,7 +737,7 @@ func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit int64
 
 	for _, file := range allfiles {
 
-			k = file.Name()
+		k = file.Name()
 
 		bname := rgxbolt.MatchString(k)
 		cname := rgxcrcbolt.MatchString(k)
@@ -856,7 +856,7 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 	for _, file := range allfiles {
 
-			k = file.Name()
+		k = file.Name()
 
 		bname := rgxbolt.MatchString(k)
 		cname := rgxcrcbolt.MatchString(k)
