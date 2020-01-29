@@ -436,10 +436,12 @@ func FileKeys(dirpath string, limit int64, offset int64) (keys []string, err err
 
 	for _, file := range allfiles {
 
-		bname := rgxbolt.MatchString(file.Name())
-		cname := rgxcrcbolt.MatchString(file.Name())
+		k = file.Name()
 
-		if !bname && !cname {
+		bname := rgxbolt.MatchString(k)
+		cname := rgxcrcbolt.MatchString(k)
+
+		if !file.IsDir() && !bname && !cname {
 
 			if co < offset && offset > -1 {
 				co++
@@ -450,7 +452,6 @@ func FileKeys(dirpath string, limit int64, offset int64) (keys []string, err err
 				break
 			}
 
-			k = file.Name()
 			filename := fmt.Sprintf("%s/%s", dirpath, k)
 
 			lnfile, err := os.Lstat(filename)
@@ -495,10 +496,12 @@ func FileKeysInfo(dirpath string, limit int64, offset int64) (ikeys []KeysInfo, 
 
 	for _, file := range allfiles {
 
-		bname := rgxbolt.MatchString(file.Name())
-		cname := rgxcrcbolt.MatchString(file.Name())
+			k = file.Name()
 
-		if !bname && !cname {
+		bname := rgxbolt.MatchString(k)
+		cname := rgxcrcbolt.MatchString(k)
+
+		if !file.IsDir() && !bname && !cname {
 
 			if co < offset && offset > -1 {
 				co++
@@ -509,7 +512,17 @@ func FileKeysInfo(dirpath string, limit int64, offset int64) (ikeys []KeysInfo, 
 				break
 			}
 
-			k = file.Name()
+			filename := fmt.Sprintf("%s/%s", dirpath, k)
+
+			lnfile, err := os.Lstat(filename)
+			if err != nil {
+				continue
+			}
+
+			if lnfile.Mode()&os.ModeType != 0 {
+				continue
+			}
+
 			filekeys = append(filekeys, k)
 
 			co++
@@ -524,15 +537,6 @@ func FileKeysInfo(dirpath string, limit int64, offset int64) (ikeys []KeysInfo, 
 	for v := range filekeys {
 
 		filename := fmt.Sprintf("%s/%s", dirpath, filekeys[v])
-
-		lnfile, err := os.Lstat(filename)
-		if err != nil {
-			continue
-		}
-
-		if lnfile.Mode()&os.ModeType != 0 {
-			continue
-		}
 
 		infile, err := os.Stat(filename)
 		if err != nil {
@@ -733,10 +737,12 @@ func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit int64
 
 	for _, file := range allfiles {
 
-		bname := rgxbolt.MatchString(file.Name())
-		cname := rgxcrcbolt.MatchString(file.Name())
+			k = file.Name()
 
-		if !bname && !cname {
+		bname := rgxbolt.MatchString(k)
+		cname := rgxcrcbolt.MatchString(k)
+
+		if !file.IsDir() && !bname && !cname {
 
 			if co < offset && offset > -1 {
 				co++
@@ -747,7 +753,6 @@ func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit int64
 				break
 			}
 
-			k = file.Name()
 			filename := fmt.Sprintf("%s/%s", dirpath, k)
 
 			lnfile, err := os.Lstat(filename)
@@ -851,10 +856,12 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 	for _, file := range allfiles {
 
-		bname := rgxbolt.MatchString(file.Name())
-		cname := rgxcrcbolt.MatchString(file.Name())
+			k = file.Name()
 
-		if !bname && !cname {
+		bname := rgxbolt.MatchString(k)
+		cname := rgxcrcbolt.MatchString(k)
+
+		if !file.IsDir() && !bname && !cname {
 
 			if co < offset && offset > -1 {
 				co++
@@ -865,7 +872,17 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 				break
 			}
 
-			k = file.Name()
+			filename := fmt.Sprintf("%s/%s", dirpath, k)
+
+			lnfile, err := os.Lstat(filename)
+			if err != nil {
+				continue
+			}
+
+			if lnfile.Mode()&os.ModeType != 0 {
+				continue
+			}
+
 			filekeys = append(filekeys, k)
 			compare[k] = true
 
@@ -881,15 +898,6 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 	for v := range filekeys {
 
 		filename := fmt.Sprintf("%s/%s", dirpath, filekeys[v])
-
-		lnfile, err := os.Lstat(filename)
-		if err != nil {
-			continue
-		}
-
-		if lnfile.Mode()&os.ModeType != 0 {
-			continue
-		}
 
 		infile, err := os.Stat(filename)
 		if err != nil {
@@ -1082,12 +1090,28 @@ func FileCount(dirpath string) (cnt int, err error) {
 
 	for _, file := range allfiles {
 
-		bname := rgxbolt.MatchString(file.Name())
-		cname := rgxcrcbolt.MatchString(file.Name())
+		k := file.Name()
+
+		bname := rgxbolt.MatchString(k)
+		cname := rgxcrcbolt.MatchString(k)
 
 		if !file.IsDir() && !bname && !cname {
+
+			filename := fmt.Sprintf("%s/%s", dirpath, k)
+
+			lnfile, err := os.Lstat(filename)
+			if err != nil {
+				continue
+			}
+
+			if lnfile.Mode()&os.ModeType != 0 {
+				continue
+			}
+
 			cnt++
+
 		}
+
 	}
 
 	return cnt, err
