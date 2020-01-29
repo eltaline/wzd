@@ -546,7 +546,7 @@ func FileKeysInfo(dirpath string, limit int64, offset int64) (ikeys []KeysInfo, 
 		ik.Key = filekeys[v]
 		ik.Type = 0
 		ik.Size = uint64(infile.Size())
-		ik.Date = uint32(infile.ModTime().Unix())
+		ik.Date = uint64(infile.ModTime().Unix())
 
 		ikeys = append(ikeys, ik)
 
@@ -698,7 +698,7 @@ func DBKeysInfo(db *bolt.DB, ibucket string, limit int64, offset int64) (ikeys [
 
 				val := b.Get([]byte(dbkeys[v]))
 				if val != nil {
-					ik.Date = Endian.Uint32(val)
+					ik.Date = Endian.Uint64(val)
 				}
 
 			} else {
@@ -907,7 +907,7 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 		ik.Key = filekeys[v]
 		ik.Type = 0
 		ik.Size = uint64(infile.Size())
-		ik.Date = uint32(infile.ModTime().Unix())
+		ik.Date = uint64(infile.ModTime().Unix())
 
 		ikeys = append(ikeys, ik)
 
@@ -995,7 +995,7 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 						val := b.Get([]byte(dbkeys[v]))
 						if val != nil {
-							ik.Date = Endian.Uint32(val)
+							ik.Date = Endian.Uint64(val)
 						}
 
 					} else {
@@ -1054,7 +1054,7 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 					val := b.Get([]byte(dbkeys[v]))
 					if val != nil {
-						ik.Date = Endian.Uint32(val)
+						ik.Date = Endian.Uint64(val)
 					}
 
 				} else {
