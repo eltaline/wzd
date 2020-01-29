@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/eltaline/bolt"
@@ -57,15 +58,27 @@ func ZDGet() iris.Handler {
 		ifnm := ctx.GetHeader("If-None-Match")
 		ifms := ctx.GetHeader("If-Modified-Since")
 
+		hkeys := ctx.GetHeader("Keys")
+		hkeysall := ctx.GetHeader("KeysAll")
+		hkeysfiles := ctx.GetHeader("KeysFiles")
+		hkeysarchive := ctx.GetHeader("KeysArchive")
+
+		hinfo := ctx.GetHeader("KeysInfo")
+		hinfoall := ctx.GetHeader("KeysInfoAll")
+		hinfofiles := ctx.GetHeader("KeysInfoFiles")
+		hinfoarchive := ctx.GetHeader("KeysInfoArchive")
+
 		hcount := ctx.GetHeader("KeysCount")
 		hcountall := ctx.GetHeader("KeysCountAll")
 		hcountfiles := ctx.GetHeader("KeysCountFiles")
 		hcountarchive := ctx.GetHeader("KeysCountArchive")
 
-		hkeys := ctx.GetHeader("Keys")
-		hkeysall := ctx.GetHeader("KeysAll")
-		hkeysfiles := ctx.GetHeader("KeysFiles")
-		hkeysarchive := ctx.GetHeader("KeysArchive")
+		hlimit := ctx.GetHeader("Limit")
+		hoffset := ctx.GetHeader("Offset")
+
+		hjson := ctx.GetHeader("JSON")
+
+		//		hconfig := ctx.GetHeader("Config")
 
 		fromarchive := ctx.GetHeader("FromArchive")
 
@@ -79,8 +92,12 @@ func ZDGet() iris.Handler {
 		xframe := ""
 
 		getbolt := false
-		getcount := false
 		getkeys := false
+		getinfo := false
+		getcount := false
+
+		limit := int64(-1)
+		offset := int64(-1)
 
 		readintegrity := true
 
@@ -137,8 +154,9 @@ func ZDGet() iris.Handler {
 				xframe = Server.XFRAME
 
 				getbolt = Server.GETBOLT
-				getcount = Server.GETCOUNT
 				getkeys = Server.GETKEYS
+				getinfo = Server.GETINFO
+				getcount = Server.GETCOUNT
 
 				readintegrity = Server.READINTEGRITY
 
@@ -287,6 +305,48 @@ func ZDGet() iris.Handler {
 
 		}
 
+		if !getkeys && (hkeys == "1" || hkeysall == "1" || hkeysfiles == "1" || hkeysarchive == "1") {
+
+			ctx.StatusCode(iris.StatusForbidden)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | The keys request is not allowed during GET request", vhost, ip)
+			}
+
+			if debugmode {
+
+				_, err := ctx.WriteString("[ERRO] The keys request is not allowed during GET request\n")
+				if err != nil {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+				}
+
+			}
+
+			return
+
+		}
+
+		if !getinfo && (hinfo == "1" || hinfoall == "1" || hinfofiles == "1" || hinfoarchive == "1") {
+
+			ctx.StatusCode(iris.StatusForbidden)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | The keys info request is not allowed during GET request", vhost, ip)
+			}
+
+			if debugmode {
+
+				_, err := ctx.WriteString("[ERRO] The keys info request is not allowed during GET request\n")
+				if err != nil {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+				}
+
+			}
+
+			return
+
+		}
+
 		if !getcount && (hcount == "1" || hcountall == "1" || hcountfiles == "1" || hcountarchive == "1") {
 
 			ctx.StatusCode(iris.StatusForbidden)
@@ -308,46 +368,6 @@ func ZDGet() iris.Handler {
 
 		}
 
-		if !getkeys && (hkeys == "1" || hkeysall == "1" || hkeysfiles == "1" || hkeysarchive == "1") {
-
-			ctx.StatusCode(iris.StatusForbidden)
-
-			if log4xx {
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | The count request is not allowed during GET request", vhost, ip)
-			}
-
-			if debugmode {
-
-				_, err := ctx.WriteString("[ERRO] The count request is not allowed during GET request\n")
-				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-				}
-
-			}
-
-			return
-
-		}
-
-		if hkeys == "1" && hkeysall == "1" {
-
-			ctx.StatusCode(iris.StatusConflict)
-
-			if log4xx {
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 409 | Can`t serve Keys and KeysAll header together due to conflict error", vhost, ip)
-			}
-
-			if debugmode {
-
-				_, err := ctx.WriteString("[ERRO] Can`t serve Keys and KeysAll header together due to conflict error\n")
-				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-				}
-
-			}
-
-		}
-
 		abs := fmt.Sprintf("%s%s/%s", base, dir, file)
 		gzabs := fmt.Sprintf("%s%s/%s.gz", base, dir, file)
 		gzfile := fmt.Sprintf("%s.gz", file)
@@ -363,12 +383,790 @@ func ZDGet() iris.Handler {
 
 		bucket := ""
 		ibucket := "index"
+		//		sbucket := "size"
+		//		tbucket := "time"
 
 		timeout := time.Duration(locktimeout) * time.Second
 
+		var err error
+
+		// Check Limit/Offset Headers for GET keys/keys with info requests
+
+		if hlimit != "" {
+
+			limit, err = strconv.ParseInt(hlimit, 10, 64)
+			if err != nil {
+
+				ctx.StatusCode(iris.StatusBadRequest)
+
+				if log4xx {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Limit uint error during GET keys/keys with info request | Limit [%s] | %v", vhost, ip, hlimit, err)
+				}
+
+				if debugmode {
+
+					_, err = ctx.WriteString("Limit uint error during GET keys/keys with info request\n")
+					if err != nil {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+		}
+
+		if hoffset != "" {
+
+			offset, err = strconv.ParseInt(hoffset, 10, 64)
+			if err != nil {
+
+				ctx.StatusCode(iris.StatusBadRequest)
+
+				if log4xx {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Offset uint error during GET keys/keys with info request | Offset [%s] | %v", vhost, ip, hoffset, err)
+				}
+
+				if debugmode {
+
+					_, err = ctx.WriteString("Offset uint error during GET keys/keys with info request\n")
+					if err != nil {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+		}
+
+		// Standart/Bolt Keys Iterator
+
+		istrue, ccnm := StringOne(hkeys, hkeysall, hkeysfiles, hkeysarchive)
+
+		switch {
+
+		case istrue && (ccnm == 1 || ccnm == 2):
+
+			var keysbuffer bytes.Buffer
+
+			uniq := true
+
+			if ccnm == 2 {
+				uniq = false
+			}
+
+			if DirExists(abs) && !FileExists(dbk) {
+
+				getkeys, err := FileKeys(abs, limit, offset)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t iterate files in directory error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				filekeys := ""
+
+				if hjson == "1" {
+					jkeys, _ := json.Marshal(getkeys)
+					filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+				} else {
+					filekeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
+				}
+
+				err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				_, err = ctx.Write(keysbuffer.Bytes())
+				if err != nil {
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+			if FileExists(dbk) {
+
+				db, err := BoltOpenRead(dbk, filemode, timeout, opentries, freelist)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+				defer db.Close()
+
+				getkeys, err := AllKeys(db, ibucket, abs, uniq, limit, offset)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				allkeys := ""
+
+				if hjson == "1" {
+					jkeys, _ := json.Marshal(getkeys)
+					allkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+				} else {
+					allkeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
+				}
+
+				err = binary.Write(&keysbuffer, Endian, []byte(allkeys))
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				_, err = ctx.Write(keysbuffer.Bytes())
+				if err != nil {
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				db.Close()
+				return
+
+			}
+
+			ctx.StatusCode(iris.StatusNotFound)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
+			return
+
+		case istrue && ccnm == 3:
+
+			var keysbuffer bytes.Buffer
+
+			if DirExists(abs) {
+
+				getkeys, err := FileKeys(abs, limit, offset)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t iterate files in directory error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				filekeys := ""
+
+				if hjson == "1" {
+					jkeys, _ := json.Marshal(getkeys)
+					filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+				} else {
+					filekeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
+				}
+
+				err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				_, err = ctx.Write(keysbuffer.Bytes())
+				if err != nil {
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+			ctx.StatusCode(iris.StatusNotFound)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
+			return
+
+		case istrue && ccnm == 4:
+
+			var keysbuffer bytes.Buffer
+
+			if FileExists(dbk) {
+
+				db, err := BoltOpenRead(dbk, filemode, timeout, opentries, freelist)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+				defer db.Close()
+
+				getkeys, err := DBKeys(db, ibucket, limit, offset)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				dbkeys := ""
+
+				if hjson == "1" {
+					jkeys, _ := json.Marshal(getkeys)
+					dbkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+				} else {
+					dbkeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
+				}
+
+				err = binary.Write(&keysbuffer, Endian, []byte(dbkeys))
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				_, err = ctx.Write(keysbuffer.Bytes())
+				if err != nil {
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				db.Close()
+				return
+
+			}
+
+			ctx.StatusCode(iris.StatusNotFound)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
+			return
+
+		}
+
+		// Standart/Bolt Keys Info Iterator
+
+		istrue, ccnm = StringOne(hinfo, hinfoall, hinfofiles, hinfoarchive)
+
+		switch {
+
+		case istrue && (ccnm == 1 || ccnm == 2):
+
+			var keysbuffer bytes.Buffer
+
+			uniq := true
+
+			if ccnm == 2 {
+				uniq = false
+			}
+
+			if DirExists(abs) && !FileExists(dbk) {
+
+				getkeys, err := FileKeysInfo(abs, limit, offset)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t iterate files in directory error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				filekeys := ""
+
+				if hjson == "1" {
+					jkeys, _ := json.Marshal(getkeys)
+					filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+				} else {
+
+					var sgetkeys []string
+
+					for _, vs := range getkeys {
+						sgetkeys = append(sgetkeys, vs.Key, strconv.FormatInt(vs.Size, 10), strconv.FormatInt(int64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+					}
+
+					filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+
+				}
+
+				err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				_, err = ctx.Write(keysbuffer.Bytes())
+				if err != nil {
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+			if FileExists(dbk) {
+
+				db, err := BoltOpenRead(dbk, filemode, timeout, opentries, freelist)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+				defer db.Close()
+
+				getkeys, err := AllKeysInfo(db, ibucket, abs, uniq, limit, offset)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				allkeys := ""
+
+				if hjson == "1" {
+					jkeys, _ := json.Marshal(getkeys)
+					allkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+				} else {
+
+					var sgetkeys []string
+
+					for _, vs := range getkeys {
+						sgetkeys = append(sgetkeys, vs.Key, strconv.FormatInt(vs.Size, 10), strconv.FormatInt(int64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+					}
+
+					allkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+
+				}
+
+				err = binary.Write(&keysbuffer, Endian, []byte(allkeys))
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				_, err = ctx.Write(keysbuffer.Bytes())
+				if err != nil {
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				db.Close()
+				return
+
+			}
+
+			ctx.StatusCode(iris.StatusNotFound)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
+			return
+
+		case istrue && ccnm == 3:
+
+			var keysbuffer bytes.Buffer
+
+			if DirExists(abs) {
+
+				getkeys, err := FileKeysInfo(abs, limit, offset)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t iterate files in directory error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				filekeys := ""
+
+				if hjson == "1" {
+					jkeys, _ := json.Marshal(getkeys)
+					filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+				} else {
+
+					var sgetkeys []string
+
+					for _, vs := range getkeys {
+						sgetkeys = append(sgetkeys, vs.Key, strconv.FormatInt(vs.Size, 10), strconv.FormatInt(int64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+					}
+
+					filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+
+				}
+
+				err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				_, err = ctx.Write(keysbuffer.Bytes())
+				if err != nil {
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+			ctx.StatusCode(iris.StatusNotFound)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
+			return
+
+		case istrue && ccnm == 4:
+
+			var keysbuffer bytes.Buffer
+
+			if FileExists(dbk) {
+
+				db, err := BoltOpenRead(dbk, filemode, timeout, opentries, freelist)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+				defer db.Close()
+
+				getkeys, err := DBKeysInfo(db, ibucket, limit, offset)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				dbkeys := ""
+
+				if hjson == "1" {
+					jkeys, _ := json.Marshal(getkeys)
+					dbkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+				} else {
+
+					var sgetkeys []string
+
+					for _, vs := range getkeys {
+						sgetkeys = append(sgetkeys, vs.Key, strconv.FormatInt(vs.Size, 10), strconv.FormatInt(int64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+					}
+
+					dbkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+
+				}
+
+				err = binary.Write(&keysbuffer, Endian, []byte(dbkeys))
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				_, err = ctx.Write(keysbuffer.Bytes())
+				if err != nil {
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				db.Close()
+				return
+
+			}
+
+			ctx.StatusCode(iris.StatusNotFound)
+
+			if log4xx {
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+			}
+
+			return
+
+		}
+
 		// Standart/Bolt Counter
 
-		istrue, ccnm := StringOne(hcount, hcountall, hcountfiles, hcountarchive)
+		istrue, ccnm = StringOne(hcount, hcountall, hcountfiles, hcountarchive)
 
 		switch {
 
@@ -380,7 +1178,7 @@ func ZDGet() iris.Handler {
 				uniq = false
 			}
 
-			if DirExists(abs) {
+			if DirExists(abs) && !FileExists(dbk) {
 
 				filecount, err := FileCount(abs)
 				if err != nil {
@@ -401,17 +1199,65 @@ func ZDGet() iris.Handler {
 
 				}
 
-				if FileExists(dbk) {
+				filecnt := ""
 
-					db, err := BoltOpenRead(dbk, filemode, timeout, opentries, freelist)
+				if hjson == "1" {
+					jcount, _ := json.Marshal(filecount)
+					filecnt = fmt.Sprintf("{\n\t\"count\": %s\n}\n", string(jcount))
+				} else {
+					filecnt = fmt.Sprintf("%d\n", filecount)
+				}
+
+				_, err = ctx.Writef("%s", filecnt)
+				if err != nil {
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+			if FileExists(dbk) {
+
+				db, err := BoltOpenRead(dbk, filemode, timeout, opentries, freelist)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+				defer db.Close()
+
+				allkeyscount := 0
+
+				switch uniq {
+
+				case false:
+
+					filecount, err := FileCount(abs)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t count files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
 
 						if debugmode {
 
-							_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+							_, err = ctx.WriteString("[ERRO] Can`t count files in directory error\n")
 							if err != nil {
 								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 							}
@@ -421,102 +1267,94 @@ func ZDGet() iris.Handler {
 						return
 
 					}
-					defer db.Close()
 
-					keyscount := 0
-
-					switch uniq {
-
-					case false:
-
-						keyscount, err = KeyCount(db, ibucket)
-						if err != nil {
-
-							ctx.StatusCode(iris.StatusInternalServerError)
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t count keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
-
-							if debugmode {
-
-								_, err = ctx.WriteString("[ERRO] Can`t count keys of files in index db bucket error\n")
-								if err != nil {
-									getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-								}
-
-							}
-
-							db.Close()
-							return
-
-						}
-
-					case true:
-
-						keyscount := 0
-
-						getkeys, err := AllKeys(db, ibucket, abs, uniq)
-						if err != nil {
-
-							ctx.StatusCode(iris.StatusInternalServerError)
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
-
-							if debugmode {
-
-								_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
-								if err != nil {
-									getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-								}
-
-							}
-
-							db.Close()
-							return
-
-						}
-
-						allkeys := fmt.Sprintf("%s", strings.Join(getkeys, "\n"))
-						scanner := bufio.NewScanner(strings.NewReader(allkeys))
-
-						for scanner.Scan() {
-							keyscount++
-						}
-
-						err = scanner.Err()
-						if err != nil {
-
-							ctx.StatusCode(iris.StatusInternalServerError)
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t scan count strings of keys error | DB [%s] | %v", vhost, ip, dbk, err)
-
-							if debugmode {
-
-								_, err = ctx.WriteString("[ERRO] Can`t scan count strings of keys error\n")
-								if err != nil {
-									getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-								}
-
-							}
-
-							db.Close()
-							return
-
-						}
-
-					}
-
-					_, err = ctx.Writef("%d\n", keyscount+filecount-1)
+					keyscount, err := KeyCount(db, ibucket)
 					if err != nil {
 
-						if log4xx {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t count keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t count keys of files in index db bucket error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
 						}
+
+						db.Close()
+						return
 
 					}
 
-					db.Close()
-					return
+					allkeyscount = keyscount + filecount
+
+				case true:
+
+					limit = 0
+					offset = 0
+
+					getkeys, err := AllKeys(db, ibucket, abs, uniq, limit, offset)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+						db.Close()
+						return
+
+					}
+
+					//					allkeys := fmt.Sprintf("%s", strings.Join(getkeys, "\n"))
+					allkeys := strings.Join(getkeys, "\n")
+					scanner := bufio.NewScanner(strings.NewReader(allkeys))
+
+					for scanner.Scan() {
+						allkeyscount++
+					}
+
+					err = scanner.Err()
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t scan count strings of keys error | DB [%s] | %v", vhost, ip, dbk, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t scan count strings of keys error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+						db.Close()
+						return
+
+					}
 
 				}
 
-				_, err = ctx.Writef("%d\n", filecount)
+				allkeyscnt := ""
+
+				if hjson == "1" {
+					jcount, _ := json.Marshal(allkeyscount)
+					allkeyscnt = fmt.Sprintf("{\n\t\"count\": %s\n}\n", string(jcount))
+				} else {
+					allkeyscnt = fmt.Sprintf("%d\n", allkeyscount)
+				}
+
+				_, err = ctx.Writef("%s", allkeyscnt)
 				if err != nil {
 
 					if log4xx {
@@ -525,6 +1363,7 @@ func ZDGet() iris.Handler {
 
 				}
 
+				db.Close()
 				return
 
 			}
@@ -560,7 +1399,16 @@ func ZDGet() iris.Handler {
 
 				}
 
-				_, err = ctx.Writef("%d\n", filecount)
+				filecnt := ""
+
+				if hjson == "1" {
+					jcount, _ := json.Marshal(filecount)
+					filecnt = fmt.Sprintf("{\n\t\"count\": %s\n}\n", string(jcount))
+				} else {
+					filecnt = fmt.Sprintf("%d\n", filecount)
+				}
+
+				_, err = ctx.Writef("%s", filecnt)
 				if err != nil {
 
 					if log4xx {
@@ -583,7 +1431,7 @@ func ZDGet() iris.Handler {
 
 		case istrue && ccnm == 4:
 
-			if DirExists(abs) && FileExists(dbk) {
+			if FileExists(dbk) {
 
 				db, err := BoltOpenRead(dbk, filemode, timeout, opentries, freelist)
 				if err != nil {
@@ -625,7 +1473,16 @@ func ZDGet() iris.Handler {
 
 				}
 
-				_, err = ctx.Writef("%d\n", keyscount)
+				keyscnt := ""
+
+				if hjson == "1" {
+					jcount, _ := json.Marshal(keyscount)
+					keyscnt = fmt.Sprintf("{\n\t\"count\": %s\n}\n", string(jcount))
+				} else {
+					keyscnt = fmt.Sprintf("%d\n", keyscount)
+				}
+
+				_, err = ctx.Writef("%s", keyscnt)
 				if err != nil {
 
 					if log4xx {
@@ -634,161 +1491,6 @@ func ZDGet() iris.Handler {
 
 				}
 
-				return
-
-			}
-
-			ctx.StatusCode(iris.StatusNotFound)
-
-			if log4xx {
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
-			}
-
-			return
-
-		}
-
-		// Standart/Bolt Keys Iterator
-
-		if DirExists(abs) && (hkeys == "1" || hkeysall == "1") {
-
-			var keysbuffer bytes.Buffer
-
-			if !FileExists(dbk) {
-
-				getkeys, err := FileKeys(abs)
-				if err != nil {
-
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate files in directory error | Directory [%s] | %v", vhost, ip, abs, err)
-
-					if debugmode {
-
-						_, err = ctx.WriteString("[ERRO] Can`t iterate files in directory error\n")
-						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-						}
-
-					}
-
-					return
-
-				}
-
-				allkeys := fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
-
-				err = binary.Write(&keysbuffer, Endian, []byte(allkeys))
-				if err != nil {
-
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write keys names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
-
-					if debugmode {
-
-						_, err = ctx.WriteString("[ERRO] Write keys names to keysbuffer error\n")
-						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-						}
-
-					}
-
-					return
-
-				}
-
-				_, err = ctx.Write(keysbuffer.Bytes())
-				if err != nil {
-
-					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-					}
-
-				}
-
-				return
-
-			}
-
-			if FileExists(dbk) {
-
-				uniq := true
-
-				if hkeysall == "1" {
-					uniq = false
-				}
-
-				db, err := BoltOpenRead(dbk, filemode, timeout, opentries, freelist)
-				if err != nil {
-
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | DB [%s] | %v", vhost, ip, dbk, err)
-
-					if debugmode {
-
-						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-						}
-
-					}
-
-					return
-
-				}
-				defer db.Close()
-
-				getkeys, err := AllKeys(db, ibucket, abs, uniq)
-				if err != nil {
-
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
-
-					if debugmode {
-
-						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
-						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-						}
-
-					}
-
-					db.Close()
-					return
-
-				}
-
-				allkeys := fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
-
-				err = binary.Write(&keysbuffer, Endian, []byte(allkeys))
-				if err != nil {
-
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write keys names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
-
-					if debugmode {
-
-						_, err = ctx.WriteString("[ERRO] Write keys names to keysbuffer error\n")
-						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-						}
-
-					}
-
-					db.Close()
-					return
-
-				}
-
-				_, err = ctx.Write(keysbuffer.Bytes())
-				if err != nil {
-
-					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-					}
-
-				}
-
-				db.Close()
 				return
 
 			}

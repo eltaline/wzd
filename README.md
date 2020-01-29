@@ -201,43 +201,43 @@ Configuring and using wZD server
 
 In most cases it is enough to use the default configuration file. A full description of all product parameters is available here: <a href="/OPTIONS.md">Options</a>
 
-Downloading the file (the existing normal file is downloaded first and not the one in the Bolt archive):
+Downloading file (the existing normal file is downloaded first and not the one in the Bolt archive):
 
 ```bash
 curl -o test.jpg http://localhost/test/test.jpg
 ```
 
-Downloading a file from the Bolt archive (forced):
+Downloading file from the Bolt archive (forced):
 
 ```bash
 curl -o test.jpg -H "FromArchive: 1" http://localhost/test/test.jpg
 ```
 
-Uploading a regular file to the directory:
+Uploading file to the directory:
 
 ```bash
 curl -X PUT --data-binary @test.jpg http://localhost/test/test.jpg
 ```
 
-Uploading a file to the Bolt archive (if the server parameter fmaxsize is not exceeded):
+Uploading file to the Bolt archive (if the server parameter fmaxsize is not exceeded):
 
 ```bash
 curl -X PUT -H "Archive: 1" --data-binary @test.jpg http://localhost/test/test.jpg
 ```
 
-Getting a count of the number of keys in the directory (if the server parameter getcount = true):
+Getting count of the number of keys in the directory (if the server parameter getcount = true):
 
 ```bash
 curl -H "KeysCount: 1" http://localhost/test
 ```
 
-Getting a list of unique files or key names in a directory (if the server parameter getkeys = true):
+Getting list of unique files or key names in a directory (if the server parameter getkeys = true):
 
 ```bash
 curl -H "Keys: 1" http://localhost/test
 ```
 
-Getting a list of non-unique files or key names in a directory (if the server parameter getkeys = true):
+Getting list of non-unique files or key names in a directory (if the server parameter getkeys = true):
 
 ```bash
 curl -H "KeysAll: 1" http://localhost/test
@@ -249,13 +249,13 @@ Downloading the whole Bolt archive from the directory (if the server parameter g
 curl -o test.bolt http://localhost/test/test.bolt
 ```
 
-Deleting a file or value (a regular file is deleted first, if it exists, and not the value in the bolt archive):
+Deleting file or value (a regular file is deleted first, if it exists, and not the value in the bolt archive):
 
 ```bash
 curl -X DELETE http://localhost/test/test.jpg
 ```
 
-Deleting a file or value from the Bolt archive (forced):
+Deleting file or value from the Bolt archive (forced):
 
 ```bash
 curl -X DELETE -H "FromArchive: 1" http://localhost/test/test.jpg
