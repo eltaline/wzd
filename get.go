@@ -855,7 +855,7 @@ func ZDGet() iris.Handler {
 						var sgetkeys []string
 
 						for _, vs := range getkeys {
-							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(vs.Date, 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
 						}
 
 						filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
@@ -950,7 +950,7 @@ func ZDGet() iris.Handler {
 						var sgetkeys []string
 
 						for _, vs := range getkeys {
-							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(vs.Date, 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
 						}
 
 						allkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
@@ -1038,7 +1038,7 @@ func ZDGet() iris.Handler {
 						var sgetkeys []string
 
 						for _, vs := range getkeys {
-							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(vs.Date, 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
 						}
 
 						filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
@@ -1145,7 +1145,7 @@ func ZDGet() iris.Handler {
 						var sgetkeys []string
 
 						for _, vs := range getkeys {
-							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(vs.Date, 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
 						}
 
 						dbkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
