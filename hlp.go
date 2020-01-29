@@ -1070,7 +1070,7 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 }
 
-// FileCount : count files in requested directory without .bolt and .crcbolt files
+// FileCount : count files in a requested directory without .bolt and .crcbolt files
 func FileCount(dirpath string) (cnt int, err error) {
 
 	cnt = 0
