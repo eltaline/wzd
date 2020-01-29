@@ -97,7 +97,7 @@ type server struct {
 // Header : type contains binary header fields
 type Header struct {
 	Size uint64
-	Date uint32
+	Date uint64
 	Mode uint16
 	Uuid uint16
 	Guid uint16
@@ -134,7 +134,7 @@ type strCIDR struct {
 type KeysInfo struct {
 	Key  string `json:"key"`
 	Size uint64 `json:"size"`
-	Date uint32 `json:"date"`
+	Date uint64 `json:"date"`
 	Type int    `json:"type"`
 }
 

@@ -317,8 +317,8 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		now := time.Now()
 		sec := now.Unix()
 
-		tb := make([]byte, 4)
-		Endian.PutUint32(tb, uint32(sec))
+		tb := make([]byte, 8)
+		Endian.PutUint64(tb, uint64(sec))
 
 		dir := filepath.Dir(uri)
 		file := filepath.Base(uri)
@@ -1446,7 +1446,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 					wcrc = crc32.Checksum(crcdata.Bytes(), tbl)
 
 					head := Header{
-						Size: uint64(realsize), Date: uint32(sec), Mode: uint16(vfilemode), Uuid: uint16(Uid), Guid: uint16(Gid), Comp: uint8(0), Encr: uint8(0), Crcs: wcrc, Rsvr: uint64(0),
+						Size: uint64(realsize), Date: uint64(sec), Mode: uint16(vfilemode), Uuid: uint16(Uid), Guid: uint16(Gid), Comp: uint8(0), Encr: uint8(0), Crcs: wcrc, Rsvr: uint64(0),
 					}
 
 					err = binary.Write(endbuffer, Endian, head)
@@ -1494,7 +1494,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				} else {
 
 					head := Header{
-						Size: uint64(realsize), Date: uint32(sec), Mode: uint16(vfilemode), Uuid: uint16(Uid), Guid: uint16(Gid), Comp: uint8(0), Encr: uint8(0), Crcs: wcrc, Rsvr: uint64(0),
+						Size: uint64(realsize), Date: uint64(sec), Mode: uint16(vfilemode), Uuid: uint16(Uid), Guid: uint16(Gid), Comp: uint8(0), Encr: uint8(0), Crcs: wcrc, Rsvr: uint64(0),
 					}
 
 					err = binary.Write(endbuffer, Endian, head)
@@ -1734,7 +1734,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					var readhead Header
 
-					headbuffer := make([]byte, 32)
+					headbuffer := make([]byte, 36)
 
 					hsizebuffer, err := pread.Read(headbuffer)
 					if err != nil {

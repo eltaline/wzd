@@ -121,6 +121,8 @@ func ZDGet() iris.Handler {
 		dir := filepath.Dir(uri)
 		file := filepath.Base(uri)
 
+		bft := int64(36)
+
 		mchregcrcbolt := rgxcrcbolt.MatchString(file)
 
 		for _, Server := range config.Server {
@@ -2201,7 +2203,7 @@ func ZDGet() iris.Handler {
 
 			b := tx.Bucket([]byte(bucket))
 			if b != nil {
-				pheader = b.GetLimit([]byte(file), uint32(544))
+				pheader = b.GetLimit([]byte(file), uint32(548))
 				return nil
 			} else {
 				return verr
@@ -2231,7 +2233,7 @@ func ZDGet() iris.Handler {
 
 		var readhead Header
 
-		headbuffer := make([]byte, 32)
+		headbuffer := make([]byte, 36)
 
 		hsizebuffer, err := preadheader.Read(headbuffer)
 		if err != nil {
@@ -2283,6 +2285,10 @@ func ZDGet() iris.Handler {
 		hmodt := modt.Format(http.TimeFormat)
 
 		crc := readhead.Crcs
+
+		if tmst > 4294967295 {
+			bft = int64(32)
+		}
 
 		contbuffer := make([]byte, 512)
 
@@ -2421,7 +2427,7 @@ func ZDGet() iris.Handler {
 
 				b := tx.Bucket([]byte(bucket))
 				if b != nil {
-					pdata = b.GetRange([]byte(file), uint32(rstart+32), uint32(rlength))
+					pdata = b.GetRange([]byte(file), uint32(rstart+bft), uint32(rlength))
 					return nil
 				} else {
 					return verr
@@ -2526,7 +2532,7 @@ func ZDGet() iris.Handler {
 
 			b := tx.Bucket([]byte(bucket))
 			if b != nil {
-				pdata = b.GetOffset([]byte(file), uint32(32))
+				pdata = b.GetOffset([]byte(file), uint32(bft))
 				return nil
 			} else {
 				return verr
