@@ -267,6 +267,8 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		bucket := ""
 		ibucket := "index"
+		sbucket := "size"
+		tbucket := "time"
 
 		timeout := time.Duration(locktimeout) * time.Second
 
@@ -441,7 +443,49 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			}
 
-			if keyexists != "" {
+			sizeexists, err := KeyExists(db, sbucket, file)
+			if err != nil {
+
+				ctx.StatusCode(iris.StatusInternalServerError)
+				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in size db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Can`t check key of file in size db bucket error\n")
+					if err != nil {
+						delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				db.Close()
+				keymutex.Unlock(dbf)
+				return
+
+			}
+
+			timeexists, err := KeyExists(db, tbucket, file)
+			if err != nil {
+
+				ctx.StatusCode(iris.StatusInternalServerError)
+				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in time db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Can`t check key of file in time db bucket error\n")
+					if err != nil {
+						delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				db.Close()
+				keymutex.Unlock(dbf)
+				return
+
+			}
+
+			if keyexists != "" || sizeexists != "" || timeexists != "" {
 
 				bucket = keyexists
 
@@ -477,6 +521,56 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 						if err != nil {
 
 							delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 599 | Can`t remove key from index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+							return err
+
+						}
+
+						err = db.Update(func(tx *bolt.Tx) error {
+
+							verr := errors.New("size bucket not exists")
+
+							b := tx.Bucket([]byte(sbucket))
+							if b != nil {
+								err = b.Delete([]byte(file))
+								if err != nil {
+									return err
+								}
+
+							} else {
+								return verr
+							}
+
+							return nil
+
+						})
+						if err != nil {
+
+							delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 599 | Can`t remove key from size db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+							return err
+
+						}
+
+						err = db.Update(func(tx *bolt.Tx) error {
+
+							verr := errors.New("time bucket not exists")
+
+							b := tx.Bucket([]byte(tbucket))
+							if b != nil {
+								err = b.Delete([]byte(file))
+								if err != nil {
+									return err
+								}
+
+							} else {
+								return verr
+							}
+
+							return nil
+
+						})
+						if err != nil {
+
+							delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 599 | Can`t remove key from time db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 							return err
 
 						}
@@ -534,6 +628,82 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Can`t remove key from index db bucket error\n")
+						if err != nil {
+							delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				err = db.Update(func(tx *bolt.Tx) error {
+
+					verr := errors.New("size bucket not exists")
+
+					b := tx.Bucket([]byte(sbucket))
+					if b != nil {
+						err = b.Delete([]byte(file))
+						if err != nil {
+							return err
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t remove key from size db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t remove key from size db bucket error\n")
+						if err != nil {
+							delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				err = db.Update(func(tx *bolt.Tx) error {
+
+					verr := errors.New("time bucket not exists")
+
+					b := tx.Bucket([]byte(tbucket))
+					if b != nil {
+						err = b.Delete([]byte(file))
+						if err != nil {
+							return err
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t remove key from time db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t remove key from time db bucket error\n")
 						if err != nil {
 							delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}

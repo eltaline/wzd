@@ -70,8 +70,9 @@ type server struct {
 	DELETE         bool
 	COMPACTION     bool
 	GETBOLT        bool
-	GETCOUNT       bool
 	GETKEYS        bool
+	GETINFO        bool
+	GETCOUNT       bool
 	NONUNIQUE      bool
 	WRITEINTEGRITY bool
 	READINTEGRITY  bool
@@ -127,6 +128,14 @@ type Allow struct {
 
 type strCIDR struct {
 	Addr string
+}
+
+// KeysInfo : type for files and/or keys with info
+type KeysInfo struct {
+	Key  string `json:"key"`
+	Size int64  `json:"size"`
+	Date int32  `json:"date"`
+	Type int    `json:"type"`
 }
 
 // Global Variables
@@ -368,8 +377,9 @@ func init() {
 	rgxdelete := regexp.MustCompile("^(?i)(true|false)$")
 	rgxcompaction := regexp.MustCompile("^(?i)(true|false)$")
 	rgxgetbolt := regexp.MustCompile("^(?i)(true|false)$")
-	rgxgetcount := regexp.MustCompile("^(?i)(true|false)$")
 	rgxgetkeys := regexp.MustCompile("^(?i)(true|false)$")
+	rgxgetinfo := regexp.MustCompile("^(?i)(true|false)$")
+	rgxgetcount := regexp.MustCompile("^(?i)(true|false)$")
 	rgxnonunique := regexp.MustCompile("^(?i)(true|false)$")
 	rgxwriteintegrity := regexp.MustCompile("^(?i)(true|false)$")
 	rgxreadintegrity := regexp.MustCompile("^(?i)(true|false)$")
@@ -583,11 +593,14 @@ func init() {
 		mchgetbolt := rgxgetbolt.MatchString(fmt.Sprintf("%t", Server.GETBOLT))
 		Check(mchgetbolt, section, "getbolt", fmt.Sprintf("%t", Server.GETBOLT), "true or false", DoExit)
 
-		mchgetcount := rgxgetcount.MatchString(fmt.Sprintf("%t", Server.GETCOUNT))
-		Check(mchgetcount, section, "getcount", fmt.Sprintf("%t", Server.GETCOUNT), "true or false", DoExit)
-
 		mchgetkeys := rgxgetkeys.MatchString(fmt.Sprintf("%t", Server.GETKEYS))
 		Check(mchgetkeys, section, "getkeys", fmt.Sprintf("%t", Server.GETKEYS), "true or false", DoExit)
+
+		mchgetinfo := rgxgetinfo.MatchString(fmt.Sprintf("%t", Server.GETINFO))
+		Check(mchgetinfo, section, "getinfo", fmt.Sprintf("%t", Server.GETINFO), "true or false", DoExit)
+
+		mchgetcount := rgxgetcount.MatchString(fmt.Sprintf("%t", Server.GETCOUNT))
+		Check(mchgetcount, section, "getcount", fmt.Sprintf("%t", Server.GETCOUNT), "true or false", DoExit)
 
 		mchnonunique := rgxnonunique.MatchString(fmt.Sprintf("%t", Server.NONUNIQUE))
 		Check(mchnonunique, section, "nonunique", fmt.Sprintf("%t", Server.NONUNIQUE), "true or false", DoExit)
@@ -700,17 +713,24 @@ func init() {
 		}
 
 		switch {
-		case Server.GETCOUNT:
-			appLogger.Warnf("| Host [%s] | Get Count Keys/Files [ENABLED]", Server.HOST)
-		default:
-			appLogger.Warnf("| Host [%s] | Get Count Keys/Files [DISABLED]", Server.HOST)
-		}
-
-		switch {
 		case Server.GETKEYS:
 			appLogger.Warnf("| Host [%s] | Get Names Keys/Files [ENABLED]", Server.HOST)
 		default:
 			appLogger.Warnf("| Host [%s] | Get Names Keys/Files [DISABLED]", Server.HOST)
+		}
+
+		switch {
+		case Server.GETINFO:
+			appLogger.Warnf("| Host [%s] | Get Info Keys/Files [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Get Info Keys/Files [DISABLED]", Server.HOST)
+		}
+
+		switch {
+		case Server.GETCOUNT:
+			appLogger.Warnf("| Host [%s] | Get Count Keys/Files [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Get Count Keys/Files [DISABLED]", Server.HOST)
 		}
 
 		switch {

@@ -155,26 +155,6 @@ func MachineID() {
 
 // File Helpers
 
-// FileCount : count files in requested directory
-func FileCount(dirpath string) (cnt int, err error) {
-
-	cnt = 0
-
-	allfiles, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return 0, err
-	}
-
-	for _, file := range allfiles {
-		if !file.IsDir() {
-			cnt++
-		}
-	}
-
-	return cnt, nil
-
-}
-
 // FileExists : check existence of requested file
 func FileExists(filename string) bool {
 
@@ -224,33 +204,6 @@ func DirExists(filename string) bool {
 
 }
 
-// FileKeys : iterate file names through requested directory
-func FileKeys(dirpath string) (keys []string, err error) {
-
-	keys = []string{}
-	var k string
-
-	last := filepath.Base(dirpath)
-	bname := fmt.Sprintf("%s.bolt", last)
-
-	allfiles, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return keys, err
-	}
-
-	for _, file := range allfiles {
-
-		if bname != file.Name() {
-			k = file.Name()
-			keys = append(keys, k)
-		}
-
-	}
-
-	return keys, nil
-
-}
-
 // RemoveFile : remove requested file and/or empty dir
 func RemoveFile(file string, directory string, deldir bool) error {
 
@@ -291,14 +244,14 @@ func RemoveFile(file string, directory string, deldir bool) error {
 
 // DB Helpers
 
-// KeyExists : check existence of requested key
-func KeyExists(db *bolt.DB, ibucket string, file string) (data string, err error) {
+// KeyExists : check existence of requested key in index/size/time bucket
+func KeyExists(db *bolt.DB, xbucket string, file string) (data string, err error) {
 
 	err = db.View(func(tx *bolt.Tx) error {
 
-		verr := errors.New("index bucket not exists")
+		verr := errors.New("index/size/time bucket not exists")
 
-		b := tx.Bucket([]byte(ibucket))
+		b := tx.Bucket([]byte(xbucket))
 		if b != nil {
 
 			val := b.Get([]byte(file))
@@ -428,16 +381,392 @@ func BucketStats(db *bolt.DB, bucket string) (cnt int, err error) {
 
 }
 
-// AllKeys : get summary list of keys for requested directory
-func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool) (keys []string, err error) {
+// RemoveFileDB : remove requested BoltDB file and/or empty dir
+func RemoveFileDB(file string, directory string, deldir bool) error {
+
+	err := os.Remove(file)
+	if err != nil {
+		return err
+	}
+
+	if deldir {
+
+		dir, err := os.Open(directory)
+		if err != nil {
+			return err
+		}
+		defer dir.Close()
+
+		_, err = dir.Readdir(1)
+		if err != nil {
+			if err == io.EOF {
+				err = os.Remove(directory)
+				if err != nil {
+					return err
+				}
+
+				return err
+
+			}
+
+			return err
+
+		}
+
+	}
+
+	return err
+
+}
+
+// Names/Count Helpers
+
+// FileKeys : get file names through requested directory
+func FileKeys(dirpath string, limit int64, offset int64) (keys []string, err error) {
+
+	var k string
+
+	allfiles, err := ioutil.ReadDir(dirpath)
+	if err != nil {
+		return keys, err
+	}
+
+	cl := int64(1)
+	co := int64(1)
+
+	for _, file := range allfiles {
+
+		bname := rgxbolt.MatchString(file.Name())
+		cname := rgxcrcbolt.MatchString(file.Name())
+
+		if !bname && !cname {
+
+			if co < offset && offset > -1 {
+				co++
+				continue
+			}
+
+			if cl > limit && limit > -1 {
+				break
+			}
+
+			k = file.Name()
+			filename := fmt.Sprintf("%s/%s", dirpath, k)
+
+			lnfile, err := os.Lstat(filename)
+			if err != nil {
+				continue
+			}
+
+			if lnfile.Mode()&os.ModeType != 0 {
+				continue
+			}
+
+			keys = append(keys, k)
+
+			co++
+			cl++
+
+		}
+
+	}
+
+	sort.Strings(keys)
+
+	return keys, err
+
+}
+
+// FileKeysInfo : get file names with info through requested directory
+func FileKeysInfo(dirpath string, limit int64, offset int64) (ikeys []KeysInfo, err error) {
+
+	var filekeys []string
+	var k string
+
+	var ik KeysInfo
+
+	allfiles, err := ioutil.ReadDir(dirpath)
+	if err != nil {
+		return ikeys, err
+	}
+
+	cl := int64(1)
+	co := int64(1)
+
+	for _, file := range allfiles {
+
+		bname := rgxbolt.MatchString(file.Name())
+		cname := rgxcrcbolt.MatchString(file.Name())
+
+		if !bname && !cname {
+
+			if co < offset && offset > -1 {
+				co++
+				continue
+			}
+
+			if cl > limit && limit > -1 {
+				break
+			}
+
+			k = file.Name()
+			filekeys = append(filekeys, k)
+
+			co++
+			cl++
+
+		}
+
+	}
+
+	sort.Strings(filekeys)
+
+	for v := range filekeys {
+
+		filename := fmt.Sprintf("%s/%s", dirpath, filekeys[v])
+
+		lnfile, err := os.Lstat(filename)
+		if err != nil {
+			continue
+		}
+
+		if lnfile.Mode()&os.ModeType != 0 {
+			continue
+		}
+
+		infile, err := os.Stat(filename)
+		if err != nil {
+			continue
+		}
+
+		ik.Key = filekeys[v]
+		ik.Type = 0
+		ik.Size = infile.Size()
+		ik.Date = int32(infile.ModTime().Unix())
+
+		ikeys = append(ikeys, ik)
+
+	}
+
+	return ikeys, err
+
+}
+
+// DBKeys : get key names through requested directory from bolt archive
+func DBKeys(db *bolt.DB, ibucket string, limit int64, offset int64) (keys []string, err error) {
+
+	var k string
+
+	err = db.View(func(tx *bolt.Tx) error {
+
+		verr := errors.New("index bucket not exists")
+
+		b := tx.Bucket([]byte(ibucket))
+		if b != nil {
+
+			pos := b.Cursor()
+
+			cl := int64(1)
+			co := int64(1)
+
+			for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+
+				if co < offset && offset > -1 {
+					co++
+					continue
+				}
+
+				if cl > limit && limit > -1 {
+					break
+				}
+
+				k = fmt.Sprintf("%s", inkey)
+				keys = append(keys, k)
+
+				co++
+				cl++
+
+			}
+
+		} else {
+			return verr
+		}
+
+		return nil
+
+	})
+	if err != nil {
+		return keys, err
+	}
+
+	sort.Strings(keys)
+
+	return keys, err
+
+}
+
+// DBKeysInfo : get key names with info through requested directory from bolt archive
+func DBKeysInfo(db *bolt.DB, ibucket string, limit int64, offset int64) (ikeys []KeysInfo, err error) {
+
+	var dbkeys []string
+	var k string
+
+	var ik KeysInfo
+
+	err = db.View(func(tx *bolt.Tx) error {
+
+		verr := errors.New("index bucket not exists")
+
+		b := tx.Bucket([]byte(ibucket))
+		if b != nil {
+
+			pos := b.Cursor()
+
+			cl := int64(1)
+			co := int64(1)
+
+			for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+
+				if co < offset && offset > -1 {
+					co++
+					continue
+				}
+
+				if cl > limit && limit > -1 {
+					break
+				}
+
+				k = fmt.Sprintf("%s", inkey)
+				dbkeys = append(dbkeys, k)
+
+				co++
+				cl++
+
+			}
+
+		} else {
+			return verr
+		}
+
+		return nil
+
+	})
+	if err != nil {
+		return ikeys, err
+	}
+
+	sort.Strings(dbkeys)
+
+	for v := range dbkeys {
+
+		ik.Key = dbkeys[v]
+		ik.Type = 1
+
+		err = db.View(func(tx *bolt.Tx) error {
+
+			verr := errors.New("size bucket not exists")
+
+			b := tx.Bucket([]byte("size"))
+			if b != nil {
+
+				val := b.Get([]byte(dbkeys[v]))
+				if val != nil {
+					ik.Size = int64(Endian.Uint64(val))
+				}
+
+			} else {
+				return verr
+			}
+
+			return nil
+
+		})
+		if err != nil {
+			return ikeys, err
+		}
+
+		err = db.View(func(tx *bolt.Tx) error {
+
+			verr := errors.New("time bucket not exists")
+
+			b := tx.Bucket([]byte("time"))
+			if b != nil {
+
+				val := b.Get([]byte(dbkeys[v]))
+				if val != nil {
+					ik.Date = int32(Endian.Uint32(val))
+				}
+
+			} else {
+				return verr
+			}
+
+			return nil
+
+		})
+		if err != nil {
+			return ikeys, err
+		}
+
+		ikeys = append(ikeys, ik)
+
+	}
+
+	return ikeys, err
+
+}
+
+// AllKeys : get summary file and key names through requested directory and from bolt archive
+func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit int64, offset int64) (keys []string, err error) {
 
 	var allkeys []string
 	compare := map[string]bool{}
-	keys = []string{}
 	var k string
 
-	last := filepath.Base(dirpath)
-	bname := fmt.Sprintf("%s.bolt", last)
+	cl := int64(1)
+	co := int64(1)
+
+	allfiles, err := ioutil.ReadDir(dirpath)
+	if err != nil {
+		return keys, err
+	}
+
+	for _, file := range allfiles {
+
+		bname := rgxbolt.MatchString(file.Name())
+		cname := rgxcrcbolt.MatchString(file.Name())
+
+		if !bname && !cname {
+
+			if co < offset && offset > -1 {
+				co++
+				continue
+			}
+
+			if cl > limit && limit > -1 {
+				break
+			}
+
+			k = file.Name()
+			filename := fmt.Sprintf("%s/%s", dirpath, k)
+
+			lnfile, err := os.Lstat(filename)
+			if err != nil {
+				continue
+			}
+
+			if lnfile.Mode()&os.ModeType != 0 {
+				continue
+			}
+
+			allkeys = append(allkeys, k)
+
+			co++
+			cl++
+
+		}
+
+	}
 
 	err = db.View(func(tx *bolt.Tx) error {
 
@@ -449,8 +778,22 @@ func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool) (keys []str
 			pos := b.Cursor()
 
 			for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+
+				if co < offset && offset > -1 {
+					co++
+					continue
+				}
+
+				if cl > limit && limit > -1 {
+					break
+				}
+
 				k = fmt.Sprintf("%s", inkey)
 				allkeys = append(allkeys, k)
+
+				co++
+				cl++
+
 			}
 
 		} else {
@@ -463,20 +806,6 @@ func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool) (keys []str
 
 	if err != nil {
 		return keys, err
-	}
-
-	allfiles, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return keys, err
-	}
-
-	for _, file := range allfiles {
-
-		if bname != file.Name() {
-			k = file.Name()
-			allkeys = append(allkeys, k)
-		}
-
 	}
 
 	if uniq {
@@ -502,41 +831,266 @@ func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool) (keys []str
 
 }
 
-// RemoveFileDB : remove requested BoltDB file and/or empty dir
-func RemoveFileDB(file string, directory string, deldir bool) error {
+// AllKeysInfo : get summary file and key names with info through requested directory and from bolt archive
+func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit int64, offset int64) (ikeys []KeysInfo, err error) {
 
-	err := os.Remove(file)
+	var filekeys []string
+	var dbkeys []string
+	compare := map[string]bool{}
+	var k string
+
+	var ik KeysInfo
+
+	cl := int64(1)
+	co := int64(1)
+
+	allfiles, err := ioutil.ReadDir(dirpath)
 	if err != nil {
-		return err
+		return ikeys, err
 	}
 
-	if deldir {
+	for _, file := range allfiles {
 
-		dir, err := os.Open(directory)
-		if err != nil {
-			return err
+		bname := rgxbolt.MatchString(file.Name())
+		cname := rgxcrcbolt.MatchString(file.Name())
+
+		if !bname && !cname {
+
+			if co < offset && offset > -1 {
+				co++
+				continue
+			}
+
+			if cl > limit && limit > -1 {
+				break
+			}
+
+			k = file.Name()
+			filekeys = append(filekeys, k)
+			compare[k] = true
+
+			co++
+			cl++
+
 		}
-		defer dir.Close()
 
-		_, err = dir.Readdir(2)
+	}
+
+	sort.Strings(filekeys)
+
+	for v := range filekeys {
+
+		filename := fmt.Sprintf("%s/%s", dirpath, filekeys[v])
+
+		lnfile, err := os.Lstat(filename)
 		if err != nil {
-			if err == io.EOF {
-				err = os.Remove(directory)
-				if err != nil {
-					return err
+			continue
+		}
+
+		if lnfile.Mode()&os.ModeType != 0 {
+			continue
+		}
+
+		infile, err := os.Stat(filename)
+		if err != nil {
+			continue
+		}
+
+		ik.Key = filekeys[v]
+		ik.Type = 0
+		ik.Size = infile.Size()
+		ik.Date = int32(infile.ModTime().Unix())
+
+		ikeys = append(ikeys, ik)
+
+	}
+
+	err = db.View(func(tx *bolt.Tx) error {
+
+		verr := errors.New("index bucket not exists")
+
+		b := tx.Bucket([]byte(ibucket))
+		if b != nil {
+
+			pos := b.Cursor()
+
+			for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+
+				if co < offset && offset > -1 {
+					co++
+					continue
 				}
 
-				return err
+				if cl > limit && limit > -1 {
+					break
+				}
+
+				k = fmt.Sprintf("%s", inkey)
+				dbkeys = append(dbkeys, k)
+
+				co++
+				cl++
 
 			}
 
-			return err
+		} else {
+			return verr
+		}
+
+		return nil
+
+	})
+	if err != nil {
+		return ikeys, err
+	}
+
+	sort.Strings(dbkeys)
+
+	if uniq {
+
+		for v := range dbkeys {
+
+			if !compare[dbkeys[v]] {
+
+				ik.Key = dbkeys[v]
+				ik.Type = 1
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("size bucket not exists")
+
+					b := tx.Bucket([]byte("size"))
+					if b != nil {
+
+						val := b.Get([]byte(dbkeys[v]))
+						if val != nil {
+							ik.Size = int64(Endian.Uint64(val))
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					return ikeys, err
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("time bucket not exists")
+
+					b := tx.Bucket([]byte("time"))
+					if b != nil {
+
+						val := b.Get([]byte(dbkeys[v]))
+						if val != nil {
+							ik.Date = int32(Endian.Uint32(val))
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					return ikeys, err
+				}
+
+				ikeys = append(ikeys, ik)
+
+			}
+
+		}
+
+	} else {
+
+		for v := range dbkeys {
+
+			ik.Key = dbkeys[v]
+			ik.Type = 1
+
+			err = db.View(func(tx *bolt.Tx) error {
+
+				verr := errors.New("size bucket not exists")
+
+				b := tx.Bucket([]byte("size"))
+				if b != nil {
+
+					val := b.Get([]byte(dbkeys[v]))
+					if val != nil {
+						ik.Size = int64(Endian.Uint64(val))
+					}
+
+				} else {
+					return verr
+				}
+
+				return nil
+
+			})
+			if err != nil {
+				return ikeys, err
+			}
+
+			err = db.View(func(tx *bolt.Tx) error {
+
+				verr := errors.New("time bucket not exists")
+
+				b := tx.Bucket([]byte("time"))
+				if b != nil {
+
+					val := b.Get([]byte(dbkeys[v]))
+					if val != nil {
+						ik.Date = int32(Endian.Uint32(val))
+					}
+
+				} else {
+					return verr
+				}
+
+				return nil
+
+			})
+			if err != nil {
+				return ikeys, err
+			}
+
+			ikeys = append(ikeys, ik)
 
 		}
 
 	}
 
-	return err
+	return ikeys, err
+
+}
+
+// FileCount : count files in requested directory without .bolt and .crcbolt files
+func FileCount(dirpath string) (cnt int, err error) {
+
+	cnt = 0
+
+	allfiles, err := ioutil.ReadDir(dirpath)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, file := range allfiles {
+
+		bname := rgxbolt.MatchString(file.Name())
+		cname := rgxcrcbolt.MatchString(file.Name())
+
+		if !file.IsDir() && !bname && !cname {
+			cnt++
+		}
+	}
+
+	return cnt, err
 
 }
 

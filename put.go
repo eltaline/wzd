@@ -317,6 +317,9 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		now := time.Now()
 		sec := now.Unix()
 
+		tb := make([]byte, 4)
+		Endian.PutUint32(tb, uint32(sec))
+
 		dir := filepath.Dir(uri)
 		file := filepath.Base(uri)
 
@@ -328,6 +331,8 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		bucket := "wzd1"
 		ibucket := "index"
+		sbucket := "size"
+		tbucket := "time"
 		cbucket := "count"
 
 		timeout := time.Duration(locktimeout) * time.Second
@@ -420,7 +425,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			}
 
-			if FileExists(dbf) && nonunique {
+			if FileExists(dbf) && !nonunique {
 
 				db, err := BoltOpenRead(dbf, filemode, timeout, opentries, freelist)
 				if err != nil {
@@ -999,6 +1004,8 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
+				// Keys Index Bucket
+
 				err = db.Update(func(tx *bolt.Tx) error {
 					_, err := tx.CreateBucketIfNotExists([]byte(ibucket))
 					if err != nil {
@@ -1027,15 +1034,24 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
-				keyexists, err := KeyExists(db, ibucket, file)
+				// Keys Size Bucket
+
+				err = db.Update(func(tx *bolt.Tx) error {
+					_, err := tx.CreateBucketIfNotExists([]byte(sbucket))
+					if err != nil {
+						return err
+					}
+					return nil
+
+				})
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t create size db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t create size db bucket error\n")
 						if err != nil {
 							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
@@ -1047,6 +1063,38 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 					return
 
 				}
+
+				// Keys Time Bucket
+
+				err = db.Update(func(tx *bolt.Tx) error {
+					_, err := tx.CreateBucketIfNotExists([]byte(tbucket))
+					if err != nil {
+						return err
+					}
+					return nil
+
+				})
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t create time db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t create time db bucket error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				// Buckets Internal Sharding Bucket
 
 				err = db.Update(func(tx *bolt.Tx) error {
 					_, err := tx.CreateBucketIfNotExists([]byte(cbucket))
@@ -1064,6 +1112,27 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Can`t create count db bucket error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				keyexists, err := KeyExists(db, ibucket, file)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
 						if err != nil {
 							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
@@ -1339,6 +1408,9 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
+				sb := make([]byte, 8)
+				Endian.PutUint64(sb, uint64(realsize))
+
 				endbuffer := new(bytes.Buffer)
 
 				if writeintegrity {
@@ -1533,6 +1605,82 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 					if debugmode {
 
 						_, err = ctx.WriteString("[ERRO] Can`t write key to index db bucket error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				err = db.Update(func(tx *bolt.Tx) error {
+
+					verr := errors.New("size bucket not exists")
+
+					b := tx.Bucket([]byte(sbucket))
+					if b != nil {
+						err = b.Put([]byte(file), sb)
+						if err != nil {
+							return err
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t write key to size db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t write key to size db bucket error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					keymutex.Unlock(dbf)
+					return
+
+				}
+
+				err = db.Update(func(tx *bolt.Tx) error {
+
+					verr := errors.New("time bucket not exists")
+
+					b := tx.Bucket([]byte(tbucket))
+					if b != nil {
+						err = b.Put([]byte(file), tb)
+						if err != nil {
+							return err
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t write key to time db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t write key to time db bucket error\n")
 						if err != nil {
 							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}

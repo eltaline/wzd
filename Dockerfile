@@ -44,8 +44,9 @@ ENV locktimeout 5
 ENV fmaxsize 1048576
 ENV args false
 ENV getbolt false
-ENV getcount true
 ENV getkeys true
+ENV getinfo true
+ENV getcount true
 ENV nonunique false
 ENV cctrl 0
 ENV minbuffer 262144
@@ -76,6 +77,7 @@ RUN apt-get update
 RUN apt-get -y install sed util-linux
 
 COPY wzd /usr/bin/
+COPY wza/wza /usr/bin/
 COPY conf/wzd/docker/wzd-docker.conf /etc/wzd/wzd.conf
 COPY conf/wzd/docker/get-localhost.conf /etc/wzd/get-localhost.conf
 COPY conf/wzd/docker/put-localhost.conf /etc/wzd/put-localhost.conf
