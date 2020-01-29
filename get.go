@@ -481,39 +481,43 @@ func ZDGet() iris.Handler {
 
 				}
 
-				filekeys := ""
+				if len(getkeys) != 0 {
 
-				if hjson == "1" {
-					jkeys, _ := json.Marshal(getkeys)
-					filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
-				} else {
-					filekeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
-				}
+					filekeys := ""
 
-				err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
-				if err != nil {
+					if hjson == "1" {
+						jkeys, _ := json.Marshal(getkeys)
+						filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+					} else {
+						filekeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
+					}
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+					err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
+					if err != nil {
 
-					if debugmode {
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
 
-						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
-						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
 						}
+
+						return
 
 					}
 
-					return
+					_, err = ctx.Write(keysbuffer.Bytes())
+					if err != nil {
 
-				}
+						if log4xx {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
 
-				_, err = ctx.Write(keysbuffer.Bytes())
-				if err != nil {
-
-					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
 
 				}
@@ -564,40 +568,44 @@ func ZDGet() iris.Handler {
 
 				}
 
-				allkeys := ""
+				if len(getkeys) != 0 {
 
-				if hjson == "1" {
-					jkeys, _ := json.Marshal(getkeys)
-					allkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
-				} else {
-					allkeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
-				}
+					allkeys := ""
 
-				err = binary.Write(&keysbuffer, Endian, []byte(allkeys))
-				if err != nil {
+					if hjson == "1" {
+						jkeys, _ := json.Marshal(getkeys)
+						allkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+					} else {
+						allkeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
+					}
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+					err = binary.Write(&keysbuffer, Endian, []byte(allkeys))
+					if err != nil {
 
-					if debugmode {
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
 
-						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
-						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
 						}
+
+						db.Close()
+						return
 
 					}
 
-					db.Close()
-					return
+					_, err = ctx.Write(keysbuffer.Bytes())
+					if err != nil {
 
-				}
+						if log4xx {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
 
-				_, err = ctx.Write(keysbuffer.Bytes())
-				if err != nil {
-
-					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
 
 				}
@@ -640,39 +648,43 @@ func ZDGet() iris.Handler {
 
 				}
 
-				filekeys := ""
+				if len(getkeys) != 0 {
 
-				if hjson == "1" {
-					jkeys, _ := json.Marshal(getkeys)
-					filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
-				} else {
-					filekeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
-				}
+					filekeys := ""
 
-				err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
-				if err != nil {
+					if hjson == "1" {
+						jkeys, _ := json.Marshal(getkeys)
+						filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+					} else {
+						filekeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
+					}
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+					err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
+					if err != nil {
 
-					if debugmode {
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
 
-						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
-						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
 						}
+
+						return
 
 					}
 
-					return
+					_, err = ctx.Write(keysbuffer.Bytes())
+					if err != nil {
 
-				}
+						if log4xx {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
 
-				_, err = ctx.Write(keysbuffer.Bytes())
-				if err != nil {
-
-					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
 
 				}
@@ -735,40 +747,44 @@ func ZDGet() iris.Handler {
 
 				}
 
-				dbkeys := ""
+				if len(getkeys) != 0 {
 
-				if hjson == "1" {
-					jkeys, _ := json.Marshal(getkeys)
-					dbkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
-				} else {
-					dbkeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
-				}
+					dbkeys := ""
 
-				err = binary.Write(&keysbuffer, Endian, []byte(dbkeys))
-				if err != nil {
+					if hjson == "1" {
+						jkeys, _ := json.Marshal(getkeys)
+						dbkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+					} else {
+						dbkeys = fmt.Sprintf("%s\n", strings.Join(getkeys, "\n"))
+					}
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+					err = binary.Write(&keysbuffer, Endian, []byte(dbkeys))
+					if err != nil {
 
-					if debugmode {
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
 
-						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
-						if err != nil {
-							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
 						}
+
+						db.Close()
+						return
 
 					}
 
-					db.Close()
-					return
+					_, err = ctx.Write(keysbuffer.Bytes())
+					if err != nil {
 
-				}
+						if log4xx {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
 
-				_, err = ctx.Write(keysbuffer.Bytes())
-				if err != nil {
-
-					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
 
 				}
@@ -825,47 +841,51 @@ func ZDGet() iris.Handler {
 
 				}
 
-				filekeys := ""
+				if len(getkeys) != 0 {
 
-				if hjson == "1" {
-					jkeys, _ := json.Marshal(getkeys)
-					filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
-				} else {
+					filekeys := ""
 
-					var sgetkeys []string
+					if hjson == "1" {
+						jkeys, _ := json.Marshal(getkeys)
+						filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+					} else {
 
-					for _, vs := range getkeys {
-						sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+						var sgetkeys []string
+
+						for _, vs := range getkeys {
+							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+						}
+
+						filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+
 					}
 
-					filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+					err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
+					if err != nil {
 
-				}
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
 
-				err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
-				if err != nil {
+						if debugmode {
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+							_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
 
-					if debugmode {
+						}
 
-						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
-						if err != nil {
+						return
+
+					}
+
+					_, err = ctx.Write(keysbuffer.Bytes())
+					if err != nil {
+
+						if log4xx {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
 
-					}
-
-					return
-
-				}
-
-				_, err = ctx.Write(keysbuffer.Bytes())
-				if err != nil {
-
-					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
 
 				}
@@ -916,48 +936,52 @@ func ZDGet() iris.Handler {
 
 				}
 
-				allkeys := ""
+				if len(getkeys) != 0 {
 
-				if hjson == "1" {
-					jkeys, _ := json.Marshal(getkeys)
-					allkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
-				} else {
+					allkeys := ""
 
-					var sgetkeys []string
+					if hjson == "1" {
+						jkeys, _ := json.Marshal(getkeys)
+						allkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+					} else {
 
-					for _, vs := range getkeys {
-						sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+						var sgetkeys []string
+
+						for _, vs := range getkeys {
+							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+						}
+
+						allkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+
 					}
 
-					allkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+					err = binary.Write(&keysbuffer, Endian, []byte(allkeys))
+					if err != nil {
 
-				}
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
 
-				err = binary.Write(&keysbuffer, Endian, []byte(allkeys))
-				if err != nil {
+						if debugmode {
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+							_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
 
-					if debugmode {
+						}
 
-						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
-						if err != nil {
+						db.Close()
+						return
+
+					}
+
+					_, err = ctx.Write(keysbuffer.Bytes())
+					if err != nil {
+
+						if log4xx {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
 
-					}
-
-					db.Close()
-					return
-
-				}
-
-				_, err = ctx.Write(keysbuffer.Bytes())
-				if err != nil {
-
-					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
 
 				}
@@ -1000,47 +1024,51 @@ func ZDGet() iris.Handler {
 
 				}
 
-				filekeys := ""
+				if len(getkeys) != 0 {
 
-				if hjson == "1" {
-					jkeys, _ := json.Marshal(getkeys)
-					filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
-				} else {
+					filekeys := ""
 
-					var sgetkeys []string
+					if hjson == "1" {
+						jkeys, _ := json.Marshal(getkeys)
+						filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+					} else {
 
-					for _, vs := range getkeys {
-						sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+						var sgetkeys []string
+
+						for _, vs := range getkeys {
+							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+						}
+
+						filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+
 					}
 
-					filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+					err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
+					if err != nil {
 
-				}
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
 
-				err = binary.Write(&keysbuffer, Endian, []byte(filekeys))
-				if err != nil {
+						if debugmode {
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+							_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
 
-					if debugmode {
+						}
 
-						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
-						if err != nil {
+						return
+
+					}
+
+					_, err = ctx.Write(keysbuffer.Bytes())
+					if err != nil {
+
+						if log4xx {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
 
-					}
-
-					return
-
-				}
-
-				_, err = ctx.Write(keysbuffer.Bytes())
-				if err != nil {
-
-					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
 
 				}
@@ -1103,48 +1131,52 @@ func ZDGet() iris.Handler {
 
 				}
 
-				dbkeys := ""
+				if len(getkeys) != 0 {
 
-				if hjson == "1" {
-					jkeys, _ := json.Marshal(getkeys)
-					dbkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
-				} else {
+					dbkeys := ""
 
-					var sgetkeys []string
+					if hjson == "1" {
+						jkeys, _ := json.Marshal(getkeys)
+						dbkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+					} else {
 
-					for _, vs := range getkeys {
-						sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+						var sgetkeys []string
+
+						for _, vs := range getkeys {
+							sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(uint64(vs.Date), 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
+						}
+
+						dbkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+
 					}
 
-					dbkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+					err = binary.Write(&keysbuffer, Endian, []byte(dbkeys))
+					if err != nil {
 
-				}
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
 
-				err = binary.Write(&keysbuffer, Endian, []byte(dbkeys))
-				if err != nil {
+						if debugmode {
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write key names to keysbuffer error | Directory [%s] | %v", vhost, ip, abs, err)
+							_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
 
-					if debugmode {
+						}
 
-						_, err = ctx.WriteString("[ERRO] Write key names to keysbuffer error\n")
-						if err != nil {
+						db.Close()
+						return
+
+					}
+
+					_, err = ctx.Write(keysbuffer.Bytes())
+					if err != nil {
+
+						if log4xx {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
 
-					}
-
-					db.Close()
-					return
-
-				}
-
-				_, err = ctx.Write(keysbuffer.Bytes())
-				if err != nil {
-
-					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
 
 				}
