@@ -554,11 +554,11 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in info db buckets error | DB [%s] | %v", vhost, ip, dbk, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in info db buckets error\n")
 						if err != nil {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
@@ -733,11 +733,11 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in info db buckets error | DB [%s] | %v", vhost, ip, dbk, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in info db buckets error\n")
 						if err != nil {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
@@ -922,11 +922,11 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in info db buckets error | DB [%s] | %v", vhost, ip, dbk, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in info db buckets error\n")
 						if err != nil {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
@@ -1117,11 +1117,11 @@ func ZDGet() iris.Handler {
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in info db buckets error | DB [%s] | %v", vhost, ip, dbk, err)
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
+						_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in info db buckets error\n")
 						if err != nil {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
@@ -1333,11 +1333,11 @@ func ZDGet() iris.Handler {
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in index db bucket error | DB [%s] | %v", vhost, ip, dbk, err)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate keys of files in info db buckets error | DB [%s] | %v", vhost, ip, dbk, err)
 
 						if debugmode {
 
-							_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in index db bucket error\n")
+							_, err = ctx.WriteString("[ERRO] Can`t iterate keys of files in info db buckets error\n")
 							if err != nil {
 								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 							}
