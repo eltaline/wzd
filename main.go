@@ -133,8 +133,8 @@ type strCIDR struct {
 // KeysInfo : type for files and/or keys with info
 type KeysInfo struct {
 	Key  string `json:"key"`
-	Size int64  `json:"size"`
-	Date int32  `json:"date"`
+	Size uint64  `json:"size"`
+	Date uint32  `json:"date"`
 	Type int    `json:"type"`
 }
 
