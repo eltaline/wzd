@@ -212,7 +212,7 @@ In most cases it is enough to use the default configuration file. A full descrip
 
 Downloading file (the existing normal file is downloaded first and not the one in the Bolt archive):
 
-**Additional headers: JSON, Limit, Offset (JSON works with all Keys* headers ; Limit and Offset is not used with KeysCount* headers)**
+**Additional headers: JSON, Limit, Offset (JSON works with all Keys headers ; Limit and Offset is not used with KeysCount headers)**
 
 ```bash
 curl -o test.jpg http://localhost/test/test.jpg
@@ -335,7 +335,7 @@ curl -X DELETE http://localhost/test/test.bolt
 Advanced usage
 --------
 
-**Additional headers: JSON, Limit, Offset (JSON works with all Keys* headers; Limit and Offset is not used with KeysCount* headers)**
+**Additional headers: JSON, Limit, Offset (JSON works with all Keys headers; Limit and Offset is not used with KeysCount headers)**
 
 Getting a list of all file names from a directory and archive with their sizes and dates in JSON format with a set limit and offset
 
