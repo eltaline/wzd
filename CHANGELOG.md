@@ -26,9 +26,9 @@ Added in version 1.1.2:
 
 Fixed in version 1.1.2:
 
-- Fix date storage format from uint32 to uint64
+- Fixed date storage format from uint32 to uint64
 - Correction of various errors
-- Fix memory leaks
+- Fixed memory leaks
 
 Version: 1.1.1
 ========
@@ -36,7 +36,7 @@ Version: 1.1.1
 Fixed in version 1.1.1:
 
 - Small fixes
-- Fix freelist select algorithm when Read
+- Fixed freelist select algorithm when Read
 
 Version: 1.1.0
 ========
@@ -56,9 +56,9 @@ Added in version 1.1.0:
 
 Fixed in version 1.1.0:
 
-- Fix set of HTTP timeouts
+- Fixed set of HTTP timeouts
 - Exclusion of the ability to upload files with the extension .bolt
-- Fix some regular expressions
+- Fixed some regular expressions
 - Ability to use server without reverse proxy servers
 
 **Version 1.0.0 is deprecated and removed from public access, because this is first design-release without important features**
