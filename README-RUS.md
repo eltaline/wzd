@@ -212,7 +212,7 @@ docker run -d --restart=always -e bindaddr=127.0.0.1:9699 -e host=localhost -e r
 
 Скачивание файла (приоритетно скачивается существующий обычный файл, а не тот, что в Bolt архиве):
 
-**Дополнительные заголовки: JSON, Limit, Offset (JSON работает со всеми заголовками Keys* ; Limit и Offset не используется с заголовками KeysCount*)**
+**Дополнительные заголовки: JSON, Limit, Offset (JSON работает со всеми заголовками Keys ; Limit и Offset не используется с заголовками KeysCount)**
 
 ```bash
 curl -o test.jpg http://localhost/test/test.jpg
@@ -335,7 +335,7 @@ curl -X DELETE http://localhost/test/test.bolt
 Расширенное использование
 --------
 
-Дополнительные заголовки: JSON, Limit, Offset (JSON работает со всеми заголовками Keys* ; Limit и Offset не используется с заголовками KeysCount*)
+**Дополнительные заголовки: JSON, Limit, Offset (JSON работает со всеми заголовками Keys ; Limit и Offset не используется с заголовками KeysCount)**
 
 Получение списка всех имен файлов из директории и архива с их размерами и датами в формате JSON с установленным лимитом и сдвигом
 
