@@ -43,9 +43,9 @@ Added in version 1.1.2:
 
 Fixed in version 1.1.2:
 
-- Fix date storage format from uint32 to uint64
+- Fixed date storage format from uint32 to uint64
 - Correction of various errors
-- Fix memory leaks
+- Fixed memory leaks
 
 Features
 ========
