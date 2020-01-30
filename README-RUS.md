@@ -287,25 +287,25 @@ curl -H "KeysInfoArchive: 1" http://localhost/test
 Получение подсчета всех уникальных файлов из директории и архива (если серверный параметр getcount = true)
 
 ```bash
-curl -H "KeysCount: 1" http://localhost/test/test.jpg
+curl -H "KeysCount: 1" http://localhost/test
 ```
 
 Получение подсчета всех файлов из директории и архива (если серверный параметр getcount = true)
 
 ```bash
-curl -H "KeysCountAll: 1" http://localhost/test/test.jpg
+curl -H "KeysCountAll: 1" http://localhost/test
 ```
 
 Получение подсчета всех файлов только из директории (если серверный параметр getcount = true)
 
 ```bash
-curl -H "KeysCountFiles: 1" http://localhost/test/test.jpg
+curl -H "KeysCountFiles: 1" http://localhost/test
 ```
 
 Получение подсчета всех файлов только из архива (если серверный параметр getcount = true)
 
 ```bash
-curl -H "KeysCountArchive: 1" http://localhost/test/test.jpg
+curl -H "KeysCountArchive: 1" http://localhost/test
 ```
 
 Скачивание целого Bolt архива из директории (если серверный параметр getbolt = true)

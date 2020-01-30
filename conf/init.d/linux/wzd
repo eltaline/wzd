@@ -1,0 +1,88 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides: wzd
+# Required-Start:       $syslog $local_fs $remote_fs $network
+# Required-Stop:        $syslog $local_fs $remote_fs
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description: wZD Service
+### END INIT INFO
+
+. /lib/lsb/init-functions
+DAEMON=wzd
+USER="wzd"
+GROUP="wzd"
+DBDIR="/var/lib/wzd"
+LOGDIR="/var/log/wzd"
+RUNDIR="/run/wzd"
+PIDFILE=/run/wzd/wzd.pid
+DESC="wZD Service"
+start() {
+
+	if [ -z `getent group wzd` ]; then
+		groupadd wzd
+	fi
+
+	if [ -z `getent passwd wzd` ]; then
+		useradd wzd -g wzd
+	fi
+
+	test -d $DBDIR || install --mode=755 --owner=wzd --group=wzd --directory $DBDIR
+	test -d $LOGDIR || install --mode=755 --owner=wzd --group=wzd --directory $LOGDIR
+	test -d $RUNDIR || install --mode=755 --owner=wzd --group=wzd --directory $RUNDIR
+
+	log_daemon_msg "Starting $DESC\n"
+	start-stop-daemon -q -b -u $USER -g $GROUP -p $PIDFILE --start --exec /usr/sbin/wzd
+	if [ $? -ne 0 ]; then
+		log_failure_msg "Failed"
+		exit 1
+	fi
+	if [ $? -eq 0 ]; then
+		log_success_msg "wZD Started"
+	fi
+	exit 0
+
+}
+
+stop() {
+
+	log_daemon_msg "Stopping $DESC\n"
+	start-stop-daemon -q -p $PIDFILE --stop
+	if [ $? -ne 0 ]; then
+		log_failure_msg "Failed"
+		exit 1
+	fi
+	if [ $? -eq 0 ]; then
+		log_success_msg "wZD Stopped"
+	fi
+
+}
+
+force_reload() {
+
+	stop
+	start
+
+}
+
+case "$1" in
+
+	start)
+		start
+		;;
+	stop)
+		stop
+		;;
+	force-reload)
+		force_reload
+		;;
+	restart)
+		stop
+		start
+		;;
+
+	*)
+		echo "$Usage: $DAEMON {start|stop|force-reload|restart}"
+		exit 2
+
+esac
