@@ -1014,7 +1014,7 @@ func main() {
 
 	app.Configure(iris.WithoutInterruptHandler, iris.WithoutBodyConsumptionOnUnmarshal, iris.WithCharset(charset), iris.WithRemoteAddrHeader(realheader), iris.WithOptimizations, iris.WithConfiguration(iris.Configuration{
 		DisablePathCorrection: false,
-		EnablePathEscape:      true,
+		EnablePathEscape:      false,
 		TimeFormat:            "Mon, 02 Jan 2006 15:04:05 GMT",
 		Charset:               charset,
 	}))

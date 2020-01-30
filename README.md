@@ -13,30 +13,39 @@ Architecture
 
 <img align="center" src="/images/wzd-arch.png" alt="wZD Arch"/>
 
-Current stable version: 1.1.1
+Current stable version: 1.1.2
 ========
 
-Added in version 1.1.0:
+- <a href=/CHANGELOG.md>Changelog</a>
 
-- HTTPS (parameters bindaddrssl, onlyssl, sslcrt, sslkey)
-- IP authorization (parameters getallow, putallow, delallow)
-- Choice of free page algorithm in BoltDB (freelist parameter)
-- Keepalive (keepalive parameter)
-- POST method (binary data protocol only)
-- OPTIONS method (parameter options)
-- Access-Control-Allow-Origin header (parameter headorigin)
-- X-Frame-Options header (parameter xframe)
-- Content-Encoding header for pre-compressed gzip files (automatic + parameter gzstatic)
-- Logging 4xx (parameter log4xx)
+**Important: incompatibilities with previous versions**
 
-Fixed in version 1.1.0:
+The procedure for upgrading to version 1.1.2:
 
-- Fix set of HTTP timeouts
-- Exclusion of the ability to upload files with the extension .bolt
-- Fix some regular expressions
-- Ability to use server without reverse proxy servers
+- Install wZD server and archiver <a href=https://github.com/eltaline/wza>wZA</a> version 1.1.2
+- Restart wZD server
+- Update Bolt archives (one time required)
 
-**Version 1.0.0 is deprecated and removed from public access, because this is first design-release without important features**
+*Restarting the update is excluded by the archiver itself
+
+```bash
+find / var / storage -type f -name '* .bolt'> /tmp/upgrade.list
+wza --upgrade --list = / tmp / upgrade.list
+```
+
+Added in version 1.1.2:
+
+- The archiver <a href=https://github.com/eltaline/wza>wZA</a> now comes immediately in the docker image
+- Headers Keys* KeysInfo* KeysCount* (parameters getkeys, getinfo, getcount)
+- JSON, Limit, Offset headers (advanced use of NoSQL component)
+- Updating the format of Bolt archives (for future support for WEB interface and FUSE)
+- Support for UTF-8
+
+Fixed in version 1.1.2:
+
+- Fix date storage format from uint32 to uint64
+- Correction of various errors
+- Fix memory leaks
 
 Features
 ========
@@ -203,6 +212,8 @@ In most cases it is enough to use the default configuration file. A full descrip
 
 Downloading file (the existing normal file is downloaded first and not the one in the Bolt archive):
 
+**Additional headers: JSON, Limit, Offset (JSON works with all Keys* headers ; Limit and Offset is not used with KeysCount* headers)**
+
 ```bash
 curl -o test.jpg http://localhost/test/test.jpg
 ```
@@ -225,22 +236,76 @@ Uploading file to the Bolt archive (if the server parameter fmaxsize is not exce
 curl -X PUT -H "Archive: 1" --data-binary @test.jpg http://localhost/test/test.jpg
 ```
 
-Getting count of the number of keys in the directory (if the server parameter getcount = true):
-
-```bash
-curl -H "KeysCount: 1" http://localhost/test
-```
-
-Getting list of unique files or key names in a directory (if the server parameter getkeys = true):
+Getting list of all unique file names from directory and archive (if the server parameter getkeys = true):
 
 ```bash
 curl -H "Keys: 1" http://localhost/test
 ```
 
-Getting list of non-unique files or key names in a directory (if the server parameter getkeys = true):
+Getting list of all file names from directory and archive (if the server parameter getkeys = true):
 
 ```bash
 curl -H "KeysAll: 1" http://localhost/test
+```
+
+Getting list of all file names only from directory (if the server parameter getkeys = true):
+
+```bash
+curl -H "KeysFiles: 1" http://localhost/test
+
+```
+Getting list of all file names only from archive (if the server parameter getkeys = true):
+
+```bash
+curl -H "KeysArchive: 1" http://localhost/test
+```
+
+Getting list of all unique file names from directory and archive with their sizes and dates (if the server parameter getinfo = true):
+
+```bash
+curl -H "KeysInfo: 1" http://localhost/test
+```
+
+Getting list of all file names from directory and archive with their sizes and dates (if the server parameter getinfo = true):
+
+```bash
+curl -H "KeysInfoAll: 1" http://localhost/test
+```
+
+Getting list of all file names only from directory with their sizes and dates (if the server parameter getinfo = true):
+
+```bash
+curl -H "KeysInfoFiles: 1" http://localhost/test
+
+```
+Getting list of all file names only from archive with their sizes and dates (if the server parameter getinfo = true):
+
+```bash
+curl -H "KeysInfoArchive: 1" http://localhost/test
+```
+
+Getting count number of all unqiue files from directory and archive (if the server parameter getcount = true):
+
+```bash
+curl -H "KeysCount: 1" http://localhost/test
+```
+
+Getting count number of all files from directory and archive (if the server parameter getcount = true):
+
+```bash
+curl -H "KeysCountAll: 1" http://localhost/test
+```
+
+Getting count number of all files only from directory (if the server parameter getcount = true):
+
+```bash
+curl -H "KeysCountFiles: 1" http://localhost/test
+```
+
+Getting count number of all files only from archive (if the server parameter getcount = true):
+
+```bash
+curl -H "KeysCountArchive: 1" http://localhost/test
 ```
 
 Downloading the whole Bolt archive from the directory (if the server parameter getbolt = true):
@@ -265,6 +330,17 @@ Deleting the whole Bolt archive from the directory (if the server parameter delb
 
 ```bash
 curl -X DELETE http://localhost/test/test.bolt
+```
+
+Advanced usage
+--------
+
+**Additional headers: JSON, Limit, Offset (JSON works with all Keys* headers; Limit and Offset is not used with KeysCount* headers)**
+
+Getting a list of all file names from a directory and archive with their sizes and dates in JSON format with a set limit and offset
+
+```bash
+curl -H "KeysInfoAll: 1" -H "JSON: 1" -H "Limit: 25" -H "Offset: 100" http://localhost/test
 ```
 
 Data migration in 3 steps without stopping the service
@@ -359,7 +435,7 @@ Notes and Q&A
 - The ability to fully reverse restore metadata when it is completely lost (if using a distributor)
 - Native protocol for the possibility of using permanent network connections and drivers for different programming languages
 - ~~Support for HTTPS protocol, it may be supported only in the future distributor~~ (Completed in standart version)
-- Advanced features for using NoSQL component
+- ~~Advanced features for using NoSQL component~~ (Completed)
 - Implementing background calculate checksums for single large files
 - Periodic checksum checks in the background to protect against bit rot
 - FUSE and / or WebDAV Mount, full support may be implemented, including write support
