@@ -172,7 +172,7 @@ systemctl enable wzd && systemctl start wzd
 
 ```bash
 docker run -d --restart=always -e bindaddr=127.0.0.1:9699 -e host=localhost -e root=/var/storage \
--v /var/storage:/var/storage --name wzd -p 80:9699 eltaline/wzd
+-v /var/storage:/var/storage --name wzd -p 9699:9699 eltaline/wzd
 ```
 
 Более расширенный вариант:
@@ -183,7 +183,7 @@ docker run -d --restart=always -e bindaddr=127.0.0.1:9699 -e host=localhost -e r
 -e writeintegrity=true -e readintegrity=true \
 -e args=false -e getbolt=false -e getcount=true -e getkeys=true \
 -e nonunique=false -e cctrl=2592000 -e delbolt=false -e deldir=false \
--v /var/storage:/var/storage --name wzd -p 80:9699 eltaline/wzd
+-v /var/storage:/var/storage --name wzd -p 9699:9699 eltaline/wzd
 ```
 
 Все ENV параметры по умолчанию можно посмотреть тут: <a href=/Dockerfile>Dockerfile</a>
