@@ -210,9 +210,9 @@ Configuring and using wZD server
 
 In most cases it is enough to use the default configuration file. A full description of all product parameters is available here: <a href="/OPTIONS.md">Options</a>
 
-Downloading file (the existing normal file is downloaded first and not the one in the Bolt archive):
-
 **Additional headers: JSON, Limit, Offset (JSON works with all Keys headers ; Limit and Offset is not used with KeysCount headers)**
+
+Downloading file (the existing normal file is downloaded first and not the one in the Bolt archive):
 
 ```bash
 curl -o test.jpg http://localhost/test/test.jpg
