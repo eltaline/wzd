@@ -20,7 +20,7 @@ Added in version 1.1.2:
 
 - The archiver <a href=https://github.com/eltaline/wza>wZA</a> now comes immediately in the docker image
 - Headers Keys* KeysInfo* KeysCount* (parameters getkeys, getinfo, getcount)
-- JSON, Limit, Offset headers (advanced use of NoSQL component)
+- Headers JSON, Limit, Offset (advanced use of NoSQL component)
 - Updating the format of Bolt archives (for future support for WEB interface and FUSE)
 - Support for UTF-8
 
