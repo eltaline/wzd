@@ -242,49 +242,49 @@ Getting list of all unique file names from directory and archive (if the server 
 curl -H "Keys: 1" http://localhost/test
 ```
 
-Getting list of all file names from directory and archive (if the server parameter getkeys = true):
+Getting list of all file names from the directory and archive (if the server parameter getkeys = true):
 
 ```bash
 curl -H "KeysAll: 1" http://localhost/test
 ```
 
-Getting list of all file names only from directory (if the server parameter getkeys = true):
+Getting list of all file names only from the directory (if the server parameter getkeys = true):
 
 ```bash
 curl -H "KeysFiles: 1" http://localhost/test
 
 ```
-Getting list of all file names only from archive (if the server parameter getkeys = true):
+Getting list of all file names only from the archive (if the server parameter getkeys = true):
 
 ```bash
 curl -H "KeysArchive: 1" http://localhost/test
 ```
 
-Getting list of all unique file names from directory and archive with their sizes and dates (if the server parameter getinfo = true):
+Getting list of all unique file names from the directory and archive with their sizes and dates (if the server parameter getinfo = true):
 
 ```bash
 curl -H "KeysInfo: 1" http://localhost/test
 ```
 
-Getting list of all file names from directory and archive with their sizes and dates (if the server parameter getinfo = true):
+Getting list of all file names from the directory and archive with their sizes and dates (if the server parameter getinfo = true):
 
 ```bash
 curl -H "KeysInfoAll: 1" http://localhost/test
 ```
 
-Getting list of all file names only from directory with their sizes and dates (if the server parameter getinfo = true):
+Getting list of all file names only from the directory with their sizes and dates (if the server parameter getinfo = true):
 
 ```bash
 curl -H "KeysInfoFiles: 1" http://localhost/test
 
 ```
-Getting list of all file names only from archive with their sizes and dates (if the server parameter getinfo = true):
+Getting list of all file names only from the archive with their sizes and dates (if the server parameter getinfo = true):
 
 ```bash
 curl -H "KeysInfoArchive: 1" http://localhost/test
 ```
 
-Getting count number of all unqiue files from directory and archive (if the server parameter getcount = true):
+Getting count number of all unique files from the directory and archive (if the server parameter getcount = true):
 
 ```bash
 curl -H "KeysCount: 1" http://localhost/test
@@ -296,13 +296,13 @@ Getting count number of all files from directory and archive (if the server para
 curl -H "KeysCountAll: 1" http://localhost/test
 ```
 
-Getting count number of all files only from directory (if the server parameter getcount = true):
+Getting count number of all files only from the directory (if the server parameter getcount = true):
 
 ```bash
 curl -H "KeysCountFiles: 1" http://localhost/test
 ```
 
-Getting count number of all files only from archive (if the server parameter getcount = true):
+Getting count number of all files only from the archive (if the server parameter getcount = true):
 
 ```bash
 curl -H "KeysCountArchive: 1" http://localhost/test
