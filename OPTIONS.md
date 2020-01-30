@@ -289,15 +289,22 @@ getbolt
 - **Type:** bool
 - **Section:** [server.name]
 
-getcount
-- **Description:** If this is disabled, getting a count of the total number of files or values (including individual files) in the directory will be forbidden.
+getkeys
+- **Description:** If this is disabled, getting file or key names (including individual files) from the directory will be forbidden.
 - **Default:** Required
 - **Values:** true or false
 - **Type:** bool
 - **Section:** [server.name]
 
-getkeys
-- **Description:** If this is disabled, getting file or key names (including individual files) from the directory will be forbidden.
+getinfo
+- **Description:** If this is disabled, getting file or key names with addition information (including individual files) from the directory will be forbidden.
+- **Default:** Required
+- **Values:** true or false
+- **Type:** bool
+- **Section:** [server.name]
+
+getcount
+- **Description:** If this is disabled, getting a count of the total number of files or values (including individual files) in the directory will be forbidden.
 - **Default:** Required
 - **Values:** true or false
 - **Type:** bool
