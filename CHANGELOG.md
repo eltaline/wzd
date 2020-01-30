@@ -12,8 +12,8 @@ The procedure for upgrading to version 1.1.2:
 *Restarting the update is excluded by the archiver itself
 
 ```bash
-find / var / storage -type f -name '* .bolt'> /tmp/upgrade.list
-wza --upgrade --list = / tmp / upgrade.list
+find /var/storage -type f -name '*.bolt'> /tmp/upgrade.list
+wza --upgrade --list=/tmp/upgrade.list
 ```
 
 Added in version 1.1.2:
