@@ -374,7 +374,7 @@ Advanced search
 - **```KeysCount``` headers also support all search headers except ```Limit, Offset, WithValue``` headers**
 - **```WithValue``` header is only available if you use ```KeysSearch*``` and ```JSON``` headers together**
 - **The ```Recursive``` header supports a maximum recursion depth of 3**
-- **The ```Expire``` header sets the lifetime once for a particular request, response returns from the cache and the lifetime for the result in the cache is not updated**
+- **The ```Expire``` header sets the lifetime once for a particular request. Other same particular request returns result from the cache and the lifetime for the result in the cache is not updated**
 - **Using ```Expire``` and ```SkipCache``` headers together will force updates the result and lifetime in the cache**
 - **When using header ```WithValue``` values are encoded by base64(outer) and HEX(inner)**
 
