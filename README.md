@@ -20,8 +20,8 @@ Current stable version: 1.1.2
 
 **Important: incompatibilities with previous versions**
 
-- For use all Keys* headers, you need to add a header ```curl "-H Sea" ...```
-- Headers Keys...Archive renamed to Keys...Archives
+- For use all ```Keys*``` headers, you need to add a header ```curl "-H Sea" ...```
+- Headers ```Keys...Archive``` renamed to ```Keys...Archives```
 - In the docker image, getkeys and getinfo options are disabled by default
 
 Added in version 1.1.3:
