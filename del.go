@@ -22,6 +22,8 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 	return func(ctx iris.Context) {
 		defer wg.Done()
 
+		var err error
+
 		// Wait Group
 
 		wg.Add(1)
@@ -41,7 +43,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		if wshutdown {
 			ctx.StatusCode(iris.StatusInternalServerError)
-			// _, err := ctx.WriteString("Shutdown wZD server in progress\n")
+			// _, err = ctx.WriteString("[ERRO] Shutdown wZD server in progress\n")
 			// if err != nil {
 			//	delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 			// }
@@ -50,6 +52,9 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		uri := ctx.Path()
 		params := ctx.URLParams()
+
+		fromfile := ctx.GetHeader("FromFile")
+		fromarchive := ctx.GetHeader("FromArchive")
 
 		badhost := true
 		badip := true
@@ -134,7 +139,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.Writef("[ERRO] Not found configured virtual host | Virtual Host [%s]\n", vhost)
+				_, err = ctx.Writef("[ERRO] Not found configured virtual host | Virtual Host [%s]\n", vhost)
 				if err != nil {
 					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -155,7 +160,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.Writef("[ERRO] Not found allowed ip | Virtual Host [%s]\n", vhost)
+				_, err = ctx.Writef("[ERRO] Not found allowed ip | Virtual Host [%s]\n", vhost)
 				if err != nil {
 					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -176,7 +181,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.Writef("[ERRO] Delete disabled | Virtual Host [%s]\n", vhost)
+				_, err = ctx.Writef("[ERRO] Delete disabled | Virtual Host [%s]\n", vhost)
 				if err != nil {
 					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -197,7 +202,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.WriteString("[ERRO] The query arguments is not allowed during DELETE request\n")
+				_, err = ctx.WriteString("[ERRO] The query arguments is not allowed during DELETE request\n")
 				if err != nil {
 					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -213,25 +218,6 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		mchregcrcbolt := rgxcrcbolt.MatchString(file)
 
-		if mchregcrcbolt {
-
-			ctx.StatusCode(iris.StatusForbidden)
-
-			if log4xx {
-				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Restricted to delete .crcbolt file error | File [%s]", vhost, ip, file)
-			}
-
-			if debugmode {
-
-				_, err := ctx.WriteString("[ERRO] Restricted to delete .crcbolt file error\n")
-				if err != nil {
-					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-				}
-
-			}
-
-		}
-
 		if !delbolt {
 
 			mchregbolt := rgxbolt.MatchString(file)
@@ -246,7 +232,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				if debugmode {
 
-					_, err := ctx.WriteString("[ERRO] Delete bolt request is not allowed during DELETE request\n")
+					_, err = ctx.WriteString("[ERRO] Delete bolt request is not allowed during DELETE request\n")
 					if err != nil {
 						delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
@@ -259,11 +245,30 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		}
 
-		abs := fmt.Sprintf("%s%s/%s", base, dir, file)
-		ddir := fmt.Sprintf("%s%s", base, dir)
+		if mchregcrcbolt {
+
+			ctx.StatusCode(iris.StatusForbidden)
+
+			if log4xx {
+				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Restricted to delete .crcbolt file error | File [%s]", vhost, ip, file)
+			}
+
+			if debugmode {
+
+				_, err = ctx.WriteString("[ERRO] Restricted to delete .crcbolt file error\n")
+				if err != nil {
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+				}
+
+			}
+
+		}
+
+		abs := filepath.Clean(base + dir + "/" + file)
+		ddir := filepath.Clean(base + dir)
 
 		dbn := filepath.Base(dir)
-		dbf := fmt.Sprintf("%s%s/%s.bolt", base, dir, dbn)
+		dbf := filepath.Clean(base + dir + "/" + dbn + ".bolt")
 
 		bucket := ""
 		ibucket := "index"
@@ -282,7 +287,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.WriteString("[ERRO] No given file name error\n")
+				_, err = ctx.WriteString("[ERRO] No given file name error\n")
 				if err != nil {
 					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -298,12 +303,12 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 			ctx.StatusCode(iris.StatusNotFound)
 
 			if log4xx {
-				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Can`t find directory error | Directory [%s]", vhost, ip, ddir)
+				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, ddir)
 			}
 
 			if debugmode {
 
-				_, err := ctx.WriteString("[ERRO] Can`t find directory error\n")
+				_, err = ctx.WriteString("[ERRO] Can`t find directory error\n")
 				if err != nil {
 					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -315,17 +320,25 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		}
 
 		if !FileExists(abs) && !FileExists(dbf) {
+
 			ctx.StatusCode(iris.StatusNotFound)
 
 			if log4xx {
-				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s] | DB [%s]", vhost, ip, abs, dbf)
+			}
+
+			if debugmode {
+
+				_, err = ctx.WriteString("[ERRO] Can`t find file and archive db error\n")
+				if err != nil {
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+				}
+
 			}
 
 			return
 
 		}
-
-		fromarchive := ctx.GetHeader("FromArchive")
 
 		key := false
 
@@ -342,7 +355,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		if key {
 
 			if FileExists(abs) && fromarchive != "1" {
-				err := RemoveFile(abs, ddir, deldir)
+				err = RemoveFile(abs, ddir, deldir)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
@@ -369,6 +382,25 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			keymutex.Unlock(abs)
 
+			if fromfile == "1" {
+
+				ctx.StatusCode(iris.StatusNotFound)
+
+				if log4xx {
+					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | File [%s] | Path [%s]", vhost, ip, file, abs)
+				}
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Can`t find file error\n")
+					if err != nil {
+						delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+			}
+
 		} else {
 
 			ctx.StatusCode(iris.StatusServiceUnavailable)
@@ -376,7 +408,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.WriteString("[ERRO] Timeout mmutex lock error\n")
+				_, err = ctx.WriteString("[ERRO] Timeout mmutex lock error\n")
 				if err != nil {
 					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -716,7 +748,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
-				keycountbucket, err := KeyCountBucket(db, bucket)
+				keyscountbucket, err := KeysCountBucket(db, bucket)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
@@ -737,7 +769,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
-				if keycountbucket == 0 {
+				if keyscountbucket == 0 {
 
 					err = db.Update(func(tx *bolt.Tx) error {
 						err = tx.DeleteBucket([]byte(bucket))
@@ -769,7 +801,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
-				keycount, err := KeyCount(db, ibucket)
+				keyscount, err := KeysCount(db, ibucket)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusInternalServerError)
@@ -790,9 +822,9 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
-				if keycount == 0 {
+				if keyscount == 0 {
 
-					err := RemoveFileDB(dbf, ddir, deldir)
+					err = RemoveFileDB(dbf, ddir, deldir)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -871,12 +903,12 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 			ctx.StatusCode(iris.StatusNotFound)
 
 			if log4xx {
-				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Can`t find file in db error | File [%s] | DB [%s]", vhost, ip, file, dbf)
+				delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | File [%s] | DB [%s]", vhost, ip, file, dbf)
 			}
 
 			if debugmode {
 
-				_, err = ctx.WriteString("[ERRO] Can`t find file in db error\n")
+				_, err = ctx.WriteString("[ERRO] Can`t find file in archive db error\n")
 				if err != nil {
 					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -894,7 +926,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.WriteString("[ERRO] Timeout mmutex lock error\n")
+				_, err = ctx.WriteString("[ERRO] Timeout mmutex lock error\n")
 				if err != nil {
 					delLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}

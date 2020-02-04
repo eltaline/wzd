@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kataras/golog"
 	"os"
+	"path/filepath"
 )
 
 // Loggers
@@ -87,22 +88,22 @@ func DelLogger() (*golog.Logger, *os.File) {
 // Log Paths
 
 func todayAppFilename() string {
-	logfile := fmt.Sprintf("%s/app.log", logdir)
+	logfile := filepath.Clean(logdir + "/app.log")
 	return logfile
 }
 
 func todayGetFilename() string {
-	logfile := fmt.Sprintf("%s/get.log", logdir)
+	logfile := filepath.Clean(logdir + "/get.log")
 	return logfile
 }
 
 func todayPutFilename() string {
-	logfile := fmt.Sprintf("%s/put.log", logdir)
+	logfile := filepath.Clean(logdir + "/put.log")
 	return logfile
 }
 
 func todayDelFilename() string {
-	logfile := fmt.Sprintf("%s/del.log", logdir)
+	logfile := filepath.Clean(logdir + "/del.log")
 	return logfile
 }
 

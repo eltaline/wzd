@@ -1,3 +1,30 @@
+Version: 1.1.3
+========
+
+**Important: incompatibilities with previous versions**
+
+- For use all Keys* headers, you need to add a header ```curl "-H Sea" ...```
+- Headers Keys...Archive renamed to Keys...Archives
+- In the docker image, getkeys and getinfo options are disabled by default
+
+Added in version 1.1.3:
+
+- Advanced recursive search for files and values
+- Global options: gcpercent, srchcache (configure garbage collector and search cache)
+- Sea header (required to work with Keys* search)
+- Headers: KeysSearch*, Recursive (getsearch, getrecursive parameters)
+- Headers: Expression, StopFirst (regular expression and stop search)
+- Headers: WithValue, Expire (getvalue, getcache parameters)
+- Headers: MinSize, MaxSize, MinStmp, MaxStmp, WithUrl
+- Headers: Expire, SkipCache (Query cache search and skip cache)
+- Response headers: Hitcache, Errcache, Errmsg search
+- FromFile header for GET and DELETE methods
+- Updated documentation
+
+Fixed in version 1.1.3:
+
+- Minor bug fixes
+
 Version: 1.1.2
 ========
 

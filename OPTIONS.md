@@ -91,11 +91,25 @@ debugmode
 - **Type:** bool
 - **Section:** [global]
 
+gcpercent
+- **Description:** This globally sets the garbage collection parameter (percent). -1 disables the garbage collector. It is not configured for a virtual host.
+- **Default:** 25
+- **Values:** -1-100
+- **Type:** int
+- **Section:** [global]
+
 freelist
 - **Description:** This globally sets the type of page release algorithm in BoltDB. The hashmap algorithm is faster. It is not configured for a virtual host.
 - **Default:** hashmap
 - **Values:** hashmap or array
 - **Type:** string
+- **Section:** [global]
+
+srchcache
+- **Description:** This globally sets the size of the search cache (megabytes). Values greater than 1/1024 of the cache size do not fit into the cache. It is not configured for a virtual host.
+- **Default:** 128
+- **Values:** 1-1048576
+- **Type:** int
 - **Section:** [global]
 
 pidfile
@@ -275,6 +289,13 @@ fmaxsize
 - **Type:** int64
 - **Section:** [server.name]
 
+vmaxsize
+- **Description:** This is the maximum size of the requested file or value when searching with the WithValue header. If this parameter is exceeded for a specific file or value, the value will not be displayed in the JSON document. Recommended size no more than 4096 (4KB). It is not recommended to request values in the search if the files or values are larger than 16KB (bytes).
+- **Default:** Required
+- **Values:** 1-262144
+- **Type:** int64
+- **Section:** [server.name]
+
 args
 - **Description:** If this is disabled, query arguments will be denied for GET requests. It is recommended that this be enabled if using Vary header on a reverse proxy server, or if versioning through query arguments.
 - **Default:** Required
@@ -303,8 +324,36 @@ getinfo
 - **Type:** bool
 - **Section:** [server.name]
 
+getsearch
+- **Description:** If this is disabled, then it will be forbidden to use KeysSearch* and Expression search headers.
+- **Default:** Required
+- **Values:** true or false
+- **Type:** bool
+- **Section:** [server.name]
+
+getrecursive
+- **Description:** If this is disabled, then a recursive search for file names or keys (including individual files) will be prohibited. Recursive header.
+- **Default:** Required
+- **Values:** true or false
+- **Type:** bool
+- **Section:** [server.name]
+
+getvalue
+- **Description:** If this is disabled, then it will be forbidden to get the values of files or keys (including individual files) in the search results through the KeysSearch* headers with WithValue header.
+- **Default:** Required
+- **Values:** true or false
+- **Type:** bool
+- **Section:** [server.name]
+
 getcount
 - **Description:** If this is disabled, getting a count of the total number of files or values (including individual files) in the directory will be forbidden.
+- **Default:** Required
+- **Values:** true or false
+- **Type:** bool
+- **Section:** [server.name]
+
+getcache
+- **Description:** If this is disabled, then it will be forbidden to set the lifetime of search results in the search cache through the Expire header.
 - **Default:** Required
 - **Values:** true or false
 - **Type:** bool

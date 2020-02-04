@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/eltaline/bolt"
@@ -13,6 +14,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -271,8 +273,8 @@ func KeyExists(db *bolt.DB, xbucket string, file string) (data string, err error
 
 }
 
-// KeyCount : count keys in an index bucket for requested directory
-func KeyCount(db *bolt.DB, ibucket string) (cnt int, err error) {
+// KeysCount : count keys in an index bucket for requested directory
+func KeysCount(db *bolt.DB, ibucket string) (cnt int, err error) {
 
 	cnt = 1
 
@@ -298,8 +300,8 @@ func KeyCount(db *bolt.DB, ibucket string) (cnt int, err error) {
 
 }
 
-// KeyCountBucket : count keys in a requested bucket
-func KeyCountBucket(db *bolt.DB, bucket string) (cnt int, err error) {
+// KeysCountBucket : count keys in a requested bucket
+func KeysCountBucket(db *bolt.DB, bucket string) (cnt int, err error) {
 
 	cnt = 1
 
@@ -421,132 +423,139 @@ func RemoveFileDB(file string, directory string, deldir bool) error {
 
 // Names/Count Helpers
 
-// FileKeys : get file names through requested directory
-func FileKeys(dirpath string, limit int64, offset int64) (keys []string, err error) {
-
-	var k string
-
-	allfiles, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return keys, err
-	}
-
-	cl := int64(1)
-	co := int64(1)
-
-	for _, file := range allfiles {
-
-		k = file.Name()
-
-		bname := rgxbolt.MatchString(k)
-		cname := rgxcrcbolt.MatchString(k)
-
-		if !file.IsDir() && !bname && !cname {
-
-			if co < offset && offset > -1 {
-				co++
-				continue
-			}
-
-			if cl > limit && limit > -1 {
-				break
-			}
-
-			filename := fmt.Sprintf("%s/%s", dirpath, k)
-
-			lnfile, err := os.Lstat(filename)
-			if err != nil {
-				continue
-			}
-
-			if lnfile.Mode()&os.ModeType != 0 {
-				continue
-			}
-
-			keys = append(keys, k)
-
-			co++
-			cl++
-
-		}
-
-	}
-
-	sort.Strings(keys)
-
-	return keys, err
-
-}
-
-// FileKeysInfo : get file names with info through requested directory
-func FileKeysInfo(dirpath string, limit int64, offset int64) (ikeys []KeysInfo, err error) {
+// FileKeys : search file names through requested directory
+func FileKeys(dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string) (ikeys []Keys, err error) {
 
 	var filekeys []string
 	var k string
 
-	var ik KeysInfo
+	var ik Keys
 
-	allfiles, err := ioutil.ReadDir(dirpath)
+	var sdcheck bool = false
+
+	iminsize := int64(minsize)
+	imaxsize := int64(maxsize)
+	iminstmp := int64(minstmp)
+	imaxstmp := int64(maxstmp)
+
+	if minsize > 0 || maxsize > 0 || minstmp > 0 || maxstmp > 0 {
+		sdcheck = true
+	}
+
+	rgxexpression, err := regexp.Compile(expression)
 	if err != nil {
 		return ikeys, err
 	}
 
-	cl := int64(1)
-	co := int64(1)
+	dirpath = filepath.Clean(dirpath)
+	url = strings.TrimSuffix(url, "/")
 
-	for _, file := range allfiles {
+	paths, err := RecursiveDirSearch(dirpath, recursive)
+	if err != nil {
+		return ikeys, err
+	}
 
-		k = file.Name()
+	cl := uint64(1)
+	co := uint64(1)
 
-		bname := rgxbolt.MatchString(k)
-		cname := rgxcrcbolt.MatchString(k)
+	for _, dirname := range paths {
 
-		if !file.IsDir() && !bname && !cname {
+		files, err := ioutil.ReadDir(dirname)
+		if err != nil {
+			return ikeys, err
+		}
 
-			if co < offset && offset > -1 {
+		for _, file := range files {
+
+			k = file.Name()
+
+			bname := rgxbolt.MatchString(k)
+			cname := rgxcrcbolt.MatchString(k)
+
+			if !file.IsDir() && !bname && !cname {
+
+				if !rgxexpression.MatchString(k) {
+					continue
+				}
+
+				if co < offset && offset > 0 {
+					co++
+					continue
+				}
+
+				if cl > limit && limit > 0 {
+					break
+				}
+
+				filename := dirname + "/" + k
+
+				lnfile, err := os.Lstat(filename)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				filekeys = append(filekeys, filename)
+
+				if stopfirst == 1 {
+					stopfirst = 255
+					break
+				}
+
 				co++
-				continue
+				cl++
+
 			}
 
-			if cl > limit && limit > -1 {
-				break
-			}
+		}
 
-			filename := fmt.Sprintf("%s/%s", dirpath, k)
+		if stopfirst == 255 {
+			break
+		}
 
-			lnfile, err := os.Lstat(filename)
-			if err != nil {
-				continue
-			}
-
-			if lnfile.Mode()&os.ModeType != 0 {
-				continue
-			}
-
-			filekeys = append(filekeys, k)
-
-			co++
-			cl++
-
+		if cl > limit && limit > 0 {
+			break
 		}
 
 	}
 
 	sort.Strings(filekeys)
 
-	for v := range filekeys {
+	for _, filename := range filekeys {
 
-		filename := fmt.Sprintf("%s/%s", dirpath, filekeys[v])
+		if sdcheck {
 
-		infile, err := os.Stat(filename)
-		if err != nil {
-			continue
+			infile, err := os.Stat(filename)
+			if err != nil {
+				continue
+			}
+
+			fsize := infile.Size()
+			fdate := infile.ModTime().Unix()
+
+			switch {
+			case fsize < iminsize && minsize > 0:
+				continue
+			case fsize > imaxsize && maxsize > 0:
+				continue
+			case fdate < iminstmp && minstmp > 0:
+				continue
+			case fdate > imaxstmp && maxstmp > 0:
+				continue
+			}
+
 		}
 
-		ik.Key = filekeys[v]
-		ik.Type = 0
-		ik.Size = uint64(infile.Size())
-		ik.Date = uint64(infile.ModTime().Unix())
+		filename = strings.TrimPrefix(filename, dirpath+"/")
+
+		if withurl {
+			filename = url + "/" + filename
+		}
+
+		ik.Key = filename
 
 		ikeys = append(ikeys, ik)
 
@@ -556,124 +565,728 @@ func FileKeysInfo(dirpath string, limit int64, offset int64) (ikeys []KeysInfo, 
 
 }
 
-// DBKeys : get key names through requested directory from bolt archive
-func DBKeys(db *bolt.DB, ibucket string, limit int64, offset int64) (keys []string, err error) {
+// FileKeysInfo : search file names with info through requested directory
+func FileKeysInfo(dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string) (ikeys []KeysInfo, err error) {
 
+	var filekeys []string
 	var k string
 
-	err = db.View(func(tx *bolt.Tx) error {
+	var ik KeysInfo
 
-		verr := errors.New("index bucket not exists")
+	var sdcheck bool = false
 
-		b := tx.Bucket([]byte(ibucket))
-		if b != nil {
+	iminsize := int64(minsize)
+	imaxsize := int64(maxsize)
+	iminstmp := int64(minstmp)
+	imaxstmp := int64(maxstmp)
 
-			pos := b.Cursor()
+	if minsize > 0 || maxsize > 0 || minstmp > 0 || maxstmp > 0 {
+		sdcheck = true
+	}
 
-			cl := int64(1)
-			co := int64(1)
+	rgxexpression, err := regexp.Compile(expression)
+	if err != nil {
+		return ikeys, err
+	}
 
-			for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+	dirpath = filepath.Clean(dirpath)
+	url = strings.TrimSuffix(url, "/")
 
-				if co < offset && offset > -1 {
+	paths, err := RecursiveDirSearch(dirpath, recursive)
+	if err != nil {
+		return ikeys, err
+	}
+
+	cl := uint64(1)
+	co := uint64(1)
+
+	for _, dirname := range paths {
+
+		files, err := ioutil.ReadDir(dirname)
+		if err != nil {
+			return ikeys, err
+		}
+
+		for _, file := range files {
+
+			k = file.Name()
+
+			bname := rgxbolt.MatchString(k)
+			cname := rgxcrcbolt.MatchString(k)
+
+			if !file.IsDir() && !bname && !cname {
+
+				if !rgxexpression.MatchString(k) {
+					continue
+				}
+
+				if co < offset && offset > 0 {
 					co++
 					continue
 				}
 
-				if cl > limit && limit > -1 {
+				if cl > limit && limit > 0 {
 					break
 				}
 
-				k = fmt.Sprintf("%s", inkey)
-				keys = append(keys, k)
+				filename := dirname + "/" + k
+
+				lnfile, err := os.Lstat(filename)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				filekeys = append(filekeys, filename)
+
+				if stopfirst == 1 {
+					stopfirst = 255
+					break
+				}
 
 				co++
 				cl++
 
 			}
 
-		} else {
-			return verr
 		}
 
-		return nil
+		if stopfirst == 255 {
+			break
+		}
 
-	})
-	if err != nil {
-		return keys, err
+		if cl > limit && limit > 0 {
+			break
+		}
+
 	}
 
-	sort.Strings(keys)
+	sort.Strings(filekeys)
 
-	return keys, err
+	for _, filename := range filekeys {
+
+		infile, err := os.Stat(filename)
+		if err != nil {
+			continue
+		}
+
+		fsize := infile.Size()
+		fdate := infile.ModTime().Unix()
+
+		if sdcheck {
+
+			switch {
+			case fsize < iminsize && minsize > 0:
+				continue
+			case fsize > imaxsize && maxsize > 0:
+				continue
+			case fdate < iminstmp && minstmp > 0:
+				continue
+			case fdate > imaxstmp && maxstmp > 0:
+				continue
+			}
+
+		}
+
+		filename = strings.TrimPrefix(filename, dirpath+"/")
+
+		if withurl {
+			filename = url + "/" + filename
+		}
+
+		ik.Key = filename
+		ik.Type = 0
+		ik.Size = uint64(fsize)
+		ik.Date = uint64(fdate)
+
+		ikeys = append(ikeys, ik)
+
+	}
+
+	return ikeys, err
 
 }
 
-// DBKeysInfo : get key names with info through requested directory from bolt archive
-func DBKeysInfo(db *bolt.DB, ibucket string, limit int64, offset int64) (ikeys []KeysInfo, err error) {
+// FileKeysSearch : search file names/names with values through requested directory
+func FileKeysSearch(dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withvalue bool, vmaxsize int64) (ikeys []KeysSearch, err error) {
+
+	var filekeys []string
+	var k string
+
+	var ik KeysSearch
+
+	var sdcheck bool = false
+
+	iminsize := int64(minsize)
+	imaxsize := int64(maxsize)
+	iminstmp := int64(minstmp)
+	imaxstmp := int64(maxstmp)
+
+	if minsize > 0 || maxsize > 0 || minstmp > 0 || maxstmp > 0 {
+		sdcheck = true
+	}
+
+	rgxexpression, err := regexp.Compile(expression)
+	if err != nil {
+		return ikeys, err
+	}
+
+	dirpath = filepath.Clean(dirpath)
+	url = strings.TrimSuffix(url, "/")
+
+	paths, err := RecursiveDirSearch(dirpath, recursive)
+	if err != nil {
+		return ikeys, err
+	}
+
+	cl := uint64(1)
+	co := uint64(1)
+
+	for _, dirname := range paths {
+
+		files, err := ioutil.ReadDir(dirname)
+		if err != nil {
+			return ikeys, err
+		}
+
+		for _, file := range files {
+
+			k = file.Name()
+
+			bname := rgxbolt.MatchString(k)
+			cname := rgxcrcbolt.MatchString(k)
+
+			if !file.IsDir() && !bname && !cname {
+
+				if !rgxexpression.MatchString(k) {
+					continue
+				}
+
+				if co < offset && offset > 0 {
+					co++
+					continue
+				}
+
+				if cl > limit && limit > 0 {
+					break
+				}
+
+				filename := dirname + "/" + k
+
+				lnfile, err := os.Lstat(filename)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				filekeys = append(filekeys, filename)
+
+				if stopfirst == 1 {
+					stopfirst = 255
+					break
+				}
+
+				co++
+				cl++
+
+			}
+
+		}
+
+		if stopfirst == 255 {
+			break
+		}
+
+		if cl > limit && limit > 0 {
+			break
+		}
+
+	}
+
+	sort.Strings(filekeys)
+
+	for _, filename := range filekeys {
+
+		var value []byte
+
+		infile, err := os.Stat(filename)
+		if err != nil {
+			continue
+		}
+
+		fsize := infile.Size()
+		fdate := infile.ModTime().Unix()
+
+		if sdcheck {
+
+			switch {
+			case fsize < iminsize && minsize > 0:
+				continue
+			case fsize > imaxsize && maxsize > 0:
+				continue
+			case fdate < iminstmp && minstmp > 0:
+				continue
+			case fdate > imaxstmp && maxstmp > 0:
+				continue
+			}
+
+		}
+
+		if withvalue && fsize <= vmaxsize {
+
+			value, err = ioutil.ReadFile(filename)
+			if err != nil {
+				return ikeys, err
+			}
+
+		}
+
+		filename = strings.TrimPrefix(filename, dirpath+"/")
+
+		if withurl {
+			filename = url + "/" + filename
+		}
+
+		ik.Key = filename
+		ik.Type = 0
+		ik.Size = uint64(fsize)
+		ik.Date = uint64(fdate)
+
+		vhex := make([]byte, hex.EncodedLen(len(value)))
+		hex.Encode(vhex, value)
+
+		ik.Value = vhex
+
+		ikeys = append(ikeys, ik)
+
+	}
+
+	return ikeys, err
+
+}
+
+// DBKeys : search key names through requested directory
+func DBKeys(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string) (ikeys []Keys, err error) {
+
+	var dbkeys []string
+	var k string
+
+	var ik Keys
+
+	var sdcheck bool = false
+
+	if minsize > 0 || maxsize > 0 || minstmp > 0 || maxstmp > 0 {
+		sdcheck = true
+	}
+
+	rgxexpression, err := regexp.Compile(expression)
+	if err != nil {
+		return ikeys, err
+	}
+
+	dirpath = filepath.Clean(dirpath)
+	url = strings.TrimSuffix(url, "/")
+
+	paths, err := RecursiveDirSearch(dirpath, recursive)
+	if err != nil {
+		return ikeys, err
+	}
+
+	cl := uint64(1)
+	co := uint64(1)
+
+	for _, dirname := range paths {
+
+		files, err := ioutil.ReadDir(dirname)
+		if err != nil {
+			return ikeys, err
+		}
+
+		for _, file := range files {
+
+			k = file.Name()
+
+			bname := rgxbolt.MatchString(k)
+
+			if !file.IsDir() && bname {
+
+				dbname := dirname + "/" + k
+
+				lnfile, err := os.Lstat(dbname)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+				if err != nil {
+					return ikeys, err
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("index bucket not exists")
+
+					b := tx.Bucket([]byte(ibucket))
+					if b != nil {
+
+						pos := b.Cursor()
+
+						for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+
+							bk := string(inkey)
+
+							if !rgxexpression.MatchString(bk) {
+								continue
+							}
+
+							if co < offset && offset > 0 {
+								co++
+								continue
+							}
+
+							if cl > limit && limit > 0 {
+								break
+							}
+
+							filename := dirname + "/" + bk
+							dbkeys = append(dbkeys, filename)
+
+							if stopfirst == 1 {
+								stopfirst = 255
+								break
+							}
+
+							co++
+							cl++
+
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				db.Close()
+
+			}
+
+			if stopfirst == 255 {
+				break
+			}
+
+			if cl > limit && limit > 0 {
+				break
+			}
+
+		}
+
+		if stopfirst == 255 {
+			break
+		}
+
+		if cl > limit && limit > 0 {
+			break
+		}
+
+	}
+
+	sort.Strings(dbkeys)
+
+	for _, filename := range dbkeys {
+
+		if sdcheck {
+
+			var ksize uint64
+			var kdate uint64
+
+			keyname := filepath.Base(filename)
+			lastpath := filepath.Dir(filename)
+			boltname := filepath.Base(lastpath) + ".bolt"
+			dbname := lastpath + "/" + boltname
+
+			db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+			if err != nil {
+				return ikeys, err
+			}
+
+			err = db.View(func(tx *bolt.Tx) error {
+
+				verr := errors.New("size bucket not exists")
+
+				b := tx.Bucket([]byte(sbucket))
+				if b != nil {
+
+					val := b.Get([]byte(keyname))
+					if val != nil {
+						ksize = Endian.Uint64(val)
+					}
+
+				} else {
+					return verr
+				}
+
+				return nil
+
+			})
+			if err != nil {
+				db.Close()
+				return ikeys, err
+			}
+
+			if sdcheck {
+
+				switch {
+				case ksize < minsize && minsize > 0:
+					db.Close()
+					continue
+				case ksize > maxsize && maxsize > 0:
+					db.Close()
+					continue
+				}
+
+			}
+
+			err = db.View(func(tx *bolt.Tx) error {
+
+				verr := errors.New("time bucket not exists")
+
+				b := tx.Bucket([]byte(tbucket))
+				if b != nil {
+
+					val := b.Get([]byte(keyname))
+					if val != nil {
+						kdate = Endian.Uint64(val)
+					}
+
+				} else {
+					return verr
+				}
+
+				return nil
+
+			})
+			if err != nil {
+				db.Close()
+				return ikeys, err
+			}
+
+			if sdcheck {
+
+				switch {
+				case kdate < minstmp && minstmp > 0:
+					db.Close()
+					continue
+				case kdate > maxstmp && maxstmp > 0:
+					db.Close()
+					continue
+				}
+
+			}
+
+			db.Close()
+
+		}
+
+		filename = strings.TrimPrefix(filename, dirpath+"/")
+
+		if withurl {
+			filename = url + "/" + filename
+		}
+
+		ik.Key = filename
+
+		ikeys = append(ikeys, ik)
+
+	}
+
+	return ikeys, err
+
+}
+
+// DBKeysInfo : search key names with info through requested directory
+func DBKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string) (ikeys []KeysInfo, err error) {
 
 	var dbkeys []string
 	var k string
 
 	var ik KeysInfo
 
-	err = db.View(func(tx *bolt.Tx) error {
+	var sdcheck bool = false
 
-		verr := errors.New("index bucket not exists")
+	if minsize > 0 || maxsize > 0 || minstmp > 0 || maxstmp > 0 {
+		sdcheck = true
+	}
 
-		b := tx.Bucket([]byte(ibucket))
-		if b != nil {
-
-			pos := b.Cursor()
-
-			cl := int64(1)
-			co := int64(1)
-
-			for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
-
-				if co < offset && offset > -1 {
-					co++
-					continue
-				}
-
-				if cl > limit && limit > -1 {
-					break
-				}
-
-				k = fmt.Sprintf("%s", inkey)
-				dbkeys = append(dbkeys, k)
-
-				co++
-				cl++
-
-			}
-
-		} else {
-			return verr
-		}
-
-		return nil
-
-	})
+	rgxexpression, err := regexp.Compile(expression)
 	if err != nil {
 		return ikeys, err
 	}
 
+	dirpath = filepath.Clean(dirpath)
+	url = strings.TrimSuffix(url, "/")
+
+	paths, err := RecursiveDirSearch(dirpath, recursive)
+	if err != nil {
+		return ikeys, err
+	}
+
+	cl := uint64(1)
+	co := uint64(1)
+
+	for _, dirname := range paths {
+
+		files, err := ioutil.ReadDir(dirname)
+		if err != nil {
+			return ikeys, err
+		}
+
+		for _, file := range files {
+
+			k = file.Name()
+
+			bname := rgxbolt.MatchString(k)
+
+			if !file.IsDir() && bname {
+
+				dbname := dirname + "/" + k
+
+				lnfile, err := os.Lstat(dbname)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+				if err != nil {
+					return ikeys, err
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("index bucket not exists")
+
+					b := tx.Bucket([]byte(ibucket))
+					if b != nil {
+
+						pos := b.Cursor()
+
+						for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+
+							bk := string(inkey)
+
+							if !rgxexpression.MatchString(bk) {
+								continue
+							}
+
+							if co < offset && offset > 0 {
+								co++
+								continue
+							}
+
+							if cl > limit && limit > 0 {
+								break
+							}
+
+							filename := dirname + "/" + bk
+							dbkeys = append(dbkeys, filename)
+
+							if stopfirst == 1 {
+								stopfirst = 255
+								break
+							}
+
+							co++
+							cl++
+
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				db.Close()
+
+			}
+
+			if stopfirst == 255 {
+				break
+			}
+
+			if cl > limit && limit > 0 {
+				break
+			}
+
+		}
+
+		if stopfirst == 255 {
+			break
+		}
+
+		if cl > limit && limit > 0 {
+			break
+		}
+
+	}
+
 	sort.Strings(dbkeys)
 
-	for v := range dbkeys {
+	for _, filename := range dbkeys {
 
-		ik.Key = dbkeys[v]
+		keyname := filepath.Base(filename)
+		lastpath := filepath.Dir(filename)
+		boltname := filepath.Base(lastpath) + ".bolt"
+		dbname := lastpath + "/" + boltname
+
+		filename = strings.TrimPrefix(filename, dirpath+"/")
+
+		if withurl {
+			filename = url + "/" + filename
+		}
+
+		ik.Key = filename
 		ik.Type = 1
+
+		db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+		if err != nil {
+			return ikeys, err
+		}
 
 		err = db.View(func(tx *bolt.Tx) error {
 
 			verr := errors.New("size bucket not exists")
 
-			b := tx.Bucket([]byte("size"))
+			b := tx.Bucket([]byte(sbucket))
 			if b != nil {
 
-				val := b.Get([]byte(dbkeys[v]))
+				val := b.Get([]byte(keyname))
 				if val != nil {
 					ik.Size = Endian.Uint64(val)
 				}
@@ -686,17 +1299,31 @@ func DBKeysInfo(db *bolt.DB, ibucket string, limit int64, offset int64) (ikeys [
 
 		})
 		if err != nil {
+			db.Close()
 			return ikeys, err
+		}
+
+		if sdcheck {
+
+			switch {
+			case ik.Size < minsize && minsize > 0:
+				db.Close()
+				continue
+			case ik.Size > maxsize && maxsize > 0:
+				db.Close()
+				continue
+			}
+
 		}
 
 		err = db.View(func(tx *bolt.Tx) error {
 
 			verr := errors.New("time bucket not exists")
 
-			b := tx.Bucket([]byte("time"))
+			b := tx.Bucket([]byte(tbucket))
 			if b != nil {
 
-				val := b.Get([]byte(dbkeys[v]))
+				val := b.Get([]byte(keyname))
 				if val != nil {
 					ik.Date = Endian.Uint64(val)
 				}
@@ -709,8 +1336,24 @@ func DBKeysInfo(db *bolt.DB, ibucket string, limit int64, offset int64) (ikeys [
 
 		})
 		if err != nil {
+			db.Close()
 			return ikeys, err
 		}
+
+		if sdcheck {
+
+			switch {
+			case ik.Date < minstmp && minstmp > 0:
+				db.Close()
+				continue
+			case ik.Date > maxstmp && maxstmp > 0:
+				db.Close()
+				continue
+			}
+
+		}
+
+		db.Close()
 
 		ikeys = append(ikeys, ik)
 
@@ -720,257 +1363,1027 @@ func DBKeysInfo(db *bolt.DB, ibucket string, limit int64, offset int64) (ikeys [
 
 }
 
-// AllKeys : get summary file and key names through requested directory and from bolt archive
-func AllKeys(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit int64, offset int64) (keys []string, err error) {
+// DBKeysSearch : search key names/names with values through requested directory
+func DBKeysSearch(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withvalue bool, vmaxsize int64) (ikeys []KeysSearch, err error) {
 
-	var allkeys []string
-	compare := map[string]bool{}
+	var dbkeys []string
 	var k string
 
-	cl := int64(1)
-	co := int64(1)
+	var ik KeysSearch
 
-	allfiles, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return keys, err
+	var sdcheck bool = false
+
+	if minsize > 0 || maxsize > 0 || minstmp > 0 || maxstmp > 0 {
+		sdcheck = true
 	}
 
-	for _, file := range allfiles {
+	rgxexpression, err := regexp.Compile(expression)
+	if err != nil {
+		return ikeys, err
+	}
 
-		k = file.Name()
+	dirpath = filepath.Clean(dirpath)
+	url = strings.TrimSuffix(url, "/")
 
-		bname := rgxbolt.MatchString(k)
-		cname := rgxcrcbolt.MatchString(k)
+	paths, err := RecursiveDirSearch(dirpath, recursive)
+	if err != nil {
+		return ikeys, err
+	}
 
-		if !file.IsDir() && !bname && !cname {
+	cl := uint64(1)
+	co := uint64(1)
 
-			if co < offset && offset > -1 {
-				co++
-				continue
+	for _, dirname := range paths {
+
+		files, err := ioutil.ReadDir(dirname)
+		if err != nil {
+			return ikeys, err
+		}
+
+		for _, file := range files {
+
+			k = file.Name()
+
+			bname := rgxbolt.MatchString(k)
+
+			if !file.IsDir() && bname {
+
+				dbname := dirname + "/" + k
+
+				lnfile, err := os.Lstat(dbname)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+				if err != nil {
+					return ikeys, err
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("index bucket not exists")
+
+					b := tx.Bucket([]byte(ibucket))
+					if b != nil {
+
+						pos := b.Cursor()
+
+						for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+
+							bk := string(inkey)
+
+							if !rgxexpression.MatchString(bk) {
+								continue
+							}
+
+							if co < offset && offset > 0 {
+								co++
+								continue
+							}
+
+							if cl > limit && limit > 0 {
+								break
+							}
+
+							filename := dirname + "/" + bk
+							dbkeys = append(dbkeys, filename)
+
+							if stopfirst == 1 {
+								stopfirst = 255
+								break
+							}
+
+							co++
+							cl++
+
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				db.Close()
+
 			}
 
-			if cl > limit && limit > -1 {
+			if stopfirst == 255 {
 				break
 			}
 
-			filename := fmt.Sprintf("%s/%s", dirpath, k)
-
-			lnfile, err := os.Lstat(filename)
-			if err != nil {
-				continue
+			if cl > limit && limit > 0 {
+				break
 			}
 
-			if lnfile.Mode()&os.ModeType != 0 {
-				continue
-			}
+		}
 
-			allkeys = append(allkeys, k)
+		if stopfirst == 255 {
+			break
+		}
 
-			co++
-			cl++
-
+		if cl > limit && limit > 0 {
+			break
 		}
 
 	}
 
-	err = db.View(func(tx *bolt.Tx) error {
+	sort.Strings(dbkeys)
 
-		verr := errors.New("index bucket not exists")
+	for _, filename := range dbkeys {
 
-		b := tx.Bucket([]byte(ibucket))
-		if b != nil {
+		var value []byte = nil
+		var bval string = ""
 
-			pos := b.Cursor()
+		keyname := filepath.Base(filename)
+		lastpath := filepath.Dir(filename)
+		boltname := filepath.Base(lastpath) + ".bolt"
+		dbname := lastpath + "/" + boltname
 
-			for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+		filename = strings.TrimPrefix(filename, dirpath+"/")
 
-				if co < offset && offset > -1 {
+		if withurl {
+			filename = url + "/" + filename
+		}
+
+		ik.Key = filename
+		ik.Type = 1
+
+		db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+		if err != nil {
+			return ikeys, err
+		}
+
+		err = db.View(func(tx *bolt.Tx) error {
+
+			verr := errors.New("size bucket not exists")
+
+			b := tx.Bucket([]byte(sbucket))
+			if b != nil {
+
+				val := b.Get([]byte(keyname))
+				if val != nil {
+					ik.Size = Endian.Uint64(val)
+				}
+
+			} else {
+				return verr
+			}
+
+			return nil
+
+		})
+		if err != nil {
+			db.Close()
+			return ikeys, err
+		}
+
+		if sdcheck {
+
+			switch {
+			case ik.Size < minsize && minsize > 0:
+				db.Close()
+				continue
+			case ik.Size > maxsize && maxsize > 0:
+				db.Close()
+				continue
+			}
+
+		}
+
+		err = db.View(func(tx *bolt.Tx) error {
+
+			verr := errors.New("time bucket not exists")
+
+			b := tx.Bucket([]byte(tbucket))
+			if b != nil {
+
+				val := b.Get([]byte(keyname))
+				if val != nil {
+					ik.Date = Endian.Uint64(val)
+				}
+
+			} else {
+				return verr
+			}
+
+			return nil
+
+		})
+		if err != nil {
+			db.Close()
+			return ikeys, err
+		}
+
+		if sdcheck {
+
+			switch {
+			case ik.Date < minstmp && minstmp > 0:
+				db.Close()
+				continue
+			case ik.Date > maxstmp && maxstmp > 0:
+				db.Close()
+				continue
+			}
+
+		}
+
+		if withvalue && int64(ik.Size) <= vmaxsize {
+
+			err = db.View(func(tx *bolt.Tx) error {
+
+				verr := errors.New("index bucket not exists")
+
+				b := tx.Bucket([]byte(ibucket))
+				if b != nil {
+
+					val := b.Get([]byte(keyname))
+					if val != nil {
+						bval = string(val)
+					}
+
+				} else {
+					return verr
+				}
+
+				return nil
+
+			})
+			if err != nil {
+				db.Close()
+				return ikeys, err
+			}
+
+			if bval != "" {
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("bucket not exists")
+
+					b := tx.Bucket([]byte(bval))
+					if b != nil {
+
+						val := b.Get([]byte(keyname))
+						if val != nil {
+							value = val
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+			}
+
+		}
+
+		vhex := make([]byte, hex.EncodedLen(len(value)))
+		hex.Encode(vhex, value)
+
+		ik.Value = vhex
+
+		db.Close()
+
+		ikeys = append(ikeys, ik)
+
+	}
+
+	return ikeys, err
+
+}
+
+// AllKeys : search summary file and key names through requested directory
+func AllKeys(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, uniq bool) (ikeys []Keys, err error) {
+
+	var filekeys []string
+	var dbkeys []string
+	compare := map[string]bool{}
+
+	var k string
+
+	var ik Keys
+
+	var sdcheck bool = false
+
+	iminsize := int64(minsize)
+	imaxsize := int64(maxsize)
+	iminstmp := int64(minstmp)
+	imaxstmp := int64(maxstmp)
+
+	if minsize > 0 || maxsize > 0 || minstmp > 0 || maxstmp > 0 {
+		sdcheck = true
+	}
+
+	rgxexpression, err := regexp.Compile(expression)
+	if err != nil {
+		return ikeys, err
+	}
+
+	dirpath = filepath.Clean(dirpath)
+	url = strings.TrimSuffix(url, "/")
+
+	paths, err := RecursiveDirSearch(dirpath, recursive)
+	if err != nil {
+		return ikeys, err
+	}
+
+	cl := uint64(1)
+	co := uint64(1)
+
+	for _, dirname := range paths {
+
+		files, err := ioutil.ReadDir(dirname)
+		if err != nil {
+			return ikeys, err
+		}
+
+		for _, file := range files {
+
+			k = file.Name()
+
+			bname := rgxbolt.MatchString(k)
+			cname := rgxcrcbolt.MatchString(k)
+
+			if !file.IsDir() && !bname && !cname {
+
+				if !rgxexpression.MatchString(k) {
+					continue
+				}
+
+				if co < offset && offset > 0 {
 					co++
 					continue
 				}
 
-				if cl > limit && limit > -1 {
+				if cl > limit && limit > 0 {
 					break
 				}
 
-				k = fmt.Sprintf("%s", inkey)
-				allkeys = append(allkeys, k)
+				filename := dirname + "/" + k
+
+				lnfile, err := os.Lstat(filename)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				filekeys = append(filekeys, filename)
+				compare[filename] = true
+
+				if stopfirst == 1 {
+					stopfirst = 255
+					break
+				}
 
 				co++
 				cl++
 
 			}
 
-		} else {
-			return verr
-		}
+			if !file.IsDir() && bname {
 
-		return nil
+				dbname := dirname + "/" + k
 
-	})
+				lnfile, err := os.Lstat(dbname)
+				if err != nil {
+					continue
+				}
 
-	if err != nil {
-		return keys, err
-	}
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
 
-	if uniq {
+				db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+				if err != nil {
+					return ikeys, err
+				}
 
-		for v := range allkeys {
+				err = db.View(func(tx *bolt.Tx) error {
 
-			if !compare[allkeys[v]] {
-				compare[allkeys[v]] = true
-				keys = append(keys, allkeys[v])
+					verr := errors.New("index bucket not exists")
+
+					b := tx.Bucket([]byte(ibucket))
+					if b != nil {
+
+						pos := b.Cursor()
+
+						for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+
+							bk := string(inkey)
+
+							if !rgxexpression.MatchString(bk) {
+								continue
+							}
+
+							if co < offset && offset > 0 {
+								co++
+								continue
+							}
+
+							if cl > limit && limit > 0 {
+								break
+							}
+
+							filename := dirname + "/" + bk
+							dbkeys = append(dbkeys, filename)
+
+							if stopfirst == 1 {
+								stopfirst = 255
+								break
+							}
+
+							co++
+							cl++
+
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				db.Close()
+
 			}
 
-		}
-
-	} else {
-
-		keys = allkeys
-
-	}
-
-	sort.Strings(keys)
-
-	return keys, err
-
-}
-
-// AllKeysInfo : get summary file and key names with info through requested directory and from bolt archive
-func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit int64, offset int64) (ikeys []KeysInfo, err error) {
-
-	var filekeys []string
-	var dbkeys []string
-	compare := map[string]bool{}
-	var k string
-
-	var ik KeysInfo
-
-	cl := int64(1)
-	co := int64(1)
-
-	allfiles, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return ikeys, err
-	}
-
-	for _, file := range allfiles {
-
-		k = file.Name()
-
-		bname := rgxbolt.MatchString(k)
-		cname := rgxcrcbolt.MatchString(k)
-
-		if !file.IsDir() && !bname && !cname {
-
-			if co < offset && offset > -1 {
-				co++
-				continue
-			}
-
-			if cl > limit && limit > -1 {
+			if stopfirst == 255 {
 				break
 			}
 
-			filename := fmt.Sprintf("%s/%s", dirpath, k)
-
-			lnfile, err := os.Lstat(filename)
-			if err != nil {
-				continue
+			if cl > limit && limit > 0 {
+				break
 			}
 
-			if lnfile.Mode()&os.ModeType != 0 {
-				continue
-			}
+		}
 
-			filekeys = append(filekeys, k)
-			compare[k] = true
+		if stopfirst == 255 {
+			break
+		}
 
-			co++
-			cl++
-
+		if cl > limit && limit > 0 {
+			break
 		}
 
 	}
 
 	sort.Strings(filekeys)
 
-	for v := range filekeys {
+	for _, filename := range filekeys {
 
-		filename := fmt.Sprintf("%s/%s", dirpath, filekeys[v])
+		if sdcheck {
 
-		infile, err := os.Stat(filename)
-		if err != nil {
-			continue
+			infile, err := os.Stat(filename)
+			if err != nil {
+				continue
+			}
+
+			fsize := infile.Size()
+			fdate := infile.ModTime().Unix()
+
+			switch {
+			case fsize < iminsize && minsize > 0:
+				continue
+			case fsize > imaxsize && maxsize > 0:
+				continue
+			case fdate < iminstmp && minstmp > 0:
+				continue
+			case fdate > imaxstmp && maxstmp > 0:
+				continue
+			}
+
 		}
 
-		ik.Key = filekeys[v]
-		ik.Type = 0
-		ik.Size = uint64(infile.Size())
-		ik.Date = uint64(infile.ModTime().Unix())
+		filename = strings.TrimPrefix(filename, dirpath+"/")
+
+		if withurl {
+			filename = url + "/" + filename
+		}
+
+		ik.Key = filename
 
 		ikeys = append(ikeys, ik)
 
-	}
-
-	err = db.View(func(tx *bolt.Tx) error {
-
-		verr := errors.New("index bucket not exists")
-
-		b := tx.Bucket([]byte(ibucket))
-		if b != nil {
-
-			pos := b.Cursor()
-
-			for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
-
-				if co < offset && offset > -1 {
-					co++
-					continue
-				}
-
-				if cl > limit && limit > -1 {
-					break
-				}
-
-				k = fmt.Sprintf("%s", inkey)
-				dbkeys = append(dbkeys, k)
-
-				co++
-				cl++
-
-			}
-
-		} else {
-			return verr
-		}
-
-		return nil
-
-	})
-	if err != nil {
-		return ikeys, err
 	}
 
 	sort.Strings(dbkeys)
 
 	if uniq {
 
-		for v := range dbkeys {
+		for _, filename := range dbkeys {
 
-			if !compare[dbkeys[v]] {
+			if sdcheck {
 
-				ik.Key = dbkeys[v]
-				ik.Type = 1
+				var ksize uint64
+				var kdate uint64
+
+				keyname := filepath.Base(filename)
+				lastpath := filepath.Dir(filename)
+				boltname := filepath.Base(lastpath) + ".bolt"
+				dbname := lastpath + "/" + boltname
+
+				db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+				if err != nil {
+					return ikeys, err
+				}
 
 				err = db.View(func(tx *bolt.Tx) error {
 
 					verr := errors.New("size bucket not exists")
 
-					b := tx.Bucket([]byte("size"))
+					b := tx.Bucket([]byte(sbucket))
 					if b != nil {
 
-						val := b.Get([]byte(dbkeys[v]))
+						val := b.Get([]byte(keyname))
+						if val != nil {
+							ksize = Endian.Uint64(val)
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				if sdcheck {
+
+					switch {
+					case ksize < minsize && minsize > 0:
+						db.Close()
+						continue
+					case ksize > maxsize && maxsize > 0:
+						db.Close()
+						continue
+					}
+
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("time bucket not exists")
+
+					b := tx.Bucket([]byte(tbucket))
+					if b != nil {
+
+						val := b.Get([]byte(keyname))
+						if val != nil {
+							kdate = Endian.Uint64(val)
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				if sdcheck {
+
+					switch {
+					case kdate < minstmp && minstmp > 0:
+						db.Close()
+						continue
+					case kdate > maxstmp && maxstmp > 0:
+						db.Close()
+						continue
+					}
+
+				}
+
+				db.Close()
+
+			}
+
+			if !compare[filename] {
+
+				filename = strings.TrimPrefix(filename, dirpath+"/")
+
+				if withurl {
+					filename = url + "/" + filename
+				}
+
+				ik.Key = filename
+
+				ikeys = append(ikeys, ik)
+
+			}
+
+		}
+
+	} else {
+
+		for _, filename := range dbkeys {
+
+			if sdcheck {
+
+				var ksize uint64
+				var kdate uint64
+
+				keyname := filepath.Base(filename)
+				lastpath := filepath.Dir(filename)
+				boltname := filepath.Base(lastpath) + ".bolt"
+				dbname := lastpath + "/" + boltname
+
+				db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+				if err != nil {
+					return ikeys, err
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("size bucket not exists")
+
+					b := tx.Bucket([]byte(sbucket))
+					if b != nil {
+
+						val := b.Get([]byte(keyname))
+						if val != nil {
+							ksize = Endian.Uint64(val)
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				if sdcheck {
+
+					switch {
+					case ksize < minsize && minsize > 0:
+						db.Close()
+						continue
+					case ksize > maxsize && maxsize > 0:
+						db.Close()
+						continue
+					}
+
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("time bucket not exists")
+
+					b := tx.Bucket([]byte(tbucket))
+					if b != nil {
+
+						val := b.Get([]byte(keyname))
+						if val != nil {
+							kdate = Endian.Uint64(val)
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				if sdcheck {
+
+					switch {
+					case kdate < minstmp && minstmp > 0:
+						db.Close()
+						continue
+					case kdate > maxstmp && maxstmp > 0:
+						db.Close()
+						continue
+					}
+
+				}
+
+				db.Close()
+
+			}
+
+			filename = strings.TrimPrefix(filename, dirpath+"/")
+
+			if withurl {
+				filename = url + "/" + filename
+			}
+
+			ik.Key = filename
+
+			ikeys = append(ikeys, ik)
+
+		}
+
+	}
+
+	return ikeys, err
+
+}
+
+// AllKeysInfo : search summary file and key names with info through requested directory
+func AllKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, uniq bool) (ikeys []KeysInfo, err error) {
+
+	var filekeys []string
+	var dbkeys []string
+	compare := map[string]bool{}
+
+	var k string
+
+	var ik KeysInfo
+
+	var sdcheck bool = false
+
+	iminsize := int64(minsize)
+	imaxsize := int64(maxsize)
+	iminstmp := int64(minstmp)
+	imaxstmp := int64(maxstmp)
+
+	if minsize > 0 || maxsize > 0 || minstmp > 0 || maxstmp > 0 {
+		sdcheck = true
+	}
+
+	rgxexpression, err := regexp.Compile(expression)
+	if err != nil {
+		return ikeys, err
+	}
+
+	dirpath = filepath.Clean(dirpath)
+	url = strings.TrimSuffix(url, "/")
+
+	paths, err := RecursiveDirSearch(dirpath, recursive)
+	if err != nil {
+		return ikeys, err
+	}
+
+	cl := uint64(1)
+	co := uint64(1)
+
+	for _, dirname := range paths {
+
+		files, err := ioutil.ReadDir(dirname)
+		if err != nil {
+			return ikeys, err
+		}
+
+		for _, file := range files {
+
+			k = file.Name()
+
+			bname := rgxbolt.MatchString(k)
+			cname := rgxcrcbolt.MatchString(k)
+
+			if !file.IsDir() && !bname && !cname {
+
+				if !rgxexpression.MatchString(k) {
+					continue
+				}
+
+				if co < offset && offset > 0 {
+					co++
+					continue
+				}
+
+				if cl > limit && limit > 0 {
+					break
+				}
+
+				filename := dirname + "/" + k
+
+				lnfile, err := os.Lstat(filename)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				filekeys = append(filekeys, filename)
+				compare[filename] = true
+
+				if stopfirst == 1 {
+					stopfirst = 255
+					break
+				}
+
+				co++
+				cl++
+
+			}
+
+			if !file.IsDir() && bname {
+
+				dbname := dirname + "/" + k
+
+				lnfile, err := os.Lstat(dbname)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+				if err != nil {
+					return ikeys, err
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("index bucket not exists")
+
+					b := tx.Bucket([]byte(ibucket))
+					if b != nil {
+
+						pos := b.Cursor()
+
+						for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+
+							bk := string(inkey)
+
+							if !rgxexpression.MatchString(bk) {
+								continue
+							}
+
+							if co < offset && offset > 0 {
+								co++
+								continue
+							}
+
+							if cl > limit && limit > 0 {
+								break
+							}
+
+							filename := dirname + "/" + bk
+							dbkeys = append(dbkeys, filename)
+
+							if stopfirst == 1 {
+								stopfirst = 255
+								break
+							}
+
+							co++
+							cl++
+
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				db.Close()
+
+			}
+
+			if stopfirst == 255 {
+				break
+			}
+
+			if cl > limit && limit > 0 {
+				break
+			}
+
+		}
+
+		if stopfirst == 255 {
+			break
+		}
+
+		if cl > limit && limit > 0 {
+			break
+		}
+
+	}
+
+	sort.Strings(filekeys)
+
+	for _, filename := range filekeys {
+
+		infile, err := os.Stat(filename)
+		if err != nil {
+			continue
+		}
+
+		fsize := infile.Size()
+		fdate := infile.ModTime().Unix()
+
+		if sdcheck {
+
+			switch {
+			case fsize < iminsize && minsize > 0:
+				continue
+			case fsize > imaxsize && maxsize > 0:
+				continue
+			case fdate < iminstmp && minstmp > 0:
+				continue
+			case fdate > imaxstmp && maxstmp > 0:
+				continue
+			}
+
+		}
+
+		filename = strings.TrimPrefix(filename, dirpath+"/")
+
+		if withurl {
+			filename = url + "/" + filename
+		}
+
+		ik.Key = filename
+		ik.Type = 0
+		ik.Size = uint64(fsize)
+		ik.Date = uint64(fdate)
+
+		ikeys = append(ikeys, ik)
+
+	}
+
+	sort.Strings(dbkeys)
+
+	if uniq {
+
+		for _, filename := range dbkeys {
+
+			keyname := filepath.Base(filename)
+			lastpath := filepath.Dir(filename)
+			boltname := filepath.Base(lastpath) + ".bolt"
+			dbname := lastpath + "/" + boltname
+
+			if !compare[filename] {
+
+				filename = strings.TrimPrefix(filename, dirpath+"/")
+
+				if withurl {
+					filename = url + "/" + filename
+				}
+
+				ik.Key = filename
+				ik.Type = 1
+
+				db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+				if err != nil {
+					return ikeys, err
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("size bucket not exists")
+
+					b := tx.Bucket([]byte(sbucket))
+					if b != nil {
+
+						val := b.Get([]byte(keyname))
 						if val != nil {
 							ik.Size = Endian.Uint64(val)
 						}
@@ -983,17 +2396,31 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 				})
 				if err != nil {
+					db.Close()
 					return ikeys, err
+				}
+
+				if sdcheck {
+
+					switch {
+					case ik.Size < minsize && minsize > 0:
+						db.Close()
+						continue
+					case ik.Size > maxsize && maxsize > 0:
+						db.Close()
+						continue
+					}
+
 				}
 
 				err = db.View(func(tx *bolt.Tx) error {
 
 					verr := errors.New("time bucket not exists")
 
-					b := tx.Bucket([]byte("time"))
+					b := tx.Bucket([]byte(tbucket))
 					if b != nil {
 
-						val := b.Get([]byte(dbkeys[v]))
+						val := b.Get([]byte(keyname))
 						if val != nil {
 							ik.Date = Endian.Uint64(val)
 						}
@@ -1006,8 +2433,24 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 				})
 				if err != nil {
+					db.Close()
 					return ikeys, err
 				}
+
+				if sdcheck {
+
+					switch {
+					case ik.Date < minstmp && minstmp > 0:
+						db.Close()
+						continue
+					case ik.Date > maxstmp && maxstmp > 0:
+						db.Close()
+						continue
+					}
+
+				}
+
+				db.Close()
 
 				ikeys = append(ikeys, ik)
 
@@ -1017,19 +2460,35 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 	} else {
 
-		for v := range dbkeys {
+		for _, filename := range dbkeys {
 
-			ik.Key = dbkeys[v]
+			keyname := filepath.Base(filename)
+			lastpath := filepath.Dir(filename)
+			boltname := filepath.Base(lastpath) + ".bolt"
+			dbname := lastpath + "/" + boltname
+
+			filename = strings.TrimPrefix(filename, dirpath+"/")
+
+			if withurl {
+				filename = url + "/" + filename
+			}
+
+			ik.Key = filename
 			ik.Type = 1
+
+			db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+			if err != nil {
+				return ikeys, err
+			}
 
 			err = db.View(func(tx *bolt.Tx) error {
 
 				verr := errors.New("size bucket not exists")
 
-				b := tx.Bucket([]byte("size"))
+				b := tx.Bucket([]byte(sbucket))
 				if b != nil {
 
-					val := b.Get([]byte(dbkeys[v]))
+					val := b.Get([]byte(keyname))
 					if val != nil {
 						ik.Size = Endian.Uint64(val)
 					}
@@ -1042,17 +2501,31 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 			})
 			if err != nil {
+				db.Close()
 				return ikeys, err
+			}
+
+			if sdcheck {
+
+				switch {
+				case ik.Size < minsize && minsize > 0:
+					db.Close()
+					continue
+				case ik.Size > maxsize && maxsize > 0:
+					db.Close()
+					continue
+				}
+
 			}
 
 			err = db.View(func(tx *bolt.Tx) error {
 
 				verr := errors.New("time bucket not exists")
 
-				b := tx.Bucket([]byte("time"))
+				b := tx.Bucket([]byte(tbucket))
 				if b != nil {
 
-					val := b.Get([]byte(dbkeys[v]))
+					val := b.Get([]byte(keyname))
 					if val != nil {
 						ik.Date = Endian.Uint64(val)
 					}
@@ -1065,8 +2538,24 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 			})
 			if err != nil {
+				db.Close()
 				return ikeys, err
 			}
+
+			if sdcheck {
+
+				switch {
+				case ik.Date < minstmp && minstmp > 0:
+					db.Close()
+					continue
+				case ik.Date > maxstmp && maxstmp > 0:
+					db.Close()
+					continue
+				}
+
+			}
+
+			db.Close()
 
 			ikeys = append(ikeys, ik)
 
@@ -1078,43 +2567,591 @@ func AllKeysInfo(db *bolt.DB, ibucket string, dirpath string, uniq bool, limit i
 
 }
 
-// FileCount : count files in a requested directory without .bolt and .crcbolt files
-func FileCount(dirpath string) (cnt int, err error) {
+// AllKeysSearch : search summary file and key names/names with values through requested directory
+func AllKeysSearch(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withvalue bool, vmaxsize int64, uniq bool) (ikeys []KeysSearch, err error) {
 
-	cnt = 0
+	var filekeys []string
+	var dbkeys []string
+	compare := map[string]bool{}
 
-	allfiles, err := ioutil.ReadDir(dirpath)
-	if err != nil {
-		return 0, err
+	var k string
+
+	var ik KeysSearch
+
+	var sdcheck bool = false
+
+	iminsize := int64(minsize)
+	imaxsize := int64(maxsize)
+	iminstmp := int64(minstmp)
+	imaxstmp := int64(maxstmp)
+
+	if minsize > 0 || maxsize > 0 || minstmp > 0 || maxstmp > 0 {
+		sdcheck = true
 	}
 
-	for _, file := range allfiles {
+	rgxexpression, err := regexp.Compile(expression)
+	if err != nil {
+		return ikeys, err
+	}
 
-		k := file.Name()
+	dirpath = filepath.Clean(dirpath)
+	url = strings.TrimSuffix(url, "/")
 
-		bname := rgxbolt.MatchString(k)
-		cname := rgxcrcbolt.MatchString(k)
+	paths, err := RecursiveDirSearch(dirpath, recursive)
+	if err != nil {
+		return ikeys, err
+	}
 
-		if !file.IsDir() && !bname && !cname {
+	cl := uint64(1)
+	co := uint64(1)
 
-			filename := fmt.Sprintf("%s/%s", dirpath, k)
+	for _, dirname := range paths {
 
-			lnfile, err := os.Lstat(filename)
+		files, err := ioutil.ReadDir(dirname)
+		if err != nil {
+			return ikeys, err
+		}
+
+		for _, file := range files {
+
+			k = file.Name()
+
+			bname := rgxbolt.MatchString(k)
+			cname := rgxcrcbolt.MatchString(k)
+
+			if !file.IsDir() && !bname && !cname {
+
+				if !rgxexpression.MatchString(k) {
+					continue
+				}
+
+				if co < offset && offset > 0 {
+					co++
+					continue
+				}
+
+				if cl > limit && limit > 0 {
+					break
+				}
+
+				filename := dirname + "/" + k
+
+				lnfile, err := os.Lstat(filename)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				filekeys = append(filekeys, filename)
+				compare[filename] = true
+
+				if stopfirst == 1 {
+					stopfirst = 255
+					break
+				}
+
+				co++
+				cl++
+
+			}
+
+			if !file.IsDir() && bname {
+
+				dbname := dirname + "/" + k
+
+				lnfile, err := os.Lstat(dbname)
+				if err != nil {
+					continue
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+					continue
+				}
+
+				db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+				if err != nil {
+					return ikeys, err
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("index bucket not exists")
+
+					b := tx.Bucket([]byte(ibucket))
+					if b != nil {
+
+						pos := b.Cursor()
+
+						for inkey, _ := pos.First(); inkey != nil; inkey, _ = pos.Next() {
+
+							bk := string(inkey)
+
+							if !rgxexpression.MatchString(bk) {
+								continue
+							}
+
+							if co < offset && offset > 0 {
+								co++
+								continue
+							}
+
+							if cl > limit && limit > 0 {
+								break
+							}
+
+							filename := dirname + "/" + bk
+							dbkeys = append(dbkeys, filename)
+
+							if stopfirst == 1 {
+								stopfirst = 255
+								break
+							}
+
+							co++
+							cl++
+
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				db.Close()
+
+			}
+
+			if stopfirst == 255 {
+				break
+			}
+
+			if cl > limit && limit > 0 {
+				break
+			}
+
+		}
+
+		if stopfirst == 255 {
+			break
+		}
+
+		if cl > limit && limit > 0 {
+			break
+		}
+
+	}
+
+	sort.Strings(filekeys)
+
+	for _, filename := range filekeys {
+
+		var value []byte
+
+		infile, err := os.Stat(filename)
+		if err != nil {
+			continue
+		}
+
+		fsize := infile.Size()
+		fdate := infile.ModTime().Unix()
+
+		if sdcheck {
+
+			switch {
+			case fsize < iminsize && minsize > 0:
+				continue
+			case fsize > imaxsize && maxsize > 0:
+				continue
+			case fdate < iminstmp && minstmp > 0:
+				continue
+			case fdate > imaxstmp && maxstmp > 0:
+				continue
+			}
+
+		}
+
+		if withvalue && fsize <= vmaxsize {
+
+			value, err = ioutil.ReadFile(filename)
 			if err != nil {
-				continue
+				return ikeys, err
 			}
 
-			if lnfile.Mode()&os.ModeType != 0 {
-				continue
+		}
+
+		filename = strings.TrimPrefix(filename, dirpath+"/")
+
+		if withurl {
+			filename = url + "/" + filename
+		}
+
+		ik.Key = filename
+		ik.Type = 0
+		ik.Size = uint64(fsize)
+		ik.Date = uint64(fdate)
+
+		vhex := make([]byte, hex.EncodedLen(len(value)))
+		hex.Encode(vhex, value)
+
+		ik.Value = vhex
+
+		ikeys = append(ikeys, ik)
+
+	}
+
+	sort.Strings(dbkeys)
+
+	if uniq {
+
+		for _, filename := range dbkeys {
+
+			var value []byte = nil
+			var bval string = ""
+
+			keyname := filepath.Base(filename)
+			lastpath := filepath.Dir(filename)
+			boltname := filepath.Base(lastpath) + ".bolt"
+			dbname := lastpath + "/" + boltname
+
+			if !compare[filename] {
+
+				filename = strings.TrimPrefix(filename, dirpath+"/")
+
+				if withurl {
+					filename = url + "/" + filename
+				}
+
+				ik.Key = filename
+				ik.Type = 1
+
+				db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+				if err != nil {
+					return ikeys, err
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("size bucket not exists")
+
+					b := tx.Bucket([]byte(sbucket))
+					if b != nil {
+
+						val := b.Get([]byte(keyname))
+						if val != nil {
+							ik.Size = Endian.Uint64(val)
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				if sdcheck {
+
+					switch {
+					case ik.Size < minsize && minsize > 0:
+						db.Close()
+						continue
+					case ik.Size > maxsize && maxsize > 0:
+						db.Close()
+						continue
+					}
+
+				}
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("time bucket not exists")
+
+					b := tx.Bucket([]byte(tbucket))
+					if b != nil {
+
+						val := b.Get([]byte(keyname))
+						if val != nil {
+							ik.Date = Endian.Uint64(val)
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				if sdcheck {
+
+					switch {
+					case ik.Date < minstmp && minstmp > 0:
+						db.Close()
+						continue
+					case ik.Date > maxstmp && maxstmp > 0:
+						db.Close()
+						continue
+					}
+
+				}
+
+				if withvalue && int64(ik.Size) <= vmaxsize {
+
+					err = db.View(func(tx *bolt.Tx) error {
+
+						verr := errors.New("index bucket not exists")
+
+						b := tx.Bucket([]byte(ibucket))
+						if b != nil {
+
+							val := b.Get([]byte(keyname))
+							if val != nil {
+								bval = string(val)
+							}
+
+						} else {
+							return verr
+						}
+
+						return nil
+
+					})
+					if err != nil {
+						db.Close()
+						return ikeys, err
+					}
+
+					if bval != "" {
+
+						err = db.View(func(tx *bolt.Tx) error {
+
+							verr := errors.New("bucket not exists")
+
+							b := tx.Bucket([]byte(bval))
+							if b != nil {
+
+								val := b.Get([]byte(keyname))
+								if val != nil {
+									value = val
+								}
+
+							} else {
+								return verr
+							}
+
+							return nil
+
+						})
+						if err != nil {
+							db.Close()
+							return ikeys, err
+						}
+
+					}
+
+				}
+
+				vhex := make([]byte, hex.EncodedLen(len(value)))
+				hex.Encode(vhex, value)
+
+				ik.Value = vhex
+
+				db.Close()
+
+				ikeys = append(ikeys, ik)
+
 			}
 
-			cnt++
+		}
+
+	} else {
+
+		for _, filename := range dbkeys {
+
+			var value []byte = nil
+			var bval string = ""
+
+			keyname := filepath.Base(filename)
+			lastpath := filepath.Dir(filename)
+			boltname := filepath.Base(lastpath) + ".bolt"
+			dbname := lastpath + "/" + boltname
+
+			filename = strings.TrimPrefix(filename, dirpath+"/")
+
+			if withurl {
+				filename = url + "/" + filename
+			}
+
+			ik.Key = filename
+			ik.Type = 1
+
+			db, err := BoltOpenRead(dbname, filemode, timeout, opentries, freelist)
+			if err != nil {
+				return ikeys, err
+			}
+
+			err = db.View(func(tx *bolt.Tx) error {
+
+				verr := errors.New("size bucket not exists")
+
+				b := tx.Bucket([]byte(sbucket))
+				if b != nil {
+
+					val := b.Get([]byte(keyname))
+					if val != nil {
+						ik.Size = Endian.Uint64(val)
+					}
+
+				} else {
+					return verr
+				}
+
+				return nil
+
+			})
+			if err != nil {
+				db.Close()
+				return ikeys, err
+			}
+
+			if sdcheck {
+
+				switch {
+				case ik.Size < minsize && minsize > 0:
+					db.Close()
+					continue
+				case ik.Size > maxsize && maxsize > 0:
+					db.Close()
+					continue
+				}
+
+			}
+
+			err = db.View(func(tx *bolt.Tx) error {
+
+				verr := errors.New("time bucket not exists")
+
+				b := tx.Bucket([]byte(tbucket))
+				if b != nil {
+
+					val := b.Get([]byte(keyname))
+					if val != nil {
+						ik.Date = Endian.Uint64(val)
+					}
+
+				} else {
+					return verr
+				}
+
+				return nil
+
+			})
+			if err != nil {
+				db.Close()
+				return ikeys, err
+			}
+
+			if sdcheck {
+
+				switch {
+				case ik.Date < minstmp && minstmp > 0:
+					db.Close()
+					continue
+				case ik.Date > maxstmp && maxstmp > 0:
+					db.Close()
+					continue
+				}
+
+			}
+
+			if withvalue && int64(ik.Size) <= vmaxsize {
+
+				err = db.View(func(tx *bolt.Tx) error {
+
+					verr := errors.New("index bucket not exists")
+
+					b := tx.Bucket([]byte(ibucket))
+					if b != nil {
+
+						val := b.Get([]byte(keyname))
+						if val != nil {
+							bval = string(val)
+						}
+
+					} else {
+						return verr
+					}
+
+					return nil
+
+				})
+				if err != nil {
+					db.Close()
+					return ikeys, err
+				}
+
+				if bval != "" {
+
+					err = db.View(func(tx *bolt.Tx) error {
+
+						verr := errors.New("bucket not exists")
+
+						b := tx.Bucket([]byte(bval))
+						if b != nil {
+
+							val := b.Get([]byte(keyname))
+							if val != nil {
+								value = val
+							}
+
+						} else {
+							return verr
+						}
+
+						return nil
+
+					})
+					if err != nil {
+						db.Close()
+						return ikeys, err
+					}
+
+				}
+
+			}
+
+			vhex := make([]byte, hex.EncodedLen(len(value)))
+			hex.Encode(vhex, value)
+
+			ik.Value = vhex
+
+			db.Close()
+
+			ikeys = append(ikeys, ik)
 
 		}
 
 	}
 
-	return cnt, err
+	return ikeys, err
 
 }
 
@@ -1213,6 +3250,98 @@ func ParseByRange(rngs string, size int64) ([]ReqRange, error) {
 	}
 
 	return ranges, nil
+
+}
+
+// RecursiveDirSearch : search directories names through requested directory with maximum available recursion level = 3
+func RecursiveDirSearch(dirpath string, recursive uint8) (paths []string, err error) {
+
+	var r1paths []string
+	var r2paths []string
+
+	paths = append(paths, dirpath)
+
+	if recursive > 3 {
+		recursive = 3
+	}
+
+	if recursive > 0 {
+
+		rcnt := uint8(0)
+
+		r1allfiles, err := ioutil.ReadDir(dirpath)
+		if err != nil {
+			return paths, err
+		}
+
+		for _, dir := range r1allfiles {
+
+			if dir.IsDir() && dir.Name() != "." && dir.Name() != ".." {
+
+				dirname := dirpath + "/" + dir.Name()
+				paths = append(paths, dirname)
+				r1paths = append(r1paths, dirname)
+
+			}
+
+		}
+
+		rcnt++
+
+		if rcnt < recursive {
+
+			for _, dirpath := range r1paths {
+
+				r2allfiles, err := ioutil.ReadDir(dirpath)
+				if err != nil {
+					return paths, err
+				}
+
+				for _, dir := range r2allfiles {
+
+					if dir.IsDir() && dir.Name() != "." && dir.Name() != ".." {
+
+						dirname := dirpath + "/" + dir.Name()
+						paths = append(paths, dirname)
+						r2paths = append(r2paths, dirname)
+
+					}
+
+				}
+
+			}
+
+		}
+
+		rcnt++
+
+		if rcnt < recursive {
+
+			for _, dirpath := range r2paths {
+
+				r3allfiles, err := ioutil.ReadDir(dirpath)
+				if err != nil {
+					return paths, err
+				}
+
+				for _, dir := range r3allfiles {
+
+					if dir.IsDir() && dir.Name() != "." && dir.Name() != ".." {
+
+						dirname := dirpath + "/" + dir.Name()
+						paths = append(paths, dirname)
+
+					}
+
+				}
+
+			}
+
+		}
+
+	}
+
+	return paths, err
 
 }
 

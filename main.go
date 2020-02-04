@@ -7,6 +7,7 @@ import (
 	"encoding/binary"
 	"flag"
 	"fmt"
+	"github.com/coocood/freecache"
 	"github.com/eltaline/badgerhold"
 	"github.com/eltaline/mmutex"
 	"github.com/eltaline/toml"
@@ -18,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"sync"
 	"time"
@@ -43,7 +45,9 @@ type global struct {
 	REALHEADER        string
 	CHARSET           string
 	DEBUGMODE         bool
+	GCPERCENT         int
 	FREELIST          string
+	SRCHCACHE         int
 	PIDFILE           string
 	LOGDIR            string
 	LOGMODE           uint32
@@ -72,7 +76,11 @@ type server struct {
 	GETBOLT        bool
 	GETKEYS        bool
 	GETINFO        bool
+	GETSEARCH      bool
+	GETRECURSIVE   bool
+	GETVALUE       bool
 	GETCOUNT       bool
+	GETCACHE       bool
 	NONUNIQUE      bool
 	WRITEINTEGRITY bool
 	READINTEGRITY  bool
@@ -82,6 +90,7 @@ type server struct {
 	ARGS           bool
 	CCTRL          int
 	FMAXSIZE       int64
+	VMAXSIZE       int64
 	MINBUFFER      int64
 	LOWBUFFER      int64
 	MEDBUFFER      int64
@@ -130,6 +139,11 @@ type strCIDR struct {
 	Addr string
 }
 
+// Keys : type for files and/or keys
+type Keys struct {
+	Key string `json:"key"`
+}
+
 // KeysInfo : type for files and/or keys with info
 type KeysInfo struct {
 	Key  string `json:"key"`
@@ -138,16 +152,31 @@ type KeysInfo struct {
 	Type int    `json:"type"`
 }
 
+// KeysSearch : type for files and/or keys for search
+type KeysSearch struct {
+	Key   string `json:"key"`
+	Size  uint64 `json:"size"`
+	Date  uint64 `json:"date"`
+	Type  int    `json:"type"`
+	Value []byte `json:"value"`
+}
+
 // Global Variables
 
 var (
-	// Endian global variable
+	// Endian
+
 	Endian binary.ByteOrder
 
 	// Uid : System user UID
+
 	Uid int64
+
 	// Gid : System user GID
+
 	Gid int64
+
+	// Config
 
 	config     Config
 	configfile string = "/etc/wzd/wzd.conf"
@@ -172,7 +201,11 @@ var (
 
 	debugmode bool = false
 
+	gcpercent int = 25
+
 	freelist string = "hashmap"
+
+	srchcache int = 128
 
 	pidfile string = "/run/wzd/wzd.pid"
 
@@ -195,7 +228,9 @@ var (
 
 func init() {
 
-	var version string = "1.1.2"
+	var err error
+
+	var version string = "1.1.3"
 	var vprint bool = false
 	var help bool = false
 
@@ -219,7 +254,7 @@ func init() {
 
 	// Load Configuration
 
-	if _, err := toml.DecodeFile(configfile, &config); err != nil {
+	if _, err = toml.DecodeFile(configfile, &config); err != nil {
 		fmt.Printf("Can`t decode config file error | File [%s] | %v\n", configfile, err)
 		os.Exit(1)
 	}
@@ -266,12 +301,22 @@ func init() {
 	mchdebugmode := rgxdebugmode.MatchString(fmt.Sprintf("%t", config.Global.DEBUGMODE))
 	Check(mchdebugmode, "[global]", "debugmode", fmt.Sprintf("%t", config.Global.DEBUGMODE), "true or false", DoExit)
 
+	mchgcpercent := RBInt(config.Global.GCPERCENT, -1, 100)
+	Check(mchgcpercent, "[global]", "gcpercent", fmt.Sprintf("%d", config.Global.GCPERCENT), "from -1 to 100", DoExit)
+
 	if config.Global.FREELIST != "" {
 		rgxfreelist := regexp.MustCompile("^(?i)(hashmap|array)$")
 		mchfreelist := rgxfreelist.MatchString(config.Global.FREELIST)
 		Check(mchfreelist, "[global]", "freelist", config.Global.FREELIST, "hashmap or array", DoExit)
 	} else {
 		config.Global.FREELIST = "hashmap"
+	}
+
+	if config.Global.SRCHCACHE != 0 {
+		mchsrchcache := RBInt(config.Global.SRCHCACHE, 1, 1048576)
+		Check(mchsrchcache, "[global]", "srchcache", fmt.Sprintf("%d", config.Global.SRCHCACHE), "from 1 to 1048576", DoExit)
+	} else {
+		config.Global.SRCHCACHE = 128
 	}
 
 	if config.Global.PIDFILE != "" {
@@ -366,6 +411,8 @@ func init() {
 		appLogger.Warnf("| KeepAlive [DISABLED]")
 	}
 
+	appLogger.Warnf("| Garbage Collection Percentage [%d]", config.Global.GCPERCENT)
+
 	// Check Server Options
 
 	var section string
@@ -379,7 +426,11 @@ func init() {
 	rgxgetbolt := regexp.MustCompile("^(?i)(true|false)$")
 	rgxgetkeys := regexp.MustCompile("^(?i)(true|false)$")
 	rgxgetinfo := regexp.MustCompile("^(?i)(true|false)$")
+	rgxgetsearch := regexp.MustCompile("^(?i)(true|false)$")
+	rgxgetrecursive := regexp.MustCompile("^(?i)(true|false)$")
+	rgxgetvalue := regexp.MustCompile("^(?i)(true|false)$")
 	rgxgetcount := regexp.MustCompile("^(?i)(true|false)$")
+	rgxgetcache := regexp.MustCompile("^(?i)(true|false)$")
 	rgxnonunique := regexp.MustCompile("^(?i)(true|false)$")
 	rgxwriteintegrity := regexp.MustCompile("^(?i)(true|false)$")
 	rgxreadintegrity := regexp.MustCompile("^(?i)(true|false)$")
@@ -459,7 +510,7 @@ func init() {
 
 				line := sgetallow.Text()
 
-				_, _, err := net.ParseCIDR(line)
+				_, _, err = net.ParseCIDR(line)
 				if err != nil {
 					appLogger.Errorf("| Bad CIDR line format in a get allow file error | %s | File [%s] | Line [%s]", section, Server.GETALLOW, line)
 					fmt.Printf("Bad CIDR line format in a get allow file error | %s | File [%s] | Line [%s]\n", section, Server.GETALLOW, line)
@@ -506,7 +557,7 @@ func init() {
 
 				line := sputallow.Text()
 
-				_, _, err := net.ParseCIDR(line)
+				_, _, err = net.ParseCIDR(line)
 				if err != nil {
 					appLogger.Errorf("| Bad CIDR line format in put allow file error | %s | File [%s] | Line [%s]", section, Server.PUTALLOW, line)
 					fmt.Printf("Bad CIDR line format in put allow file error | %s | File [%s] | Line [%s]\n", section, Server.PUTALLOW, line)
@@ -553,7 +604,7 @@ func init() {
 
 				line := sdelallow.Text()
 
-				_, _, err := net.ParseCIDR(line)
+				_, _, err = net.ParseCIDR(line)
 				if err != nil {
 					appLogger.Errorf("| Bad CIDR line format in a del allow file error | %s | File [%s] | Line [%s]", section, Server.DELALLOW, line)
 					fmt.Printf("Bad CIDR line format in a del allow file error | %s | File [%s] | Line [%s]\n", section, Server.DELALLOW, line)
@@ -599,8 +650,20 @@ func init() {
 		mchgetinfo := rgxgetinfo.MatchString(fmt.Sprintf("%t", Server.GETINFO))
 		Check(mchgetinfo, section, "getinfo", fmt.Sprintf("%t", Server.GETINFO), "true or false", DoExit)
 
+		mchgetsearch := rgxgetsearch.MatchString(fmt.Sprintf("%t", Server.GETSEARCH))
+		Check(mchgetsearch, section, "getsearch", fmt.Sprintf("%t", Server.GETSEARCH), "true or false", DoExit)
+
+		mchgetrecursive := rgxgetrecursive.MatchString(fmt.Sprintf("%t", Server.GETRECURSIVE))
+		Check(mchgetrecursive, section, "getrecursive", fmt.Sprintf("%t", Server.GETRECURSIVE), "true or false", DoExit)
+
+		mchgetvalue := rgxgetvalue.MatchString(fmt.Sprintf("%t", Server.GETVALUE))
+		Check(mchgetvalue, section, "getvalue", fmt.Sprintf("%t", Server.GETVALUE), "true or false", DoExit)
+
 		mchgetcount := rgxgetcount.MatchString(fmt.Sprintf("%t", Server.GETCOUNT))
 		Check(mchgetcount, section, "getcount", fmt.Sprintf("%t", Server.GETCOUNT), "true or false", DoExit)
+
+		mchgetcache := rgxgetcache.MatchString(fmt.Sprintf("%t", Server.GETCACHE))
+		Check(mchgetcache, section, "getcache", fmt.Sprintf("%t", Server.GETCACHE), "true or false", DoExit)
 
 		mchnonunique := rgxnonunique.MatchString(fmt.Sprintf("%t", Server.NONUNIQUE))
 		Check(mchnonunique, section, "nonunique", fmt.Sprintf("%t", Server.NONUNIQUE), "true or false", DoExit)
@@ -622,6 +685,9 @@ func init() {
 
 		mchfmaxsize := RBInt64(Server.FMAXSIZE, 1, 33554432)
 		Check(mchfmaxsize, section, "fmaxsize", fmt.Sprintf("%d", Server.FMAXSIZE), "from 1 to 33554432", DoExit)
+
+		mchvmaxsize := RBInt64(Server.VMAXSIZE, 1, 262144)
+		Check(mchvmaxsize, section, "vmaxsize", fmt.Sprintf("%d", Server.VMAXSIZE), "from 1 to 262144", DoExit)
 
 		mchargs := rgxargs.MatchString(fmt.Sprintf("%t", Server.ARGS))
 		Check(mchargs, section, "args", fmt.Sprintf("%t", Server.ARGS), "true or false", DoExit)
@@ -662,6 +728,7 @@ func init() {
 		// Output Important Server Configuration Options
 
 		appLogger.Warnf("| Host [%s] | Max File Size [%d]", Server.HOST, Server.FMAXSIZE)
+		appLogger.Warnf("| Host [%s] | Max Value Size [%d]", Server.HOST, Server.VMAXSIZE)
 
 		switch {
 		case Server.UPLOAD:
@@ -727,10 +794,38 @@ func init() {
 		}
 
 		switch {
+		case Server.GETSEARCH:
+			appLogger.Warnf("| Host [%s] | Get Search Keys/Files [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Get Search Keys/Files [DISABLED]", Server.HOST)
+		}
+
+		switch {
+		case Server.GETRECURSIVE:
+			appLogger.Warnf("| Host [%s] | Get Recursive Keys/Files [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Get Recursive Keys/Files [DISABLED]", Server.HOST)
+		}
+
+		switch {
+		case Server.GETVALUE:
+			appLogger.Warnf("| Host [%s] | Get Value Keys/Files [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Get Value Keys/Files [DISABLED]", Server.HOST)
+		}
+
+		switch {
 		case Server.GETCOUNT:
 			appLogger.Warnf("| Host [%s] | Get Count Keys/Files [ENABLED]", Server.HOST)
 		default:
 			appLogger.Warnf("| Host [%s] | Get Count Keys/Files [DISABLED]", Server.HOST)
+		}
+
+		switch {
+		case Server.GETCACHE:
+			appLogger.Warnf("| Host [%s] | Get Expire Cache [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Get Expire Cache [DISABLED]", Server.HOST)
 		}
 
 		switch {
@@ -784,6 +879,8 @@ func init() {
 
 func main() {
 
+	var err error
+
 	// System Handling
 
 	DetectEndian()
@@ -815,7 +912,7 @@ func main() {
 
 	switch {
 	case FileExists(pidfile):
-		err := os.Remove(pidfile)
+		err = os.Remove(pidfile)
 		if err != nil {
 			appLogger.Errorf("| Can`t remove pid file error | File [%s] | %v", pidfile, err)
 			fmt.Printf("Can`t remove pid file error | File [%s] | %v\n", pidfile, err)
@@ -823,7 +920,7 @@ func main() {
 		}
 		fallthrough
 	default:
-		err := ioutil.WriteFile(pidfile, []byte(fpid), 0644)
+		err = ioutil.WriteFile(pidfile, []byte(fpid), 0644)
 		if err != nil {
 			appLogger.Errorf("| Can`t create pid file error | File [%s] | %v", pidfile, err)
 			fmt.Printf("Can`t create pid file error | File [%s] | %v\n", pidfile, err)
@@ -880,6 +977,18 @@ func main() {
 		go CMPScheduler(cdb, keymutex)
 	}
 
+	// Get Cache
+
+	srchcache = config.Global.SRCHCACHE
+
+	cacheSize := srchcache * 1024 * 1024
+	cache := freecache.NewCache(cacheSize)
+
+	// Gargage Collection Percent
+
+	gcpercent = config.Global.GCPERCENT
+	debug.SetGCPercent(gcpercent)
+
 	// Web Server
 
 	app := iris.New()
@@ -900,9 +1009,9 @@ func main() {
 
 	// Web Routing
 
-	app.Get("/{directory:path}", ZDGet())
-	app.Head("/{directory:path}", ZDGet())
-	app.Options("/{directory:path}", ZDGet())
+	app.Get("/{directory:path}", ZDGet(cache))
+	app.Head("/{directory:path}", ZDGet(cache))
+	app.Options("/{directory:path}", ZDGet(cache))
 	app.Put("/{directory:path}", ZDPut(keymutex, cdb))
 	app.Post("/{directory:path}", ZDPut(keymutex, cdb))
 	app.Delete("/{directory:path}", ZDDel(keymutex, cdb))
@@ -943,7 +1052,7 @@ func main() {
 		// Remove PID File
 
 		if FileExists(pidfile) {
-			err := os.Remove(pidfile)
+			err = os.Remove(pidfile)
 			if err != nil {
 				appLogger.Errorf("| Can`t remove pid file error | File [%s] | %v", pidfile, err)
 				fmt.Printf("Can`t remove pid file error | File [%s] | %v\n", pidfile, err)

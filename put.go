@@ -26,6 +26,8 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 	return func(ctx iris.Context) {
 		defer wg.Done()
 
+		var err error
+
 		// Wait Group
 
 		wg.Add(1)
@@ -45,7 +47,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		if wshutdown {
 			ctx.StatusCode(iris.StatusInternalServerError)
-			// _, err := ctx.WriteString("Shutdown wZD server in progress\n")
+			// _, err = ctx.WriteString("[ERRO] Shutdown wZD server in progress\n")
 			// if err != nil {
 			//	putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
 			// }
@@ -174,7 +176,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.Writef("[ERRO] Not found configured virtual host | Virtual Host [%s]\n", vhost)
+				_, err = ctx.Writef("[ERRO] Not found configured virtual host | Virtual Host [%s]\n", vhost)
 				if err != nil {
 					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -195,7 +197,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.Writef("[ERRO] Not found allowed ip | Virtual Host [%s]\n", vhost)
+				_, err = ctx.Writef("[ERRO] Not found allowed ip | Virtual Host [%s]\n", vhost)
 				if err != nil {
 					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -216,7 +218,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.Writef("[ERRO] Upload disabled | Virtual Host [%s]\n", vhost)
+				_, err = ctx.Writef("[ERRO] Upload disabled | Virtual Host [%s]\n", vhost)
 				if err != nil {
 					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -237,7 +239,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.WriteString("[ERRO] The query arguments is not allowed during PUT request\n")
+				_, err = ctx.WriteString("[ERRO] The query arguments is not allowed during PUT request\n")
 				if err != nil {
 					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -260,7 +262,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err := ctx.WriteString("[ERRO] The multipart query is not allowed during PUT request\n")
+				_, err = ctx.WriteString("[ERRO] The multipart query is not allowed during PUT request\n")
 				if err != nil {
 					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -282,7 +284,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 			if debugmode {
 
-				_, err = ctx.WriteString("Content length error during PUT request\n")
+				_, err = ctx.WriteString("[ERRO] Content length error during PUT request\n")
 				if err != nil {
 					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -323,11 +325,11 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		dir := filepath.Dir(uri)
 		file := filepath.Base(uri)
 
-		abs := fmt.Sprintf("%s%s/%s", base, dir, file)
-		ddir := fmt.Sprintf("%s%s", base, dir)
+		abs := filepath.Clean(base + dir + "/" + file)
+		ddir := filepath.Clean(base + dir)
 
 		dbn := filepath.Base(dir)
-		dbf := fmt.Sprintf("%s%s/%s.bolt", base, dir, dbn)
+		dbf := filepath.Clean(base + dir + "/" + dbn + ".bolt")
 
 		bucket := "wzd1"
 		ibucket := "index"
@@ -336,6 +338,9 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		cbucket := "count"
 
 		timeout := time.Duration(locktimeout) * time.Second
+
+		mchregbolt := rgxbolt.MatchString(file)
+		mchregcrcbolt := rgxcrcbolt.MatchString(file)
 
 		if file == "/" {
 
@@ -358,8 +363,27 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		}
 
+		if mchregbolt || mchregcrcbolt {
+
+			ctx.StatusCode(iris.StatusForbidden)
+
+			if log4xx {
+				putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Restricted to upload .bolt or .crcbolt as bolt-in-bolt archive error | File [%s]", vhost, ip, file)
+			}
+
+			if debugmode {
+
+				_, err = ctx.WriteString("[ERRO] Restricted to upload .bolt or .crcbolt as bolt-in-bolt archive error\n")
+				if err != nil {
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+				}
+
+			}
+
+		}
+
 		if !DirExists(ddir) {
-			err := os.MkdirAll(ddir, dirmode)
+			err = os.MkdirAll(ddir, dirmode)
 			if err != nil {
 
 				ctx.StatusCode(iris.StatusInternalServerError)
@@ -402,28 +426,6 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		// Standart Writer
 
 		if archive != "1" || clength > fmaxsize {
-
-			mchregbolt := rgxbolt.MatchString(file)
-			mchregcrcbolt := rgxcrcbolt.MatchString(file)
-
-			if mchregbolt || mchregcrcbolt {
-
-				ctx.StatusCode(iris.StatusForbidden)
-
-				if log4xx {
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Restricted to upload .bolt or .crcbolt as standart file error | File [%s]", vhost, ip, file)
-				}
-
-				if debugmode {
-
-					_, err = ctx.WriteString("[ERRO] Restricted to upload .bolt or .crcbolt as standart file error\n")
-					if err != nil {
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-					}
-
-				}
-
-			}
 
 			if FileExists(dbf) && !nonunique {
 
@@ -897,7 +899,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				if debugmode {
 
-					_, err := ctx.WriteString("[ERRO] Can`t upload file to virtual host root error\n")
+					_, err = ctx.WriteString("[ERRO] Can`t upload file to virtual host root error\n")
 					if err != nil {
 						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
@@ -905,28 +907,6 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				}
 
 				return
-
-			}
-
-			mchregbolt := rgxbolt.MatchString(file)
-			mchregcrcbolt := rgxcrcbolt.MatchString(file)
-
-			if mchregbolt || mchregcrcbolt {
-
-				ctx.StatusCode(iris.StatusForbidden)
-
-				if log4xx {
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 403 | Restricted to upload .bolt or .crcbolt as bolt-in-bolt archive error | File [%s]", vhost, ip, file)
-				}
-
-				if debugmode {
-
-					_, err = ctx.WriteString("[ERRO] Restricted to upload .bolt or .crcbolt as bolt-in-bolt archive error\n")
-					if err != nil {
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-					}
-
-				}
 
 			}
 
@@ -1007,7 +987,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				// Keys Index Bucket
 
 				err = db.Update(func(tx *bolt.Tx) error {
-					_, err := tx.CreateBucketIfNotExists([]byte(ibucket))
+					_, err = tx.CreateBucketIfNotExists([]byte(ibucket))
 					if err != nil {
 						return err
 					}
@@ -1037,7 +1017,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				// Keys Size Bucket
 
 				err = db.Update(func(tx *bolt.Tx) error {
-					_, err := tx.CreateBucketIfNotExists([]byte(sbucket))
+					_, err = tx.CreateBucketIfNotExists([]byte(sbucket))
 					if err != nil {
 						return err
 					}
@@ -1067,7 +1047,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				// Keys Time Bucket
 
 				err = db.Update(func(tx *bolt.Tx) error {
-					_, err := tx.CreateBucketIfNotExists([]byte(tbucket))
+					_, err = tx.CreateBucketIfNotExists([]byte(tbucket))
 					if err != nil {
 						return err
 					}
@@ -1097,7 +1077,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				// Buckets Internal Sharding Bucket
 
 				err = db.Update(func(tx *bolt.Tx) error {
-					_, err := tx.CreateBucketIfNotExists([]byte(cbucket))
+					_, err = tx.CreateBucketIfNotExists([]byte(cbucket))
 					if err != nil {
 						return err
 					}
@@ -1170,7 +1150,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					lastbucket := fmt.Sprintf("wzd%d", keybucket)
 
-					keycount, err := KeyCountBucket(db, lastbucket)
+					keyscount, err := KeysCountBucket(db, lastbucket)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -1212,7 +1192,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					}
 
-					if keycount >= perbucket || keybytes >= 536870912 {
+					if keyscount >= perbucket || keybytes >= 536870912 {
 
 						bucket = fmt.Sprintf("wzd%d", keybucket+1)
 
@@ -1311,7 +1291,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				}
 
 				err = db.Update(func(tx *bolt.Tx) error {
-					_, err := tx.CreateBucketIfNotExists([]byte(bucket))
+					_, err = tx.CreateBucketIfNotExists([]byte(bucket))
 					if err != nil {
 						return err
 					}

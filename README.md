@@ -20,32 +20,27 @@ Current stable version: 1.1.2
 
 **Important: incompatibilities with previous versions**
 
-The procedure for upgrading to version 1.1.2:
+- For use all Keys* headers, you need to add a header ```curl "-H Sea" ...```
+- Headers Keys...Archive renamed to Keys...Archives
+- In the docker image, getkeys and getinfo options are disabled by default
 
-- Install wZD server and archiver <a href=https://github.com/eltaline/wza>wZA</a> version 1.1.2
-- Restart wZD server
-- Update Bolt archives (one time required)
+Added in version 1.1.3:
 
-*Restarting the update is excluded by the archiver itself
+- Advanced recursive search for files and values
+- Global options: gcpercent, srchcache (configure garbage collector and search cache)
+- Sea header (required to work with Keys* search)
+- Headers: KeysSearch*, Recursive (getsearch, getrecursive parameters)
+- Headers: Expression, StopFirst (regular expression and stop search)
+- Headers: WithValue, Expire (getvalue, getcache parameters)
+- Headers: MinSize, MaxSize, MinStmp, MaxStmp, WithUrl
+- Headers: Expire, SkipCache (Query cache search and skip cache)
+- Response headers: Hitcache, Errcache, Errmsg search
+- FromFile header for GET and DELETE methods
+- Updated documentation
 
-```bash
-find /var/storage -type f -name '*.bolt'> /tmp/upgrade.list
-wza --upgrade --list=/tmp/upgrade.list
-```
+Fixed in version 1.1.3:
 
-Added in version 1.1.2:
-
-- The archiver <a href=https://github.com/eltaline/wza>wZA</a> now comes immediately in the docker image
-- Headers Keys* KeysInfo* KeysCount* (parameters getkeys, getinfo, getcount)
-- JSON, Limit, Offset headers (advanced use of NoSQL component)
-- Updating the format of Bolt archives (for future support for WEB interface and FUSE)
-- Support for UTF-8
-
-Fixed in version 1.1.2:
-
-- Fixed date storage format from uint32 to uint64
-- Correction of various errors
-- Fixed memory leaks
+- Minor bug fixes
 
 Features
 ========
@@ -181,8 +176,8 @@ More advanced option:
 docker run -d --restart=always -e bindaddr=127.0.0.1:9699 -e host=localhost -e root=/var/storage \
 -e upload=true -e delete=true -e compaction=true -e fmaxsize=1048576 \
 -e writeintegrity=true -e readintegrity=true \
--e args=false -e getbolt=false -e getcount=true -e getkeys=true \
--e nonunique=false -e cctrl=2592000 -e delbolt=false -e deldir=false \
+-e args=false -e getbolt=false -e getcount=true -e getkeys=true -e getinfo=true \
+-e getsearch=true -e getrecursive=true -e getvalue=true -e getcache=true \
 -v /var/storage:/var/storage --name wzd -p 9699:9699 eltaline/wzd
 ```
 
@@ -210,137 +205,244 @@ Configuring and using wZD server
 
 In most cases it is enough to use the default configuration file. A full description of all product parameters is available here: <a href="/OPTIONS.md">Options</a>
 
-**Additional headers: JSON, Limit, Offset (JSON works with all Keys headers ; Limit and Offset is not used with KeysCount headers)**
+General methods
+--------
 
-Downloading file (the existing normal file is downloaded first and not the one in the Bolt archive):
+Downloading file (the existing normal file is downloaded first and not the one in the Bolt archive)
 
 ```bash
 curl -o test.jpg http://localhost/test/test.jpg
 ```
 
-Downloading file from the Bolt archive (forced):
+Downloading file from the file (forced)
+
+```bash
+curl -o test.jpg -H "FromFile: 1" http://localhost/test/test.jpg
+```
+
+Downloading file from the Bolt archive (forced)
 
 ```bash
 curl -o test.jpg -H "FromArchive: 1" http://localhost/test/test.jpg
 ```
 
-Uploading file to the directory:
-
-```bash
-curl -X PUT --data-binary @test.jpg http://localhost/test/test.jpg
-```
-
-Uploading file to the Bolt archive (if the server parameter fmaxsize is not exceeded):
-
-```bash
-curl -X PUT -H "Archive: 1" --data-binary @test.jpg http://localhost/test/test.jpg
-```
-
-Getting list of all unique file names from directory and archive (if the server parameter getkeys = true):
-
-```bash
-curl -H "Keys: 1" http://localhost/test
-```
-
-Getting list of all file names from the directory and archive (if the server parameter getkeys = true):
-
-```bash
-curl -H "KeysAll: 1" http://localhost/test
-```
-
-Getting list of all file names only from the directory (if the server parameter getkeys = true):
-
-```bash
-curl -H "KeysFiles: 1" http://localhost/test
-
-```
-Getting list of all file names only from the archive (if the server parameter getkeys = true):
-
-```bash
-curl -H "KeysArchive: 1" http://localhost/test
-```
-
-Getting list of all unique file names from the directory and archive with their sizes and dates (if the server parameter getinfo = true):
-
-```bash
-curl -H "KeysInfo: 1" http://localhost/test
-```
-
-Getting list of all file names from the directory and archive with their sizes and dates (if the server parameter getinfo = true):
-
-```bash
-curl -H "KeysInfoAll: 1" http://localhost/test
-```
-
-Getting list of all file names only from the directory with their sizes and dates (if the server parameter getinfo = true):
-
-```bash
-curl -H "KeysInfoFiles: 1" http://localhost/test
-
-```
-Getting list of all file names only from the archive with their sizes and dates (if the server parameter getinfo = true):
-
-```bash
-curl -H "KeysInfoArchive: 1" http://localhost/test
-```
-
-Getting count number of all unique files from the directory and archive (if the server parameter getcount = true):
-
-```bash
-curl -H "KeysCount: 1" http://localhost/test
-```
-
-Getting count number of all files from directory and archive (if the server parameter getcount = true):
-
-```bash
-curl -H "KeysCountAll: 1" http://localhost/test
-```
-
-Getting count number of all files only from the directory (if the server parameter getcount = true):
-
-```bash
-curl -H "KeysCountFiles: 1" http://localhost/test
-```
-
-Getting count number of all files only from the archive (if the server parameter getcount = true):
-
-```bash
-curl -H "KeysCountArchive: 1" http://localhost/test
-```
-
-Downloading the whole Bolt archive from the directory (if the server parameter getbolt = true):
+Downloading the whole Bolt archive from the directory (if the server parameter getbolt = true)
 
 ```bash
 curl -o test.bolt http://localhost/test/test.bolt
 ```
 
-Deleting file or value (a regular file is deleted first, if it exists, and not the value in the bolt archive):
+Uploading file to the directory
+
+```bash
+curl -X PUT --data-binary @test.jpg http://localhost/test/test.jpg
+```
+
+Uploading file to the Bolt archive (if the server parameter fmaxsize is not exceeded)
+
+```bash
+curl -X PUT -H "Archive: 1" --data-binary @test.jpg http://localhost/test/test.jpg
+```
+
+Deleting file (a regular file is deleted first, if it exists, and not the file in the bolt archive)
 
 ```bash
 curl -X DELETE http://localhost/test/test.jpg
 ```
 
-Deleting file or value from the Bolt archive (forced):
+Deleting file (forced)
+
+```bash
+curl -X DELETE -H "FromFile: 1" http://localhost/test/test.jpg
+```
+
+Deleting file from the Bolt archive (forced)
 
 ```bash
 curl -X DELETE -H "FromArchive: 1" http://localhost/test/test.jpg
 ```
 
-Deleting the whole Bolt archive from the directory (if the server parameter delbolt = true):
+Deleting the whole Bolt archive from the directory (if the server parameter delbolt = true)
 
 ```bash
 curl -X DELETE http://localhost/test/test.bolt
 ```
 
-Advanced usage
+Search
 --------
 
-**Additional headers: JSON, Limit, Offset (JSON works with all Keys headers; Limit and Offset is not used with KeysCount headers)**
-
-Getting a list of all file names from a directory and archive with their sizes and dates in JSON format with a set limit and offset
+Getting list of all unique file names from directory and archive (if the server parameter getkeys = true)
 
 ```bash
-curl -H "KeysInfoAll: 1" -H "JSON: 1" -H "Limit: 25" -H "Offset: 100" http://localhost/test
+curl -H "Sea: 1" -H "Keys: 1" http://localhost/test
+```
+
+Getting list of all file names from the directory and archive (if the server parameter getkeys = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysAll: 1" http://localhost/test
+```
+
+Getting list of all file names only from the directory (if the server parameter getkeys = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysFiles: 1" http://localhost/test
+
+```
+Getting list of all file names only from the archive (if the server parameter getkeys = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysArchive: 1" http://localhost/test
+```
+
+Getting list of all unique file names from the directory and archive with their sizes and dates (if the server parameter getinfo = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysInfo: 1" http://localhost/test
+```
+
+Getting list of all file names from the directory and archive with their sizes and dates (if the server parameter getinfo = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysInfoAll: 1" http://localhost/test
+```
+
+Getting list of all file names only from the directory with their sizes and dates (if the server parameter getinfo = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysInfoFiles: 1" http://localhost/test
+
+```
+Getting list of all file names only from the archive with their sizes and dates (if the server parameter getinfo = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysInfoArchive: 1" http://localhost/test
+```
+
+Getting list of all unique file names from the directory and archive with their sizes and dates (if the server parameter getsearch = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "Expression: (\.jpg$)" http://localhost/test
+```
+
+Getting list of all file names from the directory and archive with their sizes and dates (if the server parameter getsearch = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "Expression: (\.jpg$)" http://localhost/test
+```
+
+Getting list of all file names only from the directory with their sizes and dates (if the server parameter getsearch = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchFiles: 1" -H "Expression: (\.jpg$)" http://localhost/test
+
+```
+Getting list of all file names only from the archive with their sizes and dates (if the server parameter getsearch = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchArchive: 1" -H "Expression: (\.jpg$)" http://localhost/test
+```
+
+Getting count number of all unique files from the directory and archive (if the server parameter getcount = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysCount: 1" http://localhost/test
+```
+
+Getting count number of all files from directory and archive (if the server parameter getcount = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysCountAll: 1" http://localhost/test
+```
+
+Getting count number of all files only from the directory (if the server parameter getcount = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysCountFiles: 1" http://localhost/test
+```
+
+Getting count number of all files only from the archive (if the server parameter getcount = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysCountArchive: 1" http://localhost/test
+```
+
+Advanced search
+--------
+
+**```Keys, KeysInfo``` headers also support all search headers except the ```WithValue``` header**
+**```KeysCount``` headers also support all search headers except ```Limit, Offset, WithValue``` headers**
+**```WithValue``` header is only available if you use ```KeysSearch*``` and ```JSON``` headers together**
+**The ```Recursive``` header supports a maximum recursion depth of 3**
+**The ```Expire``` header sets the lifetime once for a particular request, response returns from the cache and the lifetime for the result in the cache is not updated**
+**Using ```Expire``` and ```SkipCache``` headers together will force updates the result and lifetime in the cache**
+**When using header ```WithValue``` values are encoded by base64(outer) and HEX(inner)**
+
+Regex search (if server parameter getsearch = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expression: (\ .jpg $)" http: // localhost / test
+````
+
+Recursive search (if server parameter getrecursive = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" http: // localhost / test
+````
+
+Search with saving the result to the server cache for 120 seconds (if the server parameter getcache = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" http: // localhost / test
+````
+
+Search with a skip result from the server cache
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "SkipCache: 1" http: // localhost / test
+````
+
+Search with skipping the result from the server cache and changing the value in the server cache with set new lifetime of 120 seconds (if the server parameter getcache = true)
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" -H "SkipCache: 1" http: // localhost / test
+````
+
+Limit with Offset Search
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Limit: 25" -H "Offset: 100" http: // localhost / test
+````
+
+Search with adding the virtual host URL to the key names
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "WithUrl: 1" http: // localhost / test
+````
+
+Search with size limits. ```WithValue: 1``` If any value exceeds the server parameter vmaxsize, then value will not be included in the output, but the key in the output will be present
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "MinSize: 512" -H "MaxSize: 1024" -H "WithUrl: 1" -H "WithValue: 1" http: // localhost / test
+````
+
+Search with timestamp date interval. ```WithValue: 1``` If any value exceeds the server parameter vmaxsize, then value will not be included in the output, but the key in the output will be present
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "MinStmp: 1570798400" -H "MaxStmp: 1580798400" -H "WithUrl: 1" -H "WithValue: 1" http: // localhost / test
+```
+
+Search before the first match
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expression: (10.jpg)" -H "StopFirst: 1" http: // localhost / test
+```
+
+No comments
+
+```bash
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" -H "Expression: (\ .jpg $)" -H "MinSize: 512" -H "MaxSize: 1024" -H "MinStmp: 1570798400" -H "
+MaxStmp: 1580798400 "-H" Limit: 25 "-H" Offset: 50 "-H" WithUrl: 1 "-H" WithValue: 1 "-H" Expire: 3600 "http: // localhost / test
 ```
 
 Data migration in 3 steps without stopping the service
