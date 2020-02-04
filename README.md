@@ -47,6 +47,7 @@ Features
 
 - Multi threading
 - Multi servers for fault tolerance and load balancing
+- Complete file and value search
 - Supports HTTPS and IP authorization
 - Supported HTTP methods: GET, HEAD, OPTIONS, PUT, POST and DELETE
 - Manage read and write behavior through client headers
@@ -61,7 +62,6 @@ Features
 - Bolt archives support for selective reading of a certain number of bytes from a value
 - Easy sharding of data over thousands or millions of Bolt archives based on the directory structure
 - Mixed mode support, with ability to save large files separately from Bolt archives
-- Support for obtaining a list or number of keys in a directory, including non-unique ones
 - Semi-dynamic buffers for minimal memory consumption and optimal network performance tuning
 - Includes multi threaded <a href=https://github.com/eltaline/wza>wZA</a> archiver for migrating files without stopping the service
 
@@ -370,19 +370,13 @@ curl -H "Sea: 1" -H "KeysCountArchive: 1" http://localhost/test
 Advanced search
 --------
 
-**```Keys, KeysInfo``` headers also support all search headers except the ```WithValue``` header**
-
-**```KeysCount``` headers also support all search headers except ```Limit, Offset, WithValue``` headers**
-
-**```WithValue``` header is only available if you use ```KeysSearch*``` and ```JSON``` headers together**
-
-**The ```Recursive``` header supports a maximum recursion depth of 3**
-
-**The ```Expire``` header sets the lifetime once for a particular request, response returns from the cache and the lifetime for the result in the cache is not updated**
-
-**Using ```Expire``` and ```SkipCache``` headers together will force updates the result and lifetime in the cache**
-
-**When using header ```WithValue``` values are encoded by base64(outer) and HEX(inner)**
+- **```Keys, KeysInfo``` headers also support all search headers except the ```WithValue``` header**
+- **```KeysCount``` headers also support all search headers except ```Limit, Offset, WithValue``` headers**
+- **```WithValue``` header is only available if you use ```KeysSearch*``` and ```JSON``` headers together**
+- **The ```Recursive``` header supports a maximum recursion depth of 3**
+- **The ```Expire``` header sets the lifetime once for a particular request, response returns from the cache and the lifetime for the result in the cache is not updated**
+- **Using ```Expire``` and ```SkipCache``` headers together will force updates the result and lifetime in the cache**
+- **When using header ```WithValue``` values are encoded by base64(outer) and HEX(inner)**
 
 Regex search (if server parameter getsearch = true)
 
