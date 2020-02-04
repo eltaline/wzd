@@ -374,7 +374,7 @@ Advanced search
 - **```KeysCount``` headers also support all search headers except ```Limit, Offset, WithValue``` headers**
 - **```WithValue``` header is only available if you use ```KeysSearch*``` and ```JSON``` headers together**
 - **The ```Recursive``` header supports a maximum recursion depth of 3**
-- **The ```Expire``` header sets the lifetime once for a particular request, response returns from the cache and the lifetime for the result in the cache is not updated**
+- **The ```Expire``` header sets the lifetime once for a particular request. Other same particular request returns result from the cache and the lifetime for the result in the cache is not updated**
 - **Using ```Expire``` and ```SkipCache``` headers together will force updates the result and lifetime in the cache**
 - **When using header ```WithValue``` values are encoded by base64(outer) and HEX(inner)**
 
@@ -441,8 +441,7 @@ curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expression: (10.jpg)" -H
 No comments
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" -H "Expression: (\ .jpg $)" -H "MinSize: 512" -H "MaxSize: 1024" -H "MinStmp: 1570798400" -H "
-MaxStmp: 1580798400 "-H" Limit: 25 "-H" Offset: 50 "-H" WithUrl: 1 "-H" WithValue: 1 "-H" Expire: 3600 "http://localhost/test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" -H "Expression: (\ .jpg $)" -H "MinSize: 512" -H "MaxSize: 1024" -H "MinStmp: 1570798400" -H "MaxStmp: 1580798400" -H "Limit: 25 " -H "Offset: 50" -H "WithUrl: 1" -H "WithValue: 1" -H "Expire: 3600" http://localhost/test
 ```
 
 Data migration in 3 steps without stopping the service
