@@ -441,7 +441,7 @@ curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expression: (10.jpg)" -H
 No comments
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" -H "Expression: (\ .jpg $)" -H "MinSize: 512" -H "MaxSize: 1024" -H "MinStmp: 1570798400" -H "MaxStmp: 1580798400" -H "Limit: 25 " -H "Offset: 50" -H "WithUrl: 1" -H "WithValue: 1" -H "Expire: 3600" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" -H "Expression: (\.jpg$)" -H "MinSize: 512" -H "MaxSize: 1024" -H "MinStmp: 1570798400" -H "MaxStmp: 1580798400" -H "Limit: 25 " -H "Offset: 50" -H "WithUrl: 1" -H "WithValue: 1" -H "Expire: 3600" http://localhost/test
 ```
 
 Data migration in 3 steps without stopping the service
