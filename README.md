@@ -13,7 +13,7 @@ Architecture
 
 <img align="center" src="/images/wzd-arch.png" alt="wZD Arch"/>
 
-Current stable version: 1.1.2
+Current stable version: 1.1.3
 ========
 
 - <a href=/CHANGELOG.md>Changelog</a>
