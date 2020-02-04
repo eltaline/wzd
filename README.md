@@ -35,7 +35,7 @@ Added in version 1.1.3:
 - Headers: ```MinSize, MaxSize, MinStmp, MaxStmp, WithUrl```
 - Headers: ```Expire, SkipCache``` (Query cache search and skip cache)
 - Response headers: ```Hitcache, Errcache, Errmsg``` for search
-- FromFile header for GET and DELETE methods
+- ```FromFile``` header for GET and DELETE methods
 - Updated documentation
 
 Fixed in version 1.1.3:
