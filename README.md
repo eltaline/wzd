@@ -381,68 +381,68 @@ Advanced search
 Regex search (if server parameter getsearch = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expression: (\ .jpg $)" http: // localhost / test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expression: (\ .jpg $)" http://localhost/test
 ````
 
 Recursive search (if server parameter getrecursive = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" http: // localhost / test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" http://localhost/test
 ````
 
 Search with saving the result to the server cache for 120 seconds (if the server parameter getcache = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" http: // localhost / test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" http://localhost/test
 ````
 
 Search with a skip result from the server cache
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "SkipCache: 1" http: // localhost / test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "SkipCache: 1" http://localhost/test
 ````
 
 Search with skipping the result from the server cache and changing the value in the server cache with set new lifetime of 120 seconds (if the server parameter getcache = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" -H "SkipCache: 1" http: // localhost / test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" -H "SkipCache: 1" http://localhost/test
 ````
 
 Limit with Offset Search
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Limit: 25" -H "Offset: 100" http: // localhost / test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Limit: 25" -H "Offset: 100" http://localhost/test
 ````
 
 Search with adding the virtual host URL to the key names
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "WithUrl: 1" http: // localhost / test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "WithUrl: 1" http://localhost/test
 ````
 
 Search with size limits. ```WithValue: 1``` If any value exceeds the server parameter vmaxsize, then value will not be included in the output, but the key in the output will be present
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "MinSize: 512" -H "MaxSize: 1024" -H "WithUrl: 1" -H "WithValue: 1" http: // localhost / test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "MinSize: 512" -H "MaxSize: 1024" -H "WithUrl: 1" -H "WithValue: 1" http://localhost/test
 ````
 
 Search with timestamp date interval. ```WithValue: 1``` If any value exceeds the server parameter vmaxsize, then value will not be included in the output, but the key in the output will be present
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "MinStmp: 1570798400" -H "MaxStmp: 1580798400" -H "WithUrl: 1" -H "WithValue: 1" http: // localhost / test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "MinStmp: 1570798400" -H "MaxStmp: 1580798400" -H "WithUrl: 1" -H "WithValue: 1" http://localhost/test
 ```
 
 Search before the first match
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expression: (10.jpg)" -H "StopFirst: 1" http: // localhost / test
+curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expression: (10.jpg)" -H "StopFirst: 1" http://localhost/test
 ```
 
 No comments
 
 ```bash
 curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" -H "Expression: (\ .jpg $)" -H "MinSize: 512" -H "MaxSize: 1024" -H "MinStmp: 1570798400" -H "
-MaxStmp: 1580798400 "-H" Limit: 25 "-H" Offset: 50 "-H" WithUrl: 1 "-H" WithValue: 1 "-H" Expire: 3600 "http: // localhost / test
+MaxStmp: 1580798400 "-H" Limit: 25 "-H" Offset: 50 "-H" WithUrl: 1 "-H" WithValue: 1 "-H" Expire: 3600 "http://localhost/test
 ```
 
 Data migration in 3 steps without stopping the service
