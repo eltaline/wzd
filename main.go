@@ -164,16 +164,13 @@ type KeysSearch struct {
 // Global Variables
 
 var (
-	// Endian
-
+	// Endian : Endianess
 	Endian binary.ByteOrder
 
 	// Uid : System user UID
-
 	Uid int64
 
 	// Gid : System user GID
-
 	Gid int64
 
 	// Config

@@ -242,7 +242,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				if debugmode {
 
-					_, err =  ctx.WriteString("[ERRO] The query arguments is not allowed during GET request\n")
+					_, err = ctx.WriteString("[ERRO] The query arguments is not allowed during GET request\n")
 					if err != nil {
 						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
@@ -269,7 +269,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				if debugmode {
 
-					_, err =  ctx.WriteString("[ERRO] The direct bolt request is not allowed during GET request\n")
+					_, err = ctx.WriteString("[ERRO] The direct bolt request is not allowed during GET request\n")
 					if err != nil {
 						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
@@ -292,7 +292,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			if debugmode {
 
-				_, err =  ctx.WriteString("[ERRO] Restricted to download .crcbolt file error\n")
+				_, err = ctx.WriteString("[ERRO] Restricted to download .crcbolt file error\n")
 				if err != nil {
 					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 				}
@@ -393,7 +393,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				if debugmode {
 
-					_, err =  ctx.WriteString("[ERRO] The keys request is not allowed during GET request\n")
+					_, err = ctx.WriteString("[ERRO] The keys request is not allowed during GET request\n")
 					if err != nil {
 						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
@@ -414,7 +414,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				if debugmode {
 
-					_, err =  ctx.WriteString("[ERRO] The keys info request is not allowed during GET request\n")
+					_, err = ctx.WriteString("[ERRO] The keys info request is not allowed during GET request\n")
 					if err != nil {
 						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
@@ -435,7 +435,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				if debugmode {
 
-					_, err =  ctx.WriteString("[ERRO] The keys search request is not allowed during GET request\n")
+					_, err = ctx.WriteString("[ERRO] The keys search request is not allowed during GET request\n")
 					if err != nil {
 						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
@@ -456,7 +456,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				if debugmode {
 
-					_, err =  ctx.WriteString("[ERRO] The keys recursive request is not allowed during GET request\n")
+					_, err = ctx.WriteString("[ERRO] The keys recursive request is not allowed during GET request\n")
 					if err != nil {
 						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
@@ -477,7 +477,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				if debugmode {
 
-					_, err =  ctx.WriteString("[ERRO] The keys with value request is not allowed during GET request\n")
+					_, err = ctx.WriteString("[ERRO] The keys with value request is not allowed during GET request\n")
 					if err != nil {
 						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
@@ -498,7 +498,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				if debugmode {
 
-					_, err =  ctx.WriteString("[ERRO] The count request is not allowed during GET request\n")
+					_, err = ctx.WriteString("[ERRO] The count request is not allowed during GET request\n")
 					if err != nil {
 						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
@@ -519,7 +519,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				if debugmode {
 
-					_, err =  ctx.WriteString("[ERRO] The expire request is not allowed during GET request\n")
+					_, err = ctx.WriteString("[ERRO] The expire request is not allowed during GET request\n")
 					if err != nil {
 						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 					}
