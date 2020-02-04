@@ -415,7 +415,7 @@ curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" -H "SkipCac
 curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Limit: 25" -H "Offset: 100" http://localhost/test
 ```
 
-Поиск с добавлением URL вирутального хоста к именам ключей
+Поиск с добавлением URL виртуального хоста к именам ключей
 
 ```bash
 curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "WithUrl: 1" http://localhost/test
