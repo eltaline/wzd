@@ -11,14 +11,14 @@
 
 - Расширенный рекурсивный поиск файлов и значений
 - Глобальные опции gcpercent, srchcache (настройка сборщика мусора и кеш поиска)
-- Заголовок Sea (требуется для работы с поиском Keys*)
-- Заголовки KeysSearch*, Recursive (параметры getsearch, getrecursive)
-- Заголовки Expression, StopFirst (регулярное выражение и остановка поиска)
-- Заголовки WithValue, Expire (параметры getvalue, getcache)
-- Заголовки MinSize, MaxSize, MinStmp, MaxStmp, WithUrl
-- Заголовки Expire, SkipCache (Query cache поиска и пропуск кеша)
-- Заголовки ответа в поиске Hitcache, Errcache, Errmsg
-- Заголовок FromFile для методов GET и DELETE
+- Заголовок ```Sea``` (требуется для работы с поиском ```Keys*```)
+- Заголовки ```KeysSearch*, Recursive``` (параметры getsearch, getrecursive)
+- Заголовки ```Expression, StopFirst``` (регулярное выражение и остановка поиска)
+- Заголовки ```WithValue, Expire``` (параметры getvalue, getcache)
+- Заголовки ```MinSize, MaxSize, MinStmp, MaxStmp, WithUrl```
+- Заголовки ```Expire, SkipCache``` (Query cache поиска и пропуск кеша)
+- Заголовки ответа в поиске ```Hitcache, Errcache, Errmsg```
+- Заголовок ```FromFile``` для методов GET и DELETE
 - Обновлена документация
 
 Исправлено в версии 1.1.3:
