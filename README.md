@@ -402,7 +402,7 @@ Search with a skip result from the server cache
 curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "SkipCache: 1" http://localhost/test
 ````
 
-Search with skipping the result from the server cache and changing the value in the server cache with set new lifetime of 120 seconds (if the server parameter getcache = true)
+Search with skipping the result from the server cache and changing the value in the server cache with setting new lifetime of 120 seconds (if the server parameter getcache = true)
 
 ```bash
 curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" -H "SkipCache: 1" http://localhost/test
