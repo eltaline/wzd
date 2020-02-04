@@ -292,7 +292,7 @@ curl -H "Sea: 1" -H "KeysFiles: 1" http://localhost/test
 Getting list of all file names only from the archive (if the server parameter getkeys = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysArchive: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysArchives: 1" http://localhost/test
 ```
 
 Getting list of all unique file names from the directory and archive with their sizes and dates (if the server parameter getinfo = true)
@@ -316,7 +316,7 @@ curl -H "Sea: 1" -H "KeysInfoFiles: 1" http://localhost/test
 Getting list of all file names only from the archive with their sizes and dates (if the server parameter getinfo = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysInfoArchive: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysInfoArchives: 1" http://localhost/test
 ```
 
 Getting list of all unique file names from the directory and archive with their sizes and dates (if the server parameter getsearch = true)
@@ -340,7 +340,7 @@ curl -H "Sea: 1" -H "KeysSearchFiles: 1" -H "Expression: (\.jpg$)" http://localh
 Getting list of all file names only from the archive with their sizes and dates (if the server parameter getsearch = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchArchive: 1" -H "Expression: (\.jpg$)" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearchArchives: 1" -H "Expression: (\.jpg$)" http://localhost/test
 ```
 
 Getting count number of all unique files from the directory and archive (if the server parameter getcount = true)
@@ -364,7 +364,7 @@ curl -H "Sea: 1" -H "KeysCountFiles: 1" http://localhost/test
 Getting count number of all files only from the archive (if the server parameter getcount = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysCountArchive: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysCountArchives: 1" http://localhost/test
 ```
 
 Advanced search
