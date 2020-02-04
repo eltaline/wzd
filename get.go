@@ -1880,12 +1880,12 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 					uniq = false
 				}
 
+				limit = 0
+				offset = 0
+
 				if DirExists(abs) {
 
 					allkeyscount := 0
-
-					limit = 0
-					offset = 0
 
 					getkeys, err := AllKeys(ibucket, sbucket, tbucket, filemode, timeout, opentries, freelist, abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, uniq)
 					if err != nil {
