@@ -19,8 +19,8 @@ Current stable version: 1.1.3
 - <a href=/CHANGELOG.md>Changelog</a>
 
 **Important: incompatibilities with previous versions**
-
-- For use all ```Keys*``` headers, you need to add a header ```curl "-H Sea" ...```
+:
+- For use all ```Keys*``` headers, you need to add a header ```curl -H "Sea: 1" ...```
 - Headers ```Keys...Archive``` renamed to ```Keys...Archives```
 - In the docker image, getkeys and getinfo options are disabled by default
 
