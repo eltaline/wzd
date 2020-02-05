@@ -51,6 +51,7 @@ ENV getkeys false
 ENV getinfo false
 ENV getsearch false
 ENV getrecursive false
+ENV getjoin false
 ENV getvalue false
 ENV getcount false
 ENV getcache true

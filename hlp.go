@@ -424,7 +424,7 @@ func RemoveFileDB(file string, directory string, deldir bool) error {
 // Names/Count Helpers
 
 // FileKeys : search file names through requested directory
-func FileKeys(dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string) (ikeys []Keys, err error) {
+func FileKeys(dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withjoin map[string]string) (ikeys []Keys, err error) {
 
 	var filekeys []string
 	var k string
@@ -450,7 +450,7 @@ func FileKeys(dirpath string, limit uint64, offset uint64, expression string, re
 	dirpath = filepath.Clean(dirpath)
 	url = strings.TrimSuffix(url, "/")
 
-	paths, err := RecursiveDirSearch(dirpath, recursive)
+	paths, err := RecursiveDirSearch(dirpath, withjoin, recursive)
 	if err != nil {
 		return ikeys, err
 	}
@@ -566,7 +566,7 @@ func FileKeys(dirpath string, limit uint64, offset uint64, expression string, re
 }
 
 // FileKeysInfo : search file names with info through requested directory
-func FileKeysInfo(dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string) (ikeys []KeysInfo, err error) {
+func FileKeysInfo(dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withjoin map[string]string) (ikeys []KeysInfo, err error) {
 
 	var filekeys []string
 	var k string
@@ -592,7 +592,7 @@ func FileKeysInfo(dirpath string, limit uint64, offset uint64, expression string
 	dirpath = filepath.Clean(dirpath)
 	url = strings.TrimSuffix(url, "/")
 
-	paths, err := RecursiveDirSearch(dirpath, recursive)
+	paths, err := RecursiveDirSearch(dirpath, withjoin, recursive)
 	if err != nil {
 		return ikeys, err
 	}
@@ -711,7 +711,7 @@ func FileKeysInfo(dirpath string, limit uint64, offset uint64, expression string
 }
 
 // FileKeysSearch : search file names/names with values through requested directory
-func FileKeysSearch(dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withvalue bool, vmaxsize int64) (ikeys []KeysSearch, err error) {
+func FileKeysSearch(dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withjoin map[string]string, withvalue bool, vmaxsize int64) (ikeys []KeysSearch, err error) {
 
 	var filekeys []string
 	var k string
@@ -737,7 +737,7 @@ func FileKeysSearch(dirpath string, limit uint64, offset uint64, expression stri
 	dirpath = filepath.Clean(dirpath)
 	url = strings.TrimSuffix(url, "/")
 
-	paths, err := RecursiveDirSearch(dirpath, recursive)
+	paths, err := RecursiveDirSearch(dirpath, withjoin, recursive)
 	if err != nil {
 		return ikeys, err
 	}
@@ -872,7 +872,7 @@ func FileKeysSearch(dirpath string, limit uint64, offset uint64, expression stri
 }
 
 // DBKeys : search key names through requested directory
-func DBKeys(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string) (ikeys []Keys, err error) {
+func DBKeys(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withjoin map[string]string) (ikeys []Keys, err error) {
 
 	var dbkeys []string
 	var k string
@@ -893,7 +893,7 @@ func DBKeys(ibucket string, sbucket string, tbucket string, filemode os.FileMode
 	dirpath = filepath.Clean(dirpath)
 	url = strings.TrimSuffix(url, "/")
 
-	paths, err := RecursiveDirSearch(dirpath, recursive)
+	paths, err := RecursiveDirSearch(dirpath, withjoin, recursive)
 	if err != nil {
 		return ikeys, err
 	}
@@ -1121,7 +1121,7 @@ func DBKeys(ibucket string, sbucket string, tbucket string, filemode os.FileMode
 }
 
 // DBKeysInfo : search key names with info through requested directory
-func DBKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string) (ikeys []KeysInfo, err error) {
+func DBKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withjoin map[string]string) (ikeys []KeysInfo, err error) {
 
 	var dbkeys []string
 	var k string
@@ -1142,7 +1142,7 @@ func DBKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.File
 	dirpath = filepath.Clean(dirpath)
 	url = strings.TrimSuffix(url, "/")
 
-	paths, err := RecursiveDirSearch(dirpath, recursive)
+	paths, err := RecursiveDirSearch(dirpath, withjoin, recursive)
 	if err != nil {
 		return ikeys, err
 	}
@@ -1364,7 +1364,7 @@ func DBKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.File
 }
 
 // DBKeysSearch : search key names/names with values through requested directory
-func DBKeysSearch(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withvalue bool, vmaxsize int64) (ikeys []KeysSearch, err error) {
+func DBKeysSearch(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withjoin map[string]string, withvalue bool, vmaxsize int64) (ikeys []KeysSearch, err error) {
 
 	var dbkeys []string
 	var k string
@@ -1385,7 +1385,7 @@ func DBKeysSearch(ibucket string, sbucket string, tbucket string, filemode os.Fi
 	dirpath = filepath.Clean(dirpath)
 	url = strings.TrimSuffix(url, "/")
 
-	paths, err := RecursiveDirSearch(dirpath, recursive)
+	paths, err := RecursiveDirSearch(dirpath, withjoin, recursive)
 	if err != nil {
 		return ikeys, err
 	}
@@ -1671,7 +1671,7 @@ func DBKeysSearch(ibucket string, sbucket string, tbucket string, filemode os.Fi
 }
 
 // AllKeys : search summary file and key names through requested directory
-func AllKeys(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, uniq bool) (ikeys []Keys, err error) {
+func AllKeys(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withjoin map[string]string, uniq bool) (ikeys []Keys, err error) {
 
 	var filekeys []string
 	var dbkeys []string
@@ -1700,7 +1700,7 @@ func AllKeys(ibucket string, sbucket string, tbucket string, filemode os.FileMod
 	dirpath = filepath.Clean(dirpath)
 	url = strings.TrimSuffix(url, "/")
 
-	paths, err := RecursiveDirSearch(dirpath, recursive)
+	paths, err := RecursiveDirSearch(dirpath, withjoin, recursive)
 	if err != nil {
 		return ikeys, err
 	}
@@ -2124,7 +2124,9 @@ func AllKeys(ibucket string, sbucket string, tbucket string, filemode os.FileMod
 }
 
 // AllKeysInfo : search summary file and key names with info through requested directory
-func AllKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, uniq bool) (ikeys []KeysInfo, err error) {
+func AllKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withjoin map[string]string, uniq bool) (ikeys []KeysInfo, err error) {
+
+	base := "/var/storage"
 
 	var filekeys []string
 	var dbkeys []string
@@ -2153,7 +2155,7 @@ func AllKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.Fil
 	dirpath = filepath.Clean(dirpath)
 	url = strings.TrimSuffix(url, "/")
 
-	paths, err := RecursiveDirSearch(dirpath, recursive)
+	paths, err := RecursiveDirSearch(dirpath, withjoin, recursive)
 	if err != nil {
 		return ikeys, err
 	}
@@ -2334,7 +2336,7 @@ func AllKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.Fil
 
 		}
 
-		filename = strings.TrimPrefix(filename, dirpath+"/")
+		filename = strings.TrimPrefix(strings.TrimPrefix(filename, dirpath+"/"), base+"/")
 
 		if withurl {
 			filename = url + "/" + filename
@@ -2568,7 +2570,7 @@ func AllKeysInfo(ibucket string, sbucket string, tbucket string, filemode os.Fil
 }
 
 // AllKeysSearch : search summary file and key names/names with values through requested directory
-func AllKeysSearch(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withvalue bool, vmaxsize int64, uniq bool) (ikeys []KeysSearch, err error) {
+func AllKeysSearch(ibucket string, sbucket string, tbucket string, filemode os.FileMode, timeout time.Duration, opentries int, freelist string, dirpath string, limit uint64, offset uint64, expression string, recursive uint8, stopfirst uint8, minsize uint64, maxsize uint64, minstmp uint64, maxstmp uint64, withurl bool, url string, withjoin map[string]string, withvalue bool, vmaxsize int64, uniq bool) (ikeys []KeysSearch, err error) {
 
 	var filekeys []string
 	var dbkeys []string
@@ -2597,7 +2599,7 @@ func AllKeysSearch(ibucket string, sbucket string, tbucket string, filemode os.F
 	dirpath = filepath.Clean(dirpath)
 	url = strings.TrimSuffix(url, "/")
 
-	paths, err := RecursiveDirSearch(dirpath, recursive)
+	paths, err := RecursiveDirSearch(dirpath, withjoin, recursive)
 	if err != nil {
 		return ikeys, err
 	}
@@ -3254,22 +3256,45 @@ func ParseByRange(rngs string, size int64) ([]ReqRange, error) {
 }
 
 // RecursiveDirSearch : search directories names through requested directory with maximum available recursion level = 3
-func RecursiveDirSearch(dirpath string, recursive uint8) (paths []string, err error) {
+func RecursiveDirSearch(dirpath string, withjoin map[string]string, recursive uint8) (paths []string, err error) {
 
 	var r1paths []string
 	var r2paths []string
 
-	paths = append(paths, dirpath)
+	epaths := make(map[string]int)
 
 	if recursive > 3 {
 		recursive = 3
 	}
 
-	if recursive > 0 {
+	if len(withjoin) > 0 {
 
-		rcnt := uint8(0)
+		for joinpath, irecursive := range withjoin {
 
-		r1allfiles, err := ioutil.ReadDir(dirpath)
+			jrecursive, err := strconv.ParseUint(irecursive, 10, 8)
+			if err != nil {
+				return paths, err
+			}
+
+			paths = append(paths, joinpath)
+			epaths[joinpath] = int(jrecursive)
+
+		}
+
+	} else {
+
+		paths = append(paths, dirpath)
+		epaths[dirpath] = int(recursive)
+
+	}
+
+	for edir, erec := range epaths {
+
+	if erec > 0 {
+
+		rcnt := int(0)
+
+		r1allfiles, err := ioutil.ReadDir(edir)
 		if err != nil {
 			return paths, err
 		}
@@ -3278,7 +3303,7 @@ func RecursiveDirSearch(dirpath string, recursive uint8) (paths []string, err er
 
 			if dir.IsDir() && dir.Name() != "." && dir.Name() != ".." {
 
-				dirname := dirpath + "/" + dir.Name()
+				dirname := edir + "/" + dir.Name()
 				paths = append(paths, dirname)
 				r1paths = append(r1paths, dirname)
 
@@ -3288,11 +3313,11 @@ func RecursiveDirSearch(dirpath string, recursive uint8) (paths []string, err er
 
 		rcnt++
 
-		if rcnt < recursive {
+		if rcnt < erec {
 
-			for _, dirpath := range r1paths {
+			for _, ndirpath := range r1paths {
 
-				r2allfiles, err := ioutil.ReadDir(dirpath)
+				r2allfiles, err := ioutil.ReadDir(ndirpath)
 				if err != nil {
 					return paths, err
 				}
@@ -3315,11 +3340,11 @@ func RecursiveDirSearch(dirpath string, recursive uint8) (paths []string, err er
 
 		rcnt++
 
-		if rcnt < recursive {
+		if rcnt < erec {
 
-			for _, dirpath := range r2paths {
+			for _, ndirpath := range r2paths {
 
-				r3allfiles, err := ioutil.ReadDir(dirpath)
+				r3allfiles, err := ioutil.ReadDir(ndirpath)
 				if err != nil {
 					return paths, err
 				}
@@ -3338,6 +3363,8 @@ func RecursiveDirSearch(dirpath string, recursive uint8) (paths []string, err er
 			}
 
 		}
+
+	}
 
 	}
 

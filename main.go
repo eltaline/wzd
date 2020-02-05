@@ -78,6 +78,7 @@ type server struct {
 	GETINFO        bool
 	GETSEARCH      bool
 	GETRECURSIVE   bool
+	GETJOIN        bool
 	GETVALUE       bool
 	GETCOUNT       bool
 	GETCACHE       bool
@@ -425,6 +426,7 @@ func init() {
 	rgxgetinfo := regexp.MustCompile("^(?i)(true|false)$")
 	rgxgetsearch := regexp.MustCompile("^(?i)(true|false)$")
 	rgxgetrecursive := regexp.MustCompile("^(?i)(true|false)$")
+	rgxgetjoin := regexp.MustCompile("^(?i)(true|false)$")
 	rgxgetvalue := regexp.MustCompile("^(?i)(true|false)$")
 	rgxgetcount := regexp.MustCompile("^(?i)(true|false)$")
 	rgxgetcache := regexp.MustCompile("^(?i)(true|false)$")
@@ -653,6 +655,9 @@ func init() {
 		mchgetrecursive := rgxgetrecursive.MatchString(fmt.Sprintf("%t", Server.GETRECURSIVE))
 		Check(mchgetrecursive, section, "getrecursive", fmt.Sprintf("%t", Server.GETRECURSIVE), "true or false", DoExit)
 
+		mchgetjoin := rgxgetjoin.MatchString(fmt.Sprintf("%t", Server.GETJOIN))
+		Check(mchgetjoin, section, "getjoin", fmt.Sprintf("%t", Server.GETJOIN), "true or false", DoExit)
+
 		mchgetvalue := rgxgetvalue.MatchString(fmt.Sprintf("%t", Server.GETVALUE))
 		Check(mchgetvalue, section, "getvalue", fmt.Sprintf("%t", Server.GETVALUE), "true or false", DoExit)
 
@@ -802,6 +807,13 @@ func init() {
 			appLogger.Warnf("| Host [%s] | Get Recursive Keys/Files [ENABLED]", Server.HOST)
 		default:
 			appLogger.Warnf("| Host [%s] | Get Recursive Keys/Files [DISABLED]", Server.HOST)
+		}
+
+		switch {
+		case Server.GETJOIN:
+			appLogger.Warnf("| Host [%s] | Get Join Paths/Tables [ENABLED]", Server.HOST)
+		default:
+			appLogger.Warnf("| Host [%s] | Get Join Paths/Tables [DISABLED]", Server.HOST)
 		}
 
 		switch {

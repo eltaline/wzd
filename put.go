@@ -99,7 +99,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				badhost = false
 
-				base = Server.ROOT
+				base = filepath.Clean(Server.ROOT)
 
 				for _, Vhost := range putallow {
 
