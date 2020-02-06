@@ -408,7 +408,7 @@ Search with skipping the result from the server cache and changing the value in 
 curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" -H "SkipCache: 1" http://localhost/test
 ````
 
-Limit with Offset Search
+Search with limit and offset
 
 ```bash
 curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Limit: 25" -H "Offset: 100" http://localhost/test
