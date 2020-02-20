@@ -4,12 +4,15 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
+	//"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/coocood/freecache"
 	"github.com/eltaline/bolt"
+	"github.com/eltaline/nutsdb"
 	"github.com/kataras/iris"
+	"golang.org/x/crypto/blake2b"
 	"hash/crc32"
 	"io"
 	"net"
@@ -17,16 +20,16 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 // Get
 
 // ZDGet : GET/HEAD/OPTIONS methods
-func ZDGet(cache *freecache.Cache) iris.Handler {
+func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Handler {
 	return func(ctx iris.Context) {
 		defer wg.Done()
 
@@ -43,11 +46,11 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 		// Shutdown
 
-		if wshutdown {
+		if shutdown {
 			ctx.StatusCode(iris.StatusInternalServerError)
 			// _, err = ctx.WriteString("[ERRO] Shutdown wZD server in progress\n")
 			// if err != nil {
-			//	getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
+			//	getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client| %v", vhost, ip, err)
 			// }
 			return
 		}
@@ -90,6 +93,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 		getcount := false
 		getcache := false
 
+		searchthreads := 4
+		searchtimeout := 10
+
 		readintegrity := true
 
 		opentries := 5
@@ -113,8 +119,6 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 		dir := filepath.Dir(uri)
 		file := filepath.Base(uri)
-
-		bft := int64(36)
 
 		mchregcrcbolt := rgxcrcbolt.MatchString(file)
 
@@ -157,6 +161,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 				getvalue = Server.GETVALUE
 				getcount = Server.GETCOUNT
 				getcache = Server.GETCACHE
+
+				searchthreads = Server.SEARCHTHREADS
+				searchtimeout = Server.SEARCHTIMEOUT
 
 				readintegrity = Server.READINTEGRITY
 
@@ -306,6 +313,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 		}
 
 		abs := filepath.Clean(base + dir + "/" + file)
+		ddir := filepath.Clean(base + dir)
 
 		gzabs := filepath.Clean(base + dir + "/" + file + ".gz")
 		gzfile := file + ".gz"
@@ -323,13 +331,17 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 		timeout := time.Duration(locktimeout) * time.Second
 
-		if method == "GET" && hsea == "1" {
+		if method == "GET" && hsea == "1" && search {
 
+			ups, _ := url.Parse(furi)
+			furi = ups.Scheme + "://" + ups.Host
+
+			prefix := ""
 			expression := ""
-			recursive := uint8(0)
+			recursive := int(0)
 			stopfirst := uint8(0)
 			withurl := false
-			withjoin := make(map[string]string)
+			withjoin := make(map[string]int)
 			withvalue := false
 
 			minsize := uint64(0)
@@ -338,35 +350,34 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 			minstmp := uint64(0)
 			maxstmp := uint64(0)
 
-			limit := uint64(0)
-			offset := uint64(0)
+			offset := int(-1)
+			limit := int(-1)
+
+			msort := uint8(0)
 
 			expire := int(-1)
 			skipcache := false
 
-			sbucket := "size"
-			tbucket := "time"
+			//sbucket := "size"
+			//tbucket := "time"
 
 			hkeys := ctx.GetHeader("Keys")
-			hkeysall := ctx.GetHeader("KeysAll")
 			hkeysfiles := ctx.GetHeader("KeysFiles")
 			hkeysarchives := ctx.GetHeader("KeysArchives")
 
 			hinfo := ctx.GetHeader("KeysInfo")
-			hinfoall := ctx.GetHeader("KeysInfoAll")
 			hinfofiles := ctx.GetHeader("KeysInfoFiles")
 			hinfoarchives := ctx.GetHeader("KeysInfoArchives")
 
 			hsearch := ctx.GetHeader("KeysSearch")
-			hsearchall := ctx.GetHeader("KeysSearchAll")
 			hsearchfiles := ctx.GetHeader("KeysSearchFiles")
 			hsearcharchives := ctx.GetHeader("KeysSearchArchives")
 
 			hcount := ctx.GetHeader("KeysCount")
-			hcountall := ctx.GetHeader("KeysCountAll")
 			hcountfiles := ctx.GetHeader("KeysCountFiles")
 			hcountarchives := ctx.GetHeader("KeysCountArchives")
 
+			hprefix := ctx.GetHeader("Prefix")
 			hexpression := ctx.GetHeader("Expression")
 			hrecursive := ctx.GetHeader("Recursive")
 			hstopfirst := ctx.GetHeader("StopFirst")
@@ -381,15 +392,17 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 			hwithjoin := ctx.GetHeader("WithJoin")
 			hwithvalue := ctx.GetHeader("WithValue")
 
-			hlimit := ctx.GetHeader("Limit")
 			hoffset := ctx.GetHeader("Offset")
+			hlimit := ctx.GetHeader("Limit")
+
+			hsort := ctx.GetHeader("Sort")
 
 			hexpire := ctx.GetHeader("Expire")
 			hskipcache := ctx.GetHeader("SkipCache")
 
 			hjson := ctx.GetHeader("JSON")
 
-			if !getkeys && (hkeys != "" || hkeysall != "" || hkeysfiles != "" || hkeysarchives != "") {
+			if !getkeys && (hkeys != "" || hkeysfiles != "" || hkeysarchives != "" || hexpression != "" || hprefix != "") {
 
 				ctx.StatusCode(iris.StatusForbidden)
 
@@ -410,7 +423,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			}
 
-			if !getinfo && (hinfo != "" || hinfoall != "" || hinfofiles != "" || hinfoarchives != "") {
+			if !getinfo && (hinfo != "" || hinfofiles != "" || hinfoarchives != "" || hexpression != "" || hprefix != "") {
 
 				ctx.StatusCode(iris.StatusForbidden)
 
@@ -431,7 +444,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			}
 
-			if !getsearch && (hsearch != "" || hsearchall != "" || hsearchfiles != "" || hsearcharchives != "" || hexpression != "") {
+			if !getsearch && (hsearch != "" || hsearchfiles != "" || hsearcharchives != "" || hexpression != "" || hprefix != "") {
 
 				ctx.StatusCode(iris.StatusForbidden)
 
@@ -515,7 +528,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			}
 
-			if !getcount && (hcount != "" || hcountall != "" || hcountfiles != "" || hcountarchives != "") {
+			if !getcount && (hcount != "" || hcountfiles != "" || hcountarchives != "") {
 
 				ctx.StatusCode(iris.StatusForbidden)
 
@@ -559,6 +572,10 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			// Check Additional Headers for GET keys* requests
 
+			if hprefix != "" {
+				prefix = hprefix
+			}
+
 			if hexpression != "" {
 				expression = hexpression
 			} else {
@@ -567,18 +584,17 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			if hrecursive != "" {
 
-				recursive64, err := strconv.ParseUint(hrecursive, 10, 8)
-				if err != nil {
+				if hwithjoin != "" {
 
-					ctx.StatusCode(iris.StatusBadRequest)
+					ctx.StatusCode(iris.StatusConflict)
 
 					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Recursive uint error during GET keys* request | Recursive [%s] | %v", vhost, ip, hrecursive, err)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Recursive header conflicts with WithJoin header error during GET keys* request", vhost, ip)
 					}
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Recursive uint error during GET keys* request\n")
+						_, err = ctx.WriteString("[ERRO] Recursive header conflicts with WithJoin header error during GET keys* request\n")
 						if err != nil {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
@@ -589,11 +605,29 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				}
 
-				if recursive64 > 3 {
-					recursive = 3
-				} else {
-					recursive = uint8(recursive64)
+				recursive64, err := strconv.ParseInt(hrecursive, 10, 32)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusBadRequest)
+
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Recursive int error during GET keys* request | Recursive [%s] | %v", vhost, ip, hrecursive, err)
+					}
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Recursive int error during GET keys* request\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
 				}
+
+				recursive = int(recursive64)
 
 			}
 
@@ -765,13 +799,30 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			if hwithjoin != "" {
 
-				ups, _ := url.Parse(furi)
-				furi = ups.Scheme + "://" + ups.Host
+				if hrecursive != "" {
 
-				rgxjoin := "(.+?):(\\d+)"
-				mchjoin := regexp.MustCompile(rgxjoin)
+					ctx.StatusCode(iris.StatusConflict)
 
-				jpaths := mchjoin.FindAllStringSubmatch(hwithjoin, -1)
+					if log4xx {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | WithJoin header conflicts with Recursive header error during GET keys* request", vhost, ip)
+					}
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] WithJoin header conflicts with Recursive header error during GET keys* request\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				abs = base
+
+				jpaths := rgxjoin.FindAllStringSubmatch(hwithjoin, -1)
 
 				for _, kval := range jpaths {
 					kdir := filepath.Clean(base + "/" + strings.TrimSpace(kval[1]))
@@ -797,8 +848,29 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 					}
 
-					rval := kval[2]
-					withjoin[kdir] = rval
+					rval, err := strconv.ParseInt(kval[2], 10, 32)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusBadRequest)
+
+						if log4xx {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Recursive int error during GET keys* request | WithJoin [%s] | %v", vhost, ip, hwithjoin, err)
+						}
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Recursive int error during GET keys* request\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+						return
+
+					}
+
+					withjoin[kdir] = int(rval)
 
 				}
 
@@ -834,20 +906,20 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			}
 
-			if hlimit != "" {
+			if hoffset != "" {
 
-				limit, err = strconv.ParseUint(hlimit, 10, 64)
+				offset64, err := strconv.ParseInt(hoffset, 10, 32)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusBadRequest)
 
 					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Limit uint error during GET keys* request | Limit [%s] | %v", vhost, ip, hlimit, err)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Offset int error during GET keys* request | Offset [%s] | %v", vhost, ip, hoffset, err)
 					}
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Limit uint error during GET keys* request\n")
+						_, err = ctx.WriteString("[ERRO] Offset int error during GET keys* request\n")
 						if err != nil {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
@@ -858,22 +930,24 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				}
 
+				offset = int(offset64)
+
 			}
 
-			if hoffset != "" {
+			if hlimit != "" {
 
-				offset, err = strconv.ParseUint(hoffset, 10, 64)
+				limit64, err := strconv.ParseInt(hlimit, 10, 32)
 				if err != nil {
 
 					ctx.StatusCode(iris.StatusBadRequest)
 
 					if log4xx {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Offset uint error during GET keys* request | Offset [%s] | %v", vhost, ip, hoffset, err)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Limit int error during GET keys* request | Limit [%s] | %v", vhost, ip, hlimit, err)
 					}
 
 					if debugmode {
 
-						_, err = ctx.WriteString("[ERRO] Offset uint error during GET keys* request\n")
+						_, err = ctx.WriteString("[ERRO] Limit int error during GET keys* request\n")
 						if err != nil {
 							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
@@ -882,6 +956,21 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 					return
 
+				}
+
+				limit = int(limit64)
+
+			}
+
+			if hsort != "" {
+
+				switch {
+				case hsort == "0":
+					msort = uint8(0)
+				case hsort == "1":
+					msort = uint8(1)
+				default:
+					msort = uint8(0)
 				}
 
 			}
@@ -946,24 +1035,29 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			// Cache
 
-			var vckey []byte = nil
+			var vckey []byte
+			var vchash []byte = nil
 			var vcerr string = "0"
 			var errmsg string = "none"
 
-			if getcache {
+			if search && getcache {
 
-				vckey = []byte("host:" + vhost + ";path:" + abs + ";params:" + fmt.Sprintf("%s", params) + ";hk:" + hkeys + ";hkl:" + hkeysall + ";hkf:" + hkeysfiles + ";hka:" + hkeysarchives +
-					";hi:" + hinfo + ";hil:" + hinfoall + ";hif:" + hinfofiles + ";hia:" + hinfoarchives +
-					";hs:" + hsearch + ";hsl:" + hsearchall + ";hsf:" + hsearchfiles + ";hsa:" + hsearcharchives +
-					";hc:" + hcount + ";hcl:" + hcountall + ";hcf:" + hcountfiles + ";hca:" + hcountarchives +
-					";he:" + hexpression + ";hr:" + hrecursive + ";ht:" + hstopfirst +
+				vckey = []byte("host:" + vhost + ";path:" + abs + ";params:" + fmt.Sprintf("%s", params) + ";hk:" + hkeys + ";hkf:" + hkeysfiles + ";hka:" + hkeysarchives +
+					";hi:" + hinfo + ";hif:" + hinfofiles + ";hia:" + hinfoarchives +
+					";hs:" + hsearch + ";hsf:" + hsearchfiles + ";hsa:" + hsearcharchives +
+					";hc:" + hcount + ";hcf:" + hcountfiles + ";hca:" + hcountarchives +
+					";hp:" + hprefix + ";he:" + hexpression + ";hr:" + hrecursive + ";ht:" + hstopfirst +
 					";hmix:" + hminsize + ";hmax:" + hmaxsize + ";hsix:" + hminstmp + ";hsax:" + hmaxstmp +
 					";hwrl:" + hwithurl + ";hwjn:" + hwithjoin + ";hwvl:" + hwithvalue +
-					";hlim:" + hlimit + ";hoff:" + hoffset + ";hjsn:" + hjson)
+					";hoff:" + hoffset + ";hlim:" + hlimit + ";hsrt:" + hsort + ";hjsn:" + hjson)
+
+				vcblk := blake2b.Sum256(vckey)
+				vchash = []byte(vcblk[:])
+				//vchash = hex.EncodeToString(vcblk[:])
 
 				if !skipcache {
 
-					vcget, err := cache.Get(vckey)
+					vcget, err := cache.Get(vchash)
 					if err == nil {
 
 						conttype := http.DetectContentType(vcget)
@@ -998,21 +1092,15 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			// Standart/Bolt Keys Iterator
 
-			istrue, ccnm := StringOne(hkeys, hkeysall, hkeysfiles, hkeysarchives)
+			istrue, ccnm := StringOne(hkeys, hkeysfiles, hkeysarchives)
 
 			switch {
 
-			case istrue && (ccnm == 1 || ccnm == 2):
-
-				uniq := true
-
-				if ccnm == 2 {
-					uniq = false
-				}
+			case istrue && ccnm == 1:
 
 				if DirExists(abs) {
 
-					getkeys, err := AllKeys(ibucket, sbucket, tbucket, filemode, timeout, opentries, freelist, abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, uniq)
+					getkeys, err := AllKeys(ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -1043,7 +1131,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 							var sgetkeys []string
 
 							for _, vs := range getkeys {
-								sgetkeys = append(sgetkeys, vs.Key, "\n")
+								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
 							allkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
@@ -1063,9 +1151,109 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 						ctx.Header("Hitcache", "0")
 
-						if getcache && expire >= 0 {
+						if search && getcache && expire >= 0 {
 
-							err = cache.Set(vckey, rbytes, expire)
+							err = cache.Set(vchash, rbytes, expire)
+							if err != nil {
+								vcerr = "1"
+								errmsg = fmt.Sprintf("%v", err)
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 599 | Write search results to cache error | Path [%s] | %v", vhost, ip, abs, err)
+							}
+
+						}
+
+						ctx.Header("Errcache", vcerr)
+						ctx.Header("Errmsg", errmsg)
+
+						_, err = ctx.Write(rbytes)
+						if err != nil {
+
+							if log4xx {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+					}
+
+					return
+
+				}
+
+				ctx.StatusCode(iris.StatusNotFound)
+
+				if log4xx {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
+				}
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Can`t find directory error\n")
+					if err != nil {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			case istrue && ccnm == 2:
+
+				if DirExists(abs) {
+
+					getkeys, _, _, err := FileKeys(ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, searchthreads, searchtimeout)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate files in directory error | Path [%s] | %v", vhost, ip, abs, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t iterate files in directory error\n")
+							if err != nil {
+								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+						return
+
+					}
+
+					if len(getkeys) != 0 {
+
+						filekeys := ""
+
+						if hjson == "1" {
+							jkeys, _ := json.Marshal(getkeys)
+							filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+						} else {
+
+							var sgetkeys []string
+
+							for _, vs := range getkeys {
+								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatInt(int64(vs.Type), 10), "\n")
+							}
+
+							filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+
+						}
+
+						rbytes := []byte(filekeys)
+
+						conttype := http.DetectContentType(rbytes)
+						hsize := fmt.Sprintf("%d", len(rbytes))
+						scctrl := fmt.Sprintf("max-age=%d", cctrl)
+
+						ctx.Header("Content-Type", conttype)
+						ctx.Header("Content-Length", hsize)
+						ctx.Header("Cache-Control", scctrl)
+
+						ctx.Header("Hitcache", "0")
+
+						if search && getcache && expire >= 0 {
+
+							err = cache.Set(vchash, rbytes, expire)
 							if err != nil {
 								vcerr = "1"
 								errmsg = fmt.Sprintf("%v", err)
@@ -1113,107 +1301,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				if DirExists(abs) {
 
-					getkeys, err := FileKeys(abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin)
-					if err != nil {
-
-						ctx.StatusCode(iris.StatusInternalServerError)
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t iterate files in directory error | Path [%s] | %v", vhost, ip, abs, err)
-
-						if debugmode {
-
-							_, err = ctx.WriteString("[ERRO] Can`t iterate files in directory error\n")
-							if err != nil {
-								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-							}
-
-						}
-
-						return
-
-					}
-
-					if len(getkeys) != 0 {
-
-						filekeys := ""
-
-						if hjson == "1" {
-							jkeys, _ := json.Marshal(getkeys)
-							filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
-						} else {
-
-							var sgetkeys []string
-
-							for _, vs := range getkeys {
-								sgetkeys = append(sgetkeys, vs.Key, "\n")
-							}
-
-							filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
-
-						}
-
-						rbytes := []byte(filekeys)
-
-						conttype := http.DetectContentType(rbytes)
-						hsize := fmt.Sprintf("%d", len(rbytes))
-						scctrl := fmt.Sprintf("max-age=%d", cctrl)
-
-						ctx.Header("Content-Type", conttype)
-						ctx.Header("Content-Length", hsize)
-						ctx.Header("Cache-Control", scctrl)
-
-						ctx.Header("Hitcache", "0")
-
-						if getcache && expire >= 0 {
-
-							err = cache.Set(vckey, rbytes, expire)
-							if err != nil {
-								vcerr = "1"
-								errmsg = fmt.Sprintf("%v", err)
-								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 599 | Write search results to cache error | Path [%s] | %v", vhost, ip, abs, err)
-							}
-
-						}
-
-						ctx.Header("Errcache", vcerr)
-						ctx.Header("Errmsg", errmsg)
-
-						_, err = ctx.Write(rbytes)
-						if err != nil {
-
-							if log4xx {
-								getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-							}
-
-						}
-
-					}
-
-					return
-
-				}
-
-				ctx.StatusCode(iris.StatusNotFound)
-
-				if log4xx {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
-				}
-
-				if debugmode {
-
-					_, err = ctx.WriteString("[ERRO] Can`t find directory error\n")
-					if err != nil {
-						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-					}
-
-				}
-
-				return
-
-			case istrue && ccnm == 4:
-
-				if DirExists(abs) {
-
-					getkeys, err := DBKeys(ibucket, sbucket, tbucket, filemode, timeout, opentries, freelist, abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin)
+					getkeys, err := DBKeys(ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -1244,7 +1332,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 							var sgetkeys []string
 
 							for _, vs := range getkeys {
-								sgetkeys = append(sgetkeys, vs.Key, "\n")
+								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
 							dbkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
@@ -1263,9 +1351,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 						ctx.Header("Hitcache", "0")
 
-						if getcache && expire >= 0 {
+						if search && getcache && expire >= 0 {
 
-							err = cache.Set(vckey, rbytes, expire)
+							err = cache.Set(vchash, rbytes, expire)
 							if err != nil {
 								vcerr = "1"
 								errmsg = fmt.Sprintf("%v", err)
@@ -1313,21 +1401,15 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			// Standart/Bolt Keys Info Iterator
 
-			istrue, ccnm = StringOne(hinfo, hinfoall, hinfofiles, hinfoarchives)
+			istrue, ccnm = StringOne(hinfo, hinfofiles, hinfoarchives)
 
 			switch {
 
-			case istrue && (ccnm == 1 || ccnm == 2):
-
-				uniq := true
-
-				if ccnm == 2 {
-					uniq = false
-				}
+			case istrue && ccnm == 1:
 
 				if DirExists(abs) {
 
-					getkeys, err := AllKeysInfo(ibucket, sbucket, tbucket, filemode, timeout, opentries, freelist, abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, uniq)
+					getkeys, err := AllKeysInfo(ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -1377,9 +1459,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 						ctx.Header("Hitcache", "0")
 
-						if getcache && expire >= 0 {
+						if search && getcache && expire >= 0 {
 
-							err = cache.Set(vckey, rbytes, expire)
+							err = cache.Set(vchash, rbytes, expire)
 							if err != nil {
 								vcerr = "1"
 								errmsg = fmt.Sprintf("%v", err)
@@ -1423,11 +1505,11 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				return
 
-			case istrue && ccnm == 3:
+			case istrue && ccnm == 2:
 
 				if DirExists(abs) {
 
-					getkeys, err := FileKeysInfo(abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin)
+					getkeys, _, _, err := FileKeysInfo(ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -1477,9 +1559,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 						ctx.Header("Hitcache", "0")
 
-						if getcache && expire >= 0 {
+						if search && getcache && expire >= 0 {
 
-							err = cache.Set(vckey, rbytes, expire)
+							err = cache.Set(vchash, rbytes, expire)
 							if err != nil {
 								vcerr = "1"
 								errmsg = fmt.Sprintf("%v", err)
@@ -1523,11 +1605,11 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				return
 
-			case istrue && ccnm == 4:
+			case istrue && ccnm == 3:
 
 				if DirExists(abs) {
 
-					getkeys, err := DBKeysInfo(ibucket, sbucket, tbucket, filemode, timeout, opentries, freelist, abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin)
+					getkeys, err := DBKeysInfo(ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -1577,9 +1659,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 						ctx.Header("Hitcache", "0")
 
-						if getcache && expire >= 0 {
+						if search && getcache && expire >= 0 {
 
-							err = cache.Set(vckey, rbytes, expire)
+							err = cache.Set(vchash, rbytes, expire)
 							if err != nil {
 								vcerr = "1"
 								errmsg = fmt.Sprintf("%v", err)
@@ -1627,21 +1709,15 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			// Standart/Bolt Keys Search
 
-			istrue, ccnm = StringOne(hsearch, hsearchall, hsearchfiles, hsearcharchives)
+			istrue, ccnm = StringOne(hsearch, hsearchfiles, hsearcharchives)
 
 			switch {
 
-			case istrue && (ccnm == 1 || ccnm == 2):
-
-				uniq := true
-
-				if ccnm == 2 {
-					uniq = false
-				}
+			case istrue && ccnm == 1:
 
 				if DirExists(abs) {
 
-					getkeys, err := AllKeysSearch(ibucket, sbucket, tbucket, filemode, timeout, opentries, freelist, abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, withvalue, vmaxsize, uniq)
+					getkeys, err := AllKeysSearch(filemode, timeout, opentries, freelist, ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, withvalue, vmaxsize, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -1691,9 +1767,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 						ctx.Header("Hitcache", "0")
 
-						if getcache && expire >= 0 {
+						if search && getcache && expire >= 0 {
 
-							err = cache.Set(vckey, rbytes, expire)
+							err = cache.Set(vchash, rbytes, expire)
 							if err != nil {
 								vcerr = "1"
 								errmsg = fmt.Sprintf("%v", err)
@@ -1737,11 +1813,11 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				return
 
-			case istrue && ccnm == 3:
+			case istrue && ccnm == 2:
 
 				if DirExists(abs) {
 
-					getkeys, err := FileKeysSearch(abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, withvalue, vmaxsize)
+					getkeys, _, _, err := FileKeysSearch(ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, withvalue, vmaxsize, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -1791,9 +1867,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 						ctx.Header("Hitcache", "0")
 
-						if getcache && expire >= 0 {
+						if search && getcache && expire >= 0 {
 
-							err = cache.Set(vckey, rbytes, expire)
+							err = cache.Set(vchash, rbytes, expire)
 							if err != nil {
 								vcerr = "1"
 								errmsg = fmt.Sprintf("%v", err)
@@ -1837,11 +1913,11 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				return
 
-			case istrue && ccnm == 4:
+			case istrue && ccnm == 3:
 
 				if DirExists(abs) {
 
-					getkeys, err := DBKeysSearch(ibucket, sbucket, tbucket, filemode, timeout, opentries, freelist, abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, withvalue, vmaxsize)
+					getkeys, err := DBKeysSearch(filemode, timeout, opentries, freelist, ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, withvalue, vmaxsize, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -1891,9 +1967,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 						ctx.Header("Hitcache", "0")
 
-						if getcache && expire >= 0 {
+						if search && getcache && expire >= 0 {
 
-							err = cache.Set(vckey, rbytes, expire)
+							err = cache.Set(vchash, rbytes, expire)
 							if err != nil {
 								vcerr = "1"
 								errmsg = fmt.Sprintf("%v", err)
@@ -1941,26 +2017,19 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			// Standart/Bolt Counter
 
-			istrue, ccnm = StringOne(hcount, hcountall, hcountfiles, hcountarchives)
+			istrue, ccnm = StringOne(hcount, hcountfiles, hcountarchives)
 
 			switch {
 
-			case istrue && (ccnm == 1 || ccnm == 2):
+			case istrue && ccnm == 1:
 
-				uniq := true
-
-				if ccnm == 2 {
-					uniq = false
-				}
-
-				limit = 0
-				offset = 0
+				limit = -1
 
 				if DirExists(abs) {
 
 					allkeyscount := 0
 
-					getkeys, err := AllKeys(ibucket, sbucket, tbucket, filemode, timeout, opentries, freelist, abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, uniq)
+					getkeys, err := AllKeys(ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -2032,9 +2101,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 					ctx.Header("Hitcache", "0")
 
-					if getcache && expire >= 0 {
+					if search && getcache && expire >= 0 {
 
-						err = cache.Set(vckey, rbytes, expire)
+						err = cache.Set(vchash, rbytes, expire)
 						if err != nil {
 							vcerr = "1"
 							errmsg = fmt.Sprintf("%v", err)
@@ -2076,16 +2145,15 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				return
 
-			case istrue && ccnm == 3:
+			case istrue && ccnm == 2:
 
 				filekeyscount := 0
 
-				limit = 0
-				offset = 0
+				limit = -1
 
 				if DirExists(abs) {
 
-					getkeys, err := FileKeys(abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin)
+					getkeys, _, _, err := FileKeys(ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -2157,9 +2225,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 					ctx.Header("Hitcache", "0")
 
-					if getcache && expire >= 0 {
+					if search && getcache && expire >= 0 {
 
-						err = cache.Set(vckey, rbytes, expire)
+						err = cache.Set(vchash, rbytes, expire)
 						if err != nil {
 							vcerr = "1"
 							errmsg = fmt.Sprintf("%v", err)
@@ -2201,16 +2269,15 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				return
 
-			case istrue && ccnm == 4:
+			case istrue && ccnm == 3:
 
 				dbkeyscount := 0
 
-				limit = 0
-				offset = 0
+				limit = -1
 
 				if DirExists(abs) {
 
-					getkeys, err := DBKeys(ibucket, sbucket, tbucket, filemode, timeout, opentries, freelist, abs, limit, offset, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin)
+					getkeys, err := DBKeys(ndb, base, abs, msort, offset, limit, prefix, expression, recursive, stopfirst, minsize, maxsize, minstmp, maxstmp, withurl, furi, withjoin, searchthreads, searchtimeout)
 					if err != nil {
 
 						ctx.StatusCode(iris.StatusInternalServerError)
@@ -2282,9 +2349,9 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 					ctx.Header("Hitcache", "0")
 
-					if getcache && expire >= 0 {
+					if search && getcache && expire >= 0 {
 
-						err = cache.Set(vckey, rbytes, expire)
+						err = cache.Set(vchash, rbytes, expire)
 						if err != nil {
 							vcerr = "1"
 							errmsg = fmt.Sprintf("%v", err)
@@ -2946,55 +3013,97 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 		}
 
-		db, err := BoltOpenRead(dbf, filemode, timeout, opentries, freelist)
-		if err != nil {
+		var keyexists string = ""
 
-			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+		var bf BoltFiles
+		var bfiles []BoltFiles
 
-			if debugmode {
+		var dcount int64 = 0
 
-				_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-				}
+		bf.Name = dbf
+		bfiles = append(bfiles, bf)
 
+		for {
+
+			dcount++
+			ndbf := fmt.Sprintf("%s/%s_%08d.bolt", ddir, dbn, dcount)
+
+			if FileExists(ndbf) {
+
+				bf.Name = ndbf
+				bfiles = append(bfiles, bf)
+
+			} else {
+				break
 			}
-
-			return
-
-		}
-		defer db.Close()
-
-		keyexists, err := KeyExists(db, ibucket, file)
-		if err != nil {
-
-			ctx.StatusCode(iris.StatusInternalServerError)
-			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
-
-			if debugmode {
-
-				_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
-				if err != nil {
-					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-				}
-
-			}
-
-			db.Close()
-			return
 
 		}
 
-		if gzstatic {
+		for _, bfile := range bfiles {
 
-			gzkeyexists := ""
+			dbf = bfile.Name
 
-			gzkeyexists, err = KeyExists(db, ibucket, gzfile)
+			lnfile, err := os.Lstat(dbf)
 			if err != nil {
 
 				ctx.StatusCode(iris.StatusInternalServerError)
-				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, gzfile, dbf, err)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t lstat db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Can`t lstat db file error\n")
+					if err != nil {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+			if lnfile.Mode()&os.ModeType != 0 {
+
+				ctx.StatusCode(iris.StatusInternalServerError)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Non-regular db file error | File [%s] | DB [%s]", vhost, ip, file, dbf)
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Non-regular db file error\n")
+					if err != nil {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+			db, err := BoltOpenRead(dbf, filemode, timeout, opentries, freelist)
+			if err != nil {
+
+				ctx.StatusCode(iris.StatusInternalServerError)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+					if err != nil {
+						getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+			keyexists, err = KeyExists(db, ibucket, file)
+			if err != nil {
+
+				ctx.StatusCode(iris.StatusInternalServerError)
+				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
 
 				if debugmode {
 
@@ -3010,18 +3119,52 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			}
 
-			if gzkeyexists != "" {
-				keyexists = gzkeyexists
-				abs = gzabs
-				file = gzfile
+			if gzstatic {
+
+				gzkeyexists := ""
+
+				gzkeyexists, err = KeyExists(db, ibucket, gzfile)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, gzfile, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
+						if err != nil {
+							getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				if gzkeyexists != "" {
+
+					keyexists = gzkeyexists
+					abs = gzabs
+					file = gzfile
+
+				}
+
 			}
+
+			if keyexists != "" {
+				db.Close()
+				break
+			}
+
+			db.Close()
 
 		}
 
 		if keyexists == "" {
 
 			ctx.StatusCode(iris.StatusNotFound)
-			db.Close()
 
 			if log4xx {
 				getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 404 | Not found | Path [%s]", vhost, ip, abs)
@@ -3041,6 +3184,26 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 		}
 
 		bucket = keyexists
+
+		db, err := BoltOpenRead(dbf, filemode, timeout, opentries, freelist)
+		if err != nil {
+
+			ctx.StatusCode(iris.StatusInternalServerError)
+			getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+			if debugmode {
+
+				_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+				if err != nil {
+					getLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+				}
+
+			}
+
+			return
+
+		}
+		defer db.Close()
 
 		// Header Bolt Reader
 
@@ -3134,10 +3297,6 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 		hmodt := modt.Format(http.TimeFormat)
 
 		crc := readhead.Crcs
-
-		if tmst > 4294967295 {
-			bft = int64(32)
-		}
 
 		contbuffer := make([]byte, 512)
 
@@ -3276,7 +3435,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 				b := tx.Bucket([]byte(bucket))
 				if b != nil {
-					pdata = b.GetRange([]byte(file), uint32(rstart+bft), uint32(rlength))
+					pdata = b.GetRange([]byte(file), uint32(rstart+36), uint32(rlength))
 					return nil
 				} else {
 					return verr
@@ -3381,7 +3540,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			b := tx.Bucket([]byte(bucket))
 			if b != nil {
-				pdata = b.GetOffset([]byte(file), uint32(bft))
+				pdata = b.GetOffset([]byte(file), uint32(36))
 				return nil
 			} else {
 				return verr
@@ -3433,8 +3592,7 @@ func ZDGet(cache *freecache.Cache) iris.Handler {
 
 			}
 
-			tbl := crc32.MakeTable(0xEDB88320)
-			rcrc := crc32.Checksum(fullbuffer.Bytes(), tbl)
+			rcrc := crc32.Checksum(fullbuffer.Bytes(), ctbl32)
 
 			if rcrc != crc {
 

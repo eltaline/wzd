@@ -3,26 +3,29 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/gob"
 	"errors"
 	"fmt"
-	"github.com/eltaline/badgerhold"
 	"github.com/eltaline/bolt"
 	"github.com/eltaline/mmutex"
+	"github.com/eltaline/nutsdb"
 	"github.com/kataras/iris"
 	"hash/crc32"
+	"hash/crc64"
 	"io"
 	"net"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
 // Put
 
 // ZDPut : PUT/POST/PATCH methods
-func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
+func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Handler {
 	return func(ctx iris.Context) {
 		defer wg.Done()
 
@@ -45,11 +48,11 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		// Shutdown
 
-		if wshutdown {
+		if shutdown {
 			ctx.StatusCode(iris.StatusInternalServerError)
 			// _, err = ctx.WriteString("[ERRO] Shutdown wZD server in progress\n")
 			// if err != nil {
-			//	putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip , err)
+			//      putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client| %v", vhost, ip, err)
 			// }
 			return
 		}
@@ -57,8 +60,11 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		uri := ctx.Path()
 		params := ctx.URLParams()
 		archive := ctx.GetHeader("Archive")
+		tofile := ctx.GetHeader("File")
 		length := ctx.GetHeader("Content-Length")
 		ctype := ctx.GetHeader("Content-Type")
+
+		hcompact := ctx.GetHeader("Compact")
 
 		badhost := true
 		badip := true
@@ -68,6 +74,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		upload := false
 
 		compaction := true
+		compact := false
 
 		nonunique := false
 
@@ -76,6 +83,9 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		trytimes := 5
 		opentries := 5
 		locktimeout := 5
+
+		skeyscnt := 262144
+		smaxsize := int64(536870912)
 
 		fmaxsize := int64(1048576)
 
@@ -92,6 +102,9 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 		log4xx := true
 
 		var vfilemode int64 = 640
+
+		dir := filepath.Dir(uri)
+		file := filepath.Base(uri)
 
 		for _, Server := range config.Server {
 
@@ -131,6 +144,9 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				opentries = Server.OPENTRIES
 				locktimeout = Server.LOCKTIMEOUT
 
+				skeyscnt = Server.SKEYSCNT
+
+				smaxsize = Server.SMAXSIZE
 				fmaxsize = Server.FMAXSIZE
 
 				minbuffer = Server.MINBUFFER
@@ -316,14 +332,41 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		}
 
+		if hcompact != "" {
+
+			compact64, err := strconv.ParseUint(hcompact, 10, 8)
+			if err != nil {
+
+				ctx.StatusCode(iris.StatusBadRequest)
+
+				if log4xx {
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 400 | Compact uint error during PUT request | Compact [%s] | %v", vhost, ip, hcompact, err)
+				}
+
+				if debugmode {
+
+					_, err = ctx.WriteString("[ERRO] Compact uint error during PUT request\n")
+					if err != nil {
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+					}
+
+				}
+
+				return
+
+			}
+
+			if compact64 >= 1 {
+				compact = true
+			}
+
+		}
+
 		now := time.Now()
 		sec := now.Unix()
 
 		tb := make([]byte, 8)
 		Endian.PutUint64(tb, uint64(sec))
-
-		dir := filepath.Dir(uri)
-		file := filepath.Base(uri)
 
 		abs := filepath.Clean(base + dir + "/" + file)
 		ddir := filepath.Clean(base + dir)
@@ -425,73 +468,139 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		// Standart Writer
 
-		if archive != "1" || clength > fmaxsize {
+		if archive != "1" || tofile == "1" || clength > fmaxsize {
 
 			if FileExists(dbf) && !nonunique {
 
-				db, err := BoltOpenRead(dbf, filemode, timeout, opentries, freelist)
-				if err != nil {
+				var bf BoltFiles
+				var bfiles []BoltFiles
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+				var dcount int64 = 0
 
-					if debugmode {
+				bf.Name = dbf
+				bfiles = append(bfiles, bf)
 
-						_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
-						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+				for {
+
+					dcount++
+					ndbf := fmt.Sprintf("%s/%s_%08d.bolt", ddir, dbn, dcount)
+
+					if FileExists(ndbf) {
+
+						bf.Name = ndbf
+						bfiles = append(bfiles, bf)
+
+					} else {
+						break
+					}
+
+				}
+
+				for _, bfile := range bfiles {
+
+					dbf = bfile.Name
+
+					lnfile, err := os.Lstat(dbf)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t lstat db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t lstat db file error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
 						}
+
+						return
 
 					}
 
-					return
+					if lnfile.Mode()&os.ModeType != 0 {
 
-				}
-				defer db.Close()
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Non-regular db file error | File [%s] | DB [%s]", vhost, ip, file, dbf)
 
-				keyexists, err := KeyExists(db, ibucket, file)
-				if err != nil {
+						if debugmode {
 
-					ctx.StatusCode(iris.StatusInternalServerError)
-					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+							_, err = ctx.WriteString("[ERRO] Non-regular db file error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
 
-					if debugmode {
-
-						_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
-						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
 						}
+
+						return
+
+					}
+
+					db, err := BoltOpenRead(dbf, filemode, timeout, opentries, freelist)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t open db file error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+						return
+
+					}
+
+					keyexists, err := KeyExists(db, ibucket, file)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+						db.Close()
+						return
+
+					}
+
+					if keyexists != "" {
+
+						ctx.StatusCode(iris.StatusConflict)
+
+						if log4xx {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 409 | Can`t upload standart file due to conflict with duplicate key/file name in index db bucket error | File [%s] | DB [%s]", vhost, ip, file, dbf)
+						}
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t upload standart file due to conflict with duplicate key/file name in index db bucket error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+						db.Close()
+						return
 
 					}
 
 					db.Close()
-					return
 
 				}
-
-				if keyexists != "" {
-
-					ctx.StatusCode(iris.StatusConflict)
-
-					if log4xx {
-						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 409 | Can`t upload standart file due to conflict with duplicate key/file name in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
-					}
-
-					if debugmode {
-
-						_, err = ctx.WriteString("[ERRO] Can`t upload standart file due to conflict with duplicate key/file name in index db bucket error\n")
-						if err != nil {
-							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
-						}
-
-					}
-
-					db.Close()
-					return
-
-				}
-
-				db.Close()
 
 			}
 
@@ -750,6 +859,52 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					}
 
+					if search {
+
+						var nval RawKeysData
+
+						dcrc := crc64.Checksum([]byte(ddir), ctbl64)
+
+						radix.Lock()
+						tree, _, _ = tree.Insert([]byte(ddir), dcrc)
+						radix.Unlock()
+
+						nbucket := strconv.FormatUint(dcrc, 16)
+
+						nkey := []byte("f:" + file)
+
+						nval.Size = uint64(realsize)
+						nval.Date = uint64(sec)
+						nval.Prnt = uint32(0)
+						nval.Buck = uint16(0)
+						nval.Type = uint16(0)
+
+						nbuffer := new(bytes.Buffer)
+
+						_ = binary.Write(nbuffer, Endian, nval)
+
+						err = NDBInsert(ndb, nbucket, nkey, nbuffer.Bytes(), 0)
+						if err != nil {
+
+							ctx.StatusCode(iris.StatusInternalServerError)
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write file metadata to search db error | File [%s] | Path [%s] | NDB Bucket [%s] | %v", vhost, ip, file, dir, nbucket, err)
+
+							if debugmode {
+
+								_, err = ctx.WriteString("[ERRO] Write file metadata to search db error\n")
+								if err != nil {
+									putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+								}
+
+							}
+
+							keymutex.Unlock(abs)
+							return
+
+						}
+
+					}
+
 					keymutex.Unlock(abs)
 					return
 
@@ -863,6 +1018,52 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
+				if search {
+
+					var nval RawKeysData
+
+					dcrc := crc64.Checksum([]byte(ddir), ctbl64)
+
+					radix.Lock()
+					tree, _, _ = tree.Insert([]byte(ddir), dcrc)
+					radix.Unlock()
+
+					nbucket := strconv.FormatUint(dcrc, 16)
+
+					nkey := []byte("f:" + file)
+
+					nval.Size = uint64(realsize)
+					nval.Date = uint64(sec)
+					nval.Prnt = uint32(0)
+					nval.Buck = uint16(0)
+					nval.Type = uint16(0)
+
+					nbuffer := new(bytes.Buffer)
+
+					_ = binary.Write(nbuffer, Endian, nval)
+
+					err = NDBInsert(ndb, nbucket, nkey, nbuffer.Bytes(), 0)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write file metadata to search db error | File [%s] | Path [%s] | NDB Bucket [%s] | %v", vhost, ip, file, dir, nbucket, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Write file metadata to search db error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+						keymutex.Unlock(abs)
+						return
+
+					}
+
+				}
+
 				keymutex.Unlock(abs)
 				return
 
@@ -888,7 +1089,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 		// Bolt Writer
 
-		if archive == "1" {
+		if archive == "1" || clength <= fmaxsize {
 
 			if dbn == "/" {
 				ctx.StatusCode(iris.StatusForbidden)
@@ -923,6 +1124,267 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 				perbucket = 64
 			case clength >= 16777216:
 				perbucket = 32
+			}
+
+			var bf BoltFiles
+			var bfiles []BoltFiles
+
+			var bcount int64 = 0
+			var ncount int64 = 0
+			var dcount int64 = 0
+
+			if FileExists(dbf) {
+
+				bf.Name = dbf
+				bfiles = append(bfiles, bf)
+
+				bcount++
+
+			}
+
+			for {
+
+				dcount++
+				ndbf := fmt.Sprintf("%s/%s_%08d.bolt", ddir, dbn, dcount)
+
+				if FileExists(ndbf) {
+
+					bcount++
+
+					bf.Name = ndbf
+					bfiles = append(bfiles, bf)
+
+				} else {
+					break
+				}
+
+			}
+
+			if bcount == 0 {
+
+				db, err := BoltOpenWrite(dbf, filemode, timeout, opentries, freelist)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open/create db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t open/create db file error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+				defer db.Close()
+
+				err = os.Chmod(dbf, filemode)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t chmod db error | DB [%s] | %v", vhost, ip, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t chmod db error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				// Keys Index Bucket
+
+				err = db.Update(func(tx *bolt.Tx) error {
+					_, err = tx.CreateBucketIfNotExists([]byte(ibucket))
+					if err != nil {
+						return err
+					}
+					return nil
+
+				})
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t create index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t create index db bucket error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				db.Close()
+
+				bf.Name = dbf
+				bfiles = append(bfiles, bf)
+
+				bcount++
+
+			}
+
+			for _, bfile := range bfiles {
+
+				ncount++
+
+				dbf = bfile.Name
+
+				lnfile, err := os.Lstat(dbf)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t lstat db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t lstat db file error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				if lnfile.Mode()&os.ModeType != 0 {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Non-regular db file error | File [%s] | DB [%s]", vhost, ip, file, dbf)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Non-regular db file error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				infile, err := os.Stat(dbf)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t stat db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t stat db file error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				bsize := infile.Size()
+
+				db, err := BoltOpenRead(dbf, filemode, timeout, opentries, freelist)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t open/create db file error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t open/create db file error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					return
+
+				}
+
+				keyexists, err := KeyExists(db, ibucket, file)
+				if err != nil {
+
+					ctx.StatusCode(iris.StatusInternalServerError)
+					putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t check key of file in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+					if debugmode {
+
+						_, err = ctx.WriteString("[ERRO] Can`t check key of file in index db bucket error\n")
+						if err != nil {
+							putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+						}
+
+					}
+
+					db.Close()
+					return
+
+				}
+
+				if keyexists != "" {
+
+					db.Close()
+					break
+
+				}
+
+				if ncount == bcount {
+
+					keyscnt, err := KeysCount(db, ibucket)
+					if err != nil {
+
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Can`t count keys of all files in index db bucket error | File [%s] | DB [%s] | %v", vhost, ip, file, dbf, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Can`t count keys of all files in index db bucket error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+						db.Close()
+						return
+
+					}
+
+					if bsize >= smaxsize || keyscnt >= skeyscnt {
+
+						db.Close()
+						dbf = fmt.Sprintf("%s/%s_%08d.bolt", ddir, dbn, ncount)
+						bucket = "wzd1"
+						break
+
+					}
+
+				}
+
+				db.Close()
+
 			}
 
 			key := false
@@ -1398,8 +1860,6 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 					var readbuffer bytes.Buffer
 					tee := io.TeeReader(rawbuffer, &readbuffer)
 
-					tbl := crc32.MakeTable(0xEDB88320)
-
 					crcdata := new(bytes.Buffer)
 
 					_, err = crcdata.ReadFrom(tee)
@@ -1423,7 +1883,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					}
 
-					wcrc = crc32.Checksum(crcdata.Bytes(), tbl)
+					wcrc = crc32.Checksum(crcdata.Bytes(), ctbl32)
 
 					head := Header{
 						Size: uint64(realsize), Date: uint64(sec), Mode: uint16(vfilemode), Uuid: uint16(Uid), Guid: uint16(Gid), Comp: uint8(0), Encr: uint8(0), Crcs: wcrc, Rsvr: uint64(0),
@@ -1760,8 +2220,6 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					}
 
-					rtbl := crc32.MakeTable(0xEDB88320)
-
 					rcrcdata := new(bytes.Buffer)
 
 					_, err = rcrcdata.ReadFrom(pread)
@@ -1785,7 +2243,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 					}
 
-					rcrc = crc32.Checksum(rcrcdata.Bytes(), rtbl)
+					rcrc = crc32.Checksum(rcrcdata.Bytes(), ctbl32)
 
 					rcrcdata.Reset()
 
@@ -1812,18 +2270,108 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *badgerhold.Store) iris.Handler {
 
 				}
 
-				if keyexists != "" && compaction && cmpsched {
+				if search {
 
-					sdts := &Compact{
-						Path:   dbf,
-						MachID: machid,
-						Time:   time.Now(),
+					var nval RawKeysData
+					var prnt uint64 = 0
+
+					fname := filepath.Base(dbf)
+
+					dcrc := crc64.Checksum([]byte(ddir), ctbl64)
+
+					radix.Lock()
+					tree, _, _ = tree.Insert([]byte(ddir), dcrc)
+					radix.Unlock()
+
+					nbucket := strconv.FormatUint(dcrc, 16)
+
+					nkey := []byte("b:" + file)
+
+					if strings.ContainsRune(fname, 95) {
+						prnt, _ = strconv.ParseUint(strings.Split(strings.TrimSuffix(fname, ".bolt"), "_")[1], 10, 64)
 					}
 
-					err = cdb.Upsert(dbf, sdts)
+					nbck, _ := strconv.Atoi(strings.TrimPrefix(bucket, "wzd"))
+
+					nval.Size = uint64(realsize)
+					nval.Date = uint64(sec)
+					nval.Prnt = uint32(prnt)
+					nval.Buck = uint16(nbck)
+					nval.Type = uint16(1)
+
+					nbuffer := new(bytes.Buffer)
+
+					_ = binary.Write(nbuffer, Endian, nval)
+
+					err = NDBInsert(ndb, nbucket, nkey, nbuffer.Bytes(), 0)
 					if err != nil {
 
-						putLogger.Errorf("| Insert/Update data error | PATH [%s] | %v", dbf, err)
+						ctx.StatusCode(iris.StatusInternalServerError)
+						putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 500 | Write file metadata to search db error | File [%s] | DB [%s] | NDB Bucket [%s] | %v", vhost, ip, file, dbf, nbucket, err)
+
+						if debugmode {
+
+							_, err = ctx.WriteString("[ERRO] Write file metadata to search db error\n")
+							if err != nil {
+								putLogger.Errorf("| Virtual Host [%s] | Client IP [%s] | 499 | Can`t complete response to client | %v", vhost, ip, err)
+							}
+
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+				}
+
+				if keyexists != "" && compaction && cmpsched || compact {
+
+					if compact {
+
+						err = db.CompactQuietly()
+						if err != nil {
+							putLogger.Errorf("| On the fly compaction error | DB [%s] | %v", dbf, err)
+						}
+
+						err = os.Chmod(dbf, filemode)
+						if err != nil {
+							putLogger.Errorf("Can`t chmod db error | DB [%s] | %v", dbf, err)
+						}
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+					bdbf := make([]byte, 8)
+					Endian.PutUint64(bdbf, crc64.Checksum([]byte(dbf), ctbl64))
+
+					bval := new(bytes.Buffer)
+
+					sdts := &Compact{
+						Path: dbf,
+						Time: time.Now(),
+					}
+
+					enc := gob.NewEncoder(bval)
+					err := enc.Encode(sdts)
+					if err != nil {
+
+						putLogger.Errorf("| Gob encode for compaction db error | Path [%s] | %v", dbf, err)
+
+						db.Close()
+						keymutex.Unlock(dbf)
+						return
+
+					}
+
+					err = NDBInsert(cdb, cmpbucket, bdbf, bval.Bytes(), 0)
+					if err != nil {
+
+						putLogger.Errorf("| Insert/Update data error | Path [%s] | %v", dbf, err)
 						putLogger.Errorf("| Compaction will be started on the fly | DB [%s]", dbf)
 
 						err = db.CompactQuietly()

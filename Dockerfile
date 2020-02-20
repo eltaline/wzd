@@ -15,15 +15,19 @@ ENV charset "UTF-8"
 ENV debugmode false
 ENV gcpercent 25
 ENV freelist "hashmap"
-ENV srchcache 128
+ENV search true
+ENV searchcache 134217728
+ENV searchdir "/var/lib/wzd/search"
+ENV searchinit 4
+ENV searchindex "ram"
 ENV pidfile "/run/wzd/wzd.pid"
 ENV logdir "/var/log/wzd"
 ENV logmode 0640
 ENV defsleep 1
 ENV cmpsched true
-ENV cmpdir "/var/lib/wzd"
-ENV cmptime 30
-ENV cmpcheck 5
+ENV cmpdir "/var/lib/wzd/compact"
+ENV cmptime 7
+ENV cmpcheck 1
 
 ENV host "localhost"
 ENV root "/var/storage"
@@ -43,8 +47,10 @@ ENV readintegrity true
 ENV trytimes 5
 ENV opentries 5
 ENV locktimeout 5
+ENV skeyscnt 16384
+ENV smaxsize 536870912
 ENV fmaxsize 1048576
-ENV vmaxsize 1024
+ENV vmaxsize 4096
 ENV args false
 ENV getbolt false
 ENV getkeys false
@@ -55,6 +61,8 @@ ENV getjoin false
 ENV getvalue false
 ENV getcount false
 ENV getcache true
+ENV searchthreads 4
+ENV searchtimeout 10
 ENV nonunique false
 ENV cctrl 0
 ENV minbuffer 262144

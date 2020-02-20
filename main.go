@@ -8,16 +8,21 @@ import (
 	"flag"
 	"fmt"
 	"github.com/coocood/freecache"
-	"github.com/eltaline/badgerhold"
+	"github.com/eltaline/gron"
 	"github.com/eltaline/mmutex"
+	"github.com/eltaline/nutsdb"
 	"github.com/eltaline/toml"
+	"github.com/hashicorp/go-immutable-radix"
 	"github.com/kataras/iris"
 	"github.com/kataras/iris/middleware/logger"
 	"github.com/kataras/iris/middleware/recover"
+	"hash/crc32"
+	"hash/crc64"
 	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
+	"path/filepath"
 	"regexp"
 	"runtime/debug"
 	"strconv"
@@ -47,16 +52,19 @@ type global struct {
 	DEBUGMODE         bool
 	GCPERCENT         int
 	FREELIST          string
-	SRCHCACHE         int
+	SEARCH            bool
+	SEARCHCACHE       int
+	SEARCHDIR         string
+	SEARCHINIT        int
+	SEARCHINDEX       string
+	CMPSCHED          bool
+	CMPDIR            string
+	CMPTIME           int
+	CMPCHECK          int
 	PIDFILE           string
 	LOGDIR            string
 	LOGMODE           uint32
 	DEFSLEEP          int
-	CMPSCHED          bool
-	CMPTHREADS        int
-	CMPDIR            string
-	CMPTIME           int
-	CMPCHECK          int
 }
 
 type server struct {
@@ -82,6 +90,8 @@ type server struct {
 	GETVALUE       bool
 	GETCOUNT       bool
 	GETCACHE       bool
+	SEARCHTHREADS  int
+	SEARCHTIMEOUT  int
 	NONUNIQUE      bool
 	WRITEINTEGRITY bool
 	READINTEGRITY  bool
@@ -90,6 +100,8 @@ type server struct {
 	LOCKTIMEOUT    int
 	ARGS           bool
 	CCTRL          int
+	SKEYSCNT       int
+	SMAXSIZE       int64
 	FMAXSIZE       int64
 	VMAXSIZE       int64
 	MINBUFFER      int64
@@ -125,9 +137,8 @@ type ReqRange struct {
 
 // Compact : type contains information about db files for compaction/defragmentation
 type Compact struct {
-	Path   string
-	MachID string
-	Time   time.Time
+	Path string
+	Time time.Time
 }
 
 // Allow : type for key and slice pairs of a virtual host and CIDR allowable networks
@@ -142,8 +153,12 @@ type strCIDR struct {
 
 // Keys : type for files and/or keys
 type Keys struct {
-	Key string `json:"key"`
+	Key  string `json:"key"`
+	Type int    `json:"type"`
 }
+
+type KeysListAsc []Keys
+type KeysListDsc []Keys
 
 // KeysInfo : type for files and/or keys with info
 type KeysInfo struct {
@@ -153,18 +168,43 @@ type KeysInfo struct {
 	Type int    `json:"type"`
 }
 
+type KeysInfoListAsc []KeysInfo
+type KeysInfoListDsc []KeysInfo
+
 // KeysSearch : type for files and/or keys for search
 type KeysSearch struct {
 	Key   string `json:"key"`
 	Size  uint64 `json:"size"`
 	Date  uint64 `json:"date"`
 	Type  int    `json:"type"`
-	Value []byte `json:"value"`
+	Value string `json:"value"`
+}
+
+type KeysSearchListAsc []KeysSearch
+type KeysSearchListDsc []KeysSearch
+
+// RawKeysData : raw type keys for search metadata db
+type RawKeysData struct {
+	Size uint64
+	Date uint64
+	Prnt uint32
+	Buck uint16
+	Type uint16
+}
+
+// BoltFiles : type for sharding bolt files
+type BoltFiles struct {
+	Name string
 }
 
 // Global Variables
 
 var (
+
+	// Shutdown Mutex
+
+	lsht = &sync.Mutex{}
+
 	// Endian : Endianess
 	Endian binary.ByteOrder
 
@@ -174,11 +214,24 @@ var (
 	// Gid : System user GID
 	Gid int64
 
+	// Radix Tree
+
+	radix = &sync.RWMutex{}
+	tree  = iradix.New()
+
+	// CRC32/64 Table
+
+	ctbl32 = crc32.MakeTable(0xEDB88320)
+	ctbl64 = crc64.MakeTable(0xC96C5795D7870F42)
+
+	// Byte Slash
+
+	bslash = []byte("/")
+
 	// Config
 
 	config     Config
 	configfile string = "/etc/wzd/wzd.conf"
-	wg         sync.WaitGroup
 
 	onlyssl bool = false
 
@@ -192,10 +245,9 @@ var (
 	idletimeout       time.Duration = 60 * time.Second
 	keepalive         bool          = false
 
-	machid string = "nomachineid"
+	//machid string = "nomachineid"
 
-	shutdown  bool = false
-	wshutdown bool = false
+	shutdown bool = false
 
 	debugmode bool = false
 
@@ -203,7 +255,11 @@ var (
 
 	freelist string = "hashmap"
 
-	srchcache int = 128
+	search             = false
+	searchcache int    = 33554432
+	searchdir   string = "/var/lib/wzd/search"
+	searchinit  int    = 4
+	searchindex string = "ram"
 
 	pidfile string = "/run/wzd/wzd.pid"
 
@@ -212,14 +268,17 @@ var (
 
 	defsleep time.Duration = 1 * time.Second
 
+	cmpbucket = "cmp"
+
 	cmpsched bool          = true
-	cmpdir   string        = "/var/lib/wzd"
-	cmptime  int           = 30
-	cmpcheck time.Duration = 300 * time.Second
+	cmpdir   string        = "/var/lib/wzd/compact"
+	cmptime  int           = 7
+	cmpcheck time.Duration = 1
 
 	rgxbolt    = regexp.MustCompile(`(\.bolt$)`)
 	rgxcrcbolt = regexp.MustCompile(`(\.crcbolt$)`)
 	rgxctype   = regexp.MustCompile("(multipart)")
+	rgxjoin    = regexp.MustCompile(`(.+?):(\d+)`)
 )
 
 // Init Function
@@ -310,11 +369,56 @@ func init() {
 		config.Global.FREELIST = "hashmap"
 	}
 
-	if config.Global.SRCHCACHE != 0 {
-		mchsrchcache := RBInt(config.Global.SRCHCACHE, 1, 1048576)
-		Check(mchsrchcache, "[global]", "srchcache", fmt.Sprintf("%d", config.Global.SRCHCACHE), "from 1 to 1048576", DoExit)
+	rgxsearch := regexp.MustCompile("^(?i)(true|false)$")
+	mchsearch := rgxsearch.MatchString(fmt.Sprintf("%t", config.Global.SEARCH))
+	Check(mchsearch, "[global]", "search", fmt.Sprintf("%t", config.Global.SEARCH), "true or false", DoExit)
+
+	if config.Global.SEARCHCACHE != 0 {
+		mchsearchcache := RBInt(config.Global.SEARCHCACHE, 33554432, 2147483647)
+		Check(mchsearchcache, "[global]", "searchcache", fmt.Sprintf("%d", config.Global.SEARCHCACHE), "from 33554432 to 2147483647", DoExit)
 	} else {
-		config.Global.SRCHCACHE = 128
+		config.Global.SEARCHCACHE = 33554432
+	}
+
+	if config.Global.SEARCHDIR != "" {
+		rgxsearchdir := regexp.MustCompile("^(/?[^/\x00]*)+/?$")
+		mchsearchdir := rgxsearchdir.MatchString(config.Global.SEARCHDIR)
+		Check(mchsearchdir, "[global]", "searchdir", config.Global.SEARCHDIR, "ex. /var/lib/wzd/search", DoExit)
+	} else {
+		config.Global.SEARCHDIR = "/var/lib/wzd/search"
+	}
+
+	mchsearchinit := RBInt(config.Global.SEARCHINIT, 1, 256)
+	Check(mchsearchinit, "[global]", "searchinit", fmt.Sprintf("%d", config.Global.SEARCHINIT), "from 1 to 256", DoExit)
+
+	if config.Global.SEARCHINDEX != "" {
+		rgxsearchindex := regexp.MustCompile("^(?i)(ram|bpt|disk)$")
+		mchsearchindex := rgxsearchindex.MatchString(config.Global.SEARCHINDEX)
+		Check(mchsearchindex, "[global]", "searchindex", config.Global.SEARCHINDEX, "ram or disk or bpt", DoExit)
+	} else {
+		config.Global.SEARCHINDEX = "ram"
+	}
+
+	if config.Global.CMPDIR != "" {
+		rgxcmpdir := regexp.MustCompile("^(/?[^/\x00]*)+/?$")
+		mchcmpdir := rgxcmpdir.MatchString(config.Global.CMPDIR)
+		Check(mchcmpdir, "[global]", "cmpdir", config.Global.CMPDIR, "ex. /var/lib/wzd/compact", DoExit)
+	} else {
+		config.Global.CMPDIR = "/var/lib/wzd/compact"
+	}
+
+	rgxcmpsched := regexp.MustCompile("^(?i)(true|false)$")
+	mchcmpsched := rgxcmpsched.MatchString(fmt.Sprintf("%t", config.Global.CMPSCHED))
+	Check(mchcmpsched, "[global]", "cmpsched", fmt.Sprintf("%t", config.Global.CMPSCHED), "true or false", DoExit)
+
+	if config.Global.CMPSCHED {
+
+		mchcmptime := RBInt(config.Global.CMPTIME, 1, 365)
+		Check(mchcmptime, "[global]", "cmptime", fmt.Sprintf("%d", config.Global.CMPTIME), "from 1 to 365", DoExit)
+
+		mchcmpcheck := RBInt(config.Global.CMPCHECK, 1, 7)
+		Check(mchcmpcheck, "[global]", "cmpcheck", fmt.Sprintf("%d", config.Global.CMPCHECK), "from 1 to 7", DoExit)
+
 	}
 
 	if config.Global.PIDFILE != "" {
@@ -340,27 +444,9 @@ func init() {
 	mchdefsleep := RBInt(config.Global.DEFSLEEP, 1, 5)
 	Check(mchdefsleep, "[global]", "defsleep", fmt.Sprintf("%d", config.Global.DEFSLEEP), "from 1 to 5", DoExit)
 
-	if config.Global.CMPDIR != "" {
-		rgxcmpdir := regexp.MustCompile("^(/?[^/\x00]*)+/?$")
-		mchcmpdir := rgxcmpdir.MatchString(config.Global.CMPDIR)
-		Check(mchcmpdir, "[global]", "cmpdir", config.Global.CMPDIR, "ex. /var/lib/wzd", DoExit)
-	} else {
-		config.Global.CMPDIR = "/var/lib/wzd"
-	}
+	// Log Directory
 
-	rgxcmpsched := regexp.MustCompile("^(?i)(true|false)$")
-	mchcmpsched := rgxcmpsched.MatchString(fmt.Sprintf("%t", config.Global.CMPSCHED))
-	Check(mchcmpsched, "[global]", "cmpsched", fmt.Sprintf("%t", config.Global.CMPSCHED), "true or false", DoExit)
-
-	if config.Global.CMPSCHED {
-
-		mchcmptime := RBInt(config.Global.CMPTIME, 1, 365)
-		Check(mchcmptime, "[global]", "cmptime", fmt.Sprintf("%d", config.Global.CMPTIME), "from 1 to 365", DoExit)
-
-		mchcmpcheck := RBInt(config.Global.CMPCHECK, 1, 5)
-		Check(mchcmpcheck, "[global]", "cmpcheck", fmt.Sprintf("%d", config.Global.CMPCHECK), "from 1 to 5", DoExit)
-
-	}
+	logdir = config.Global.LOGDIR
 
 	// Log Mode
 
@@ -387,6 +473,13 @@ func init() {
 	}
 
 	switch {
+	case config.Global.SEARCH:
+		appLogger.Warnf("| Search [ENABLED]")
+	default:
+		appLogger.Warnf("| Search [DISABLED]")
+	}
+
+	switch {
 	case config.Global.ONLYSSL:
 		appLogger.Warnf("| Only SSL Mode [ENABLED]")
 	default:
@@ -397,7 +490,7 @@ func init() {
 	case config.Global.CMPSCHED:
 		appLogger.Warnf("| Compaction Scheduler [ENABLED]")
 		appLogger.Warnf("| Compaction Time > [%d] days", config.Global.CMPTIME)
-		appLogger.Warnf("| Compaction Scheduler Check Every [%d] seconds", config.Global.CMPCHECK)
+		appLogger.Warnf("| Compaction Scheduler Check Every [%d] days", config.Global.CMPCHECK)
 	default:
 		appLogger.Warnf("| Compaction Scheduler [DISABLED]")
 	}
@@ -455,7 +548,7 @@ func init() {
 		Check(mchroot, section, "root", Server.ROOT, "ex. /var/storage/localhost", DoExit)
 
 		if Server.SSLCRT != "" {
-			mchsslcrt := rgxsslcrt.MatchString(Server.SSLCRT)
+			mchsslcrt := rgxsslcrt.MatchString(filepath.Clean(Server.SSLCRT))
 			Check(mchsslcrt, section, "sslcrt", Server.SSLCRT, "/path/to/sslcrt.pem", DoExit)
 
 			if Server.SSLKEY == "" {
@@ -473,7 +566,7 @@ func init() {
 		}
 
 		if Server.SSLKEY != "" {
-			mchsslkey := rgxsslkey.MatchString(Server.SSLKEY)
+			mchsslkey := rgxsslkey.MatchString(filepath.Clean(Server.SSLKEY))
 			Check(mchsslkey, section, "sslkey", Server.SSLKEY, "/path/to/sslkey.pem", DoExit)
 
 			if Server.SSLCRT == "" {
@@ -494,7 +587,7 @@ func init() {
 
 			var get Allow
 
-			getfile, err := os.OpenFile(Server.GETALLOW, os.O_RDONLY, os.ModePerm)
+			getfile, err := os.OpenFile(filepath.Clean(Server.GETALLOW), os.O_RDONLY, os.ModePerm)
 			if err != nil {
 				appLogger.Errorf("Can`t open get allow file error | %s | File [%s] | %v", section, Server.GETALLOW, err)
 				fmt.Printf("Can`t open get allow file error | %s | File [%s] | %v\n", section, Server.GETALLOW, err)
@@ -541,7 +634,7 @@ func init() {
 
 			var put Allow
 
-			putfile, err := os.OpenFile(Server.PUTALLOW, os.O_RDONLY, os.ModePerm)
+			putfile, err := os.OpenFile(filepath.Clean(Server.PUTALLOW), os.O_RDONLY, os.ModePerm)
 			if err != nil {
 				appLogger.Errorf("Can`t open put allow file error | %s | File [%s] | %v", section, Server.PUTALLOW, err)
 				fmt.Printf("Can`t open put allow file error | %s | File [%s] | %v\n", section, Server.PUTALLOW, err)
@@ -588,7 +681,7 @@ func init() {
 
 			var del Allow
 
-			delfile, err := os.OpenFile(Server.DELALLOW, os.O_RDONLY, os.ModePerm)
+			delfile, err := os.OpenFile(filepath.Clean(Server.DELALLOW), os.O_RDONLY, os.ModePerm)
 			if err != nil {
 				appLogger.Errorf("Can`t open del allow file error | %s | File [%s] | %v", section, Server.DELALLOW, err)
 				fmt.Printf("Can`t open del allow file error | %s | File [%s] | %v\n", section, Server.DELALLOW, err)
@@ -667,6 +760,12 @@ func init() {
 		mchgetcache := rgxgetcache.MatchString(fmt.Sprintf("%t", Server.GETCACHE))
 		Check(mchgetcache, section, "getcache", fmt.Sprintf("%t", Server.GETCACHE), "true or false", DoExit)
 
+		mchsearchthreads := RBInt(Server.SEARCHTHREADS, 1, 256)
+		Check(mchsearchthreads, section, "searchthreads", fmt.Sprintf("%d", Server.SEARCHTHREADS), "from 1 to 256", DoExit)
+
+		mchsearchtimeout := RBInt(Server.SEARCHTIMEOUT, 1, 86400)
+		Check(mchsearchtimeout, section, "searchtimeout", fmt.Sprintf("%d", Server.SEARCHTIMEOUT), "from 1 to 86400", DoExit)
+
 		mchnonunique := rgxnonunique.MatchString(fmt.Sprintf("%t", Server.NONUNIQUE))
 		Check(mchnonunique, section, "nonunique", fmt.Sprintf("%t", Server.NONUNIQUE), "true or false", DoExit)
 
@@ -685,11 +784,17 @@ func init() {
 		mchlocktimeout := RBInt(Server.LOCKTIMEOUT, 1, 3600)
 		Check(mchlocktimeout, section, "locktimeout", fmt.Sprintf("%d", Server.LOCKTIMEOUT), "from 1 to 3600", DoExit)
 
-		mchfmaxsize := RBInt64(Server.FMAXSIZE, 1, 33554432)
-		Check(mchfmaxsize, section, "fmaxsize", fmt.Sprintf("%d", Server.FMAXSIZE), "from 1 to 33554432", DoExit)
+		mchskeyscnt := RBInt(Server.SKEYSCNT, 4096, 131072)
+		Check(mchskeyscnt, section, "skeyscnt", fmt.Sprintf("%d", Server.SKEYSCNT), "from 4096 to 131072", DoExit)
 
-		mchvmaxsize := RBInt64(Server.VMAXSIZE, 1, 262144)
-		Check(mchvmaxsize, section, "vmaxsize", fmt.Sprintf("%d", Server.VMAXSIZE), "from 1 to 262144", DoExit)
+		mchsmaxsize := RBInt64(Server.SMAXSIZE, 33554432, 1073741824)
+		Check(mchsmaxsize, section, "smaxsize", fmt.Sprintf("%d", Server.SMAXSIZE), "from 33554432 to 1073741824", DoExit)
+
+		mchfmaxsize := RBInt64(Server.FMAXSIZE, 1024, 33554432)
+		Check(mchfmaxsize, section, "fmaxsize", fmt.Sprintf("%d", Server.FMAXSIZE), "from 1024 to 33554432", DoExit)
+
+		mchvmaxsize := RBInt64(Server.VMAXSIZE, 1024, 1048576)
+		Check(mchvmaxsize, section, "vmaxsize", fmt.Sprintf("%d", Server.VMAXSIZE), "from 1024 to 1048576", DoExit)
 
 		mchargs := rgxargs.MatchString(fmt.Sprintf("%t", Server.ARGS))
 		Check(mchargs, section, "args", fmt.Sprintf("%t", Server.ARGS), "true or false", DoExit)
@@ -729,6 +834,8 @@ func init() {
 
 		// Output Important Server Configuration Options
 
+		appLogger.Warnf("| Host [%s] | Max Shard Keys [%d]", Server.HOST, Server.SKEYSCNT)
+		appLogger.Warnf("| Host [%s] | Max Shard Size [%d]", Server.HOST, Server.SMAXSIZE)
 		appLogger.Warnf("| Host [%s] | Max File Size [%d]", Server.HOST, Server.FMAXSIZE)
 		appLogger.Warnf("| Host [%s] | Max Value Size [%d]", Server.HOST, Server.VMAXSIZE)
 
@@ -837,6 +944,9 @@ func init() {
 			appLogger.Warnf("| Host [%s] | Get Expire Cache [DISABLED]", Server.HOST)
 		}
 
+		appLogger.Warnf("| Host [%s] | Search Threads [COUNT: %d]", Server.HOST, Server.SEARCHTHREADS)
+		appLogger.Warnf("| Host [%s] | Search Timeout [SECONDS: %d]", Server.HOST, Server.SEARCHTIMEOUT)
+
 		switch {
 		case Server.NONUNIQUE:
 			appLogger.Warnf("| Host [%s] | Non-Unique Keys/Files [ENABLED]", Server.HOST)
@@ -890,6 +1000,10 @@ func main() {
 
 	var err error
 
+	// Main WaitGroup
+
+	var wg sync.WaitGroup
+
 	// System Handling
 
 	DetectEndian()
@@ -897,7 +1011,7 @@ func main() {
 
 	// Get Machine ID
 
-	MachineID()
+	//MachineID()
 
 	// Get Pid
 
@@ -905,7 +1019,7 @@ func main() {
 
 	// Log Directory
 
-	logdir = config.Global.LOGDIR
+	logdir = filepath.Clean(config.Global.LOGDIR)
 
 	if !DirExists(logdir) {
 		fmt.Printf("Log directory not exists error | Path: [%s]\n", logdir)
@@ -917,7 +1031,7 @@ func main() {
 
 	// PID File
 
-	pidfile = config.Global.PIDFILE
+	pidfile = filepath.Clean(config.Global.PIDFILE)
 
 	switch {
 	case FileExists(pidfile):
@@ -937,6 +1051,10 @@ func main() {
 		}
 
 	}
+
+	// Cron Scheduler
+
+	cron := gron.New()
 
 	// Only SSL
 
@@ -962,36 +1080,126 @@ func main() {
 
 	keymutex := mmutex.NewMMutex()
 
-	// Open CMP DB
+	// Search
+
+	search = config.Global.SEARCH
+	searchcache = config.Global.SEARCHCACHE
+
+	cache := freecache.NewCache(searchcache)
+
+	// Search Metadata Database
+
+	if search {
+		TreeInit()
+	}
+
+	searchdir = filepath.Clean(config.Global.SEARCHDIR)
+	searchinit = config.Global.SEARCHINIT
+	searchindex = config.Global.SEARCHINDEX
+
+	if !DirExists(searchdir) {
+
+		err = os.MkdirAll(searchdir, 0700)
+		if err != nil {
+			appLogger.Errorf("| Can`t create search db directory error | DB Directory [%s] | %v", searchdir, err)
+			fmt.Printf("Can`t create db directory error | DB Directory [%s] | %v\n", searchdir, err)
+			os.Exit(1)
+		}
+
+	}
+
+	nopt := nutsdb.DefaultOptions
+	nopt.Dir = searchdir
+
+	switch {
+	case searchindex == "ram":
+		nopt.EntryIdxMode = nutsdb.HintKeyValAndRAMIdxMode
+	case searchindex == "disk":
+		nopt.EntryIdxMode = nutsdb.HintKeyAndRAMIdxMode
+	case searchindex == "bpt":
+		nopt.EntryIdxMode = nutsdb.HintBPTSparseIdxMode
+	}
+
+	nopt.SegmentSize = 67108864
+	nopt.NodeNum = 1
+	nopt.StartFileLoadingMode = nutsdb.MMap
+
+	nempty, err := IsEmptyDir(searchdir)
+	if err != nil {
+		appLogger.Errorf("| Can`t check search db directory error | DB Directory [%s] | %v", searchdir, err)
+		fmt.Printf("Can`t check search db directory error | DB Directory [%s] | %v\n", searchdir, err)
+		os.Exit(1)
+	}
+
+	if nempty {
+
+		nopt.RWMode = nutsdb.MMap
+		nopt.SyncEnable = false
+
+		if search {
+			SearchInit(nopt)
+		}
+
+	}
+
+	nopt.RWMode = nutsdb.FileIO
+	nopt.SyncEnable = true
+
+	ndb, err := nutsdb.Open(nopt)
+	if err != nil {
+		appLogger.Errorf("| Can`t open search db error | DB Directory [%s] | %v", searchdir, err)
+		fmt.Printf("Can`t open search db error | DB Directory [%s] | %v\n", searchdir, err)
+		os.Exit(1)
+	}
+	defer ndb.Close()
+
+	// Compaction Database
 
 	cmpsched = config.Global.CMPSCHED
-	cmpdir = config.Global.CMPDIR
+	cmpdir = filepath.Clean(config.Global.CMPDIR)
 	cmptime = config.Global.CMPTIME
-	cmpcheck = time.Duration(config.Global.CMPCHECK) * time.Second
+	cmpcheck = time.Duration(config.Global.CMPCHECK)
 
-	options := badgerhold.DefaultOptions
-	options.Dir = cmpdir
-	options.ValueDir = cmpdir
+	if !DirExists(cmpdir) {
 
-	cdb, err := badgerhold.Open(options)
+		err = os.MkdirAll(cmpdir, 0700)
+		if err != nil {
+			appLogger.Errorf("| Can`t create compaction db directory error | DB Directory [%s] | %v", cmpdir, err)
+			fmt.Printf("Can`t create compaction db directory error | DB Directory [%s] | %v\n", cmpdir, err)
+			os.Exit(1)
+		}
+
+	}
+
+	copt := nutsdb.DefaultOptions
+	copt.Dir = cmpdir
+	//copt.EntryIdxMode = nutsdb.HintKeyValAndRAMIdxMode
+	copt.EntryIdxMode = nutsdb.HintKeyAndRAMIdxMode
+	//copt.EntryIdxMode = nutsdb.HintBPTSparseIdxMode
+	copt.SegmentSize = 67108864
+	copt.NodeNum = 1
+	copt.StartFileLoadingMode = nutsdb.MMap
+
+	copt.RWMode = nutsdb.FileIO
+	copt.SyncEnable = true
+
+	cdb, err := nutsdb.Open(copt)
 	if err != nil {
-		appLogger.Errorf("| Can`t open/create compaction db | DB Directory [%s] | %v", cmpdir, err)
+		appLogger.Errorf("| Can`t open/create compact db error | DB Directory [%s] | %v", cmpdir, err)
+		fmt.Printf("Can`t open/create compact db error | DB Directory [%s] | %v\n", cmpdir, err)
 		os.Exit(1)
 	}
 	defer cdb.Close()
 
-	// Go CMP Scheduler
-
 	if cmpsched {
-		go CMPScheduler(cdb, keymutex)
+
+		cron.AddFunc(gron.Every(cmpcheck*(24*time.Hour)), func() {
+			wg.Add(1)
+			CMPScheduler(keymutex, cdb)
+			wg.Done()
+		})
+
 	}
-
-	// Get Cache
-
-	srchcache = config.Global.SRCHCACHE
-
-	cacheSize := srchcache * 1024 * 1024
-	cache := freecache.NewCache(cacheSize)
 
 	// Gargage Collection Percent
 
@@ -1018,12 +1226,12 @@ func main() {
 
 	// Web Routing
 
-	app.Get("/{directory:path}", ZDGet(cache))
-	app.Head("/{directory:path}", ZDGet(cache))
-	app.Options("/{directory:path}", ZDGet(cache))
-	app.Put("/{directory:path}", ZDPut(keymutex, cdb))
-	app.Post("/{directory:path}", ZDPut(keymutex, cdb))
-	app.Delete("/{directory:path}", ZDDel(keymutex, cdb))
+	app.Get("/{directory:path}", ZDGet(cache, ndb, &wg))
+	app.Head("/{directory:path}", ZDGet(cache, ndb, &wg))
+	app.Options("/{directory:path}", ZDGet(cache, ndb, &wg))
+	app.Put("/{directory:path}", ZDPut(keymutex, cdb, ndb, &wg))
+	app.Post("/{directory:path}", ZDPut(keymutex, cdb, ndb, &wg))
+	app.Delete("/{directory:path}", ZDDel(keymutex, cdb, ndb, &wg))
 
 	// Interrupt Handler
 
@@ -1035,7 +1243,9 @@ func main() {
 		appLogger.Warnf("Capture interrupt")
 		appLogger.Warnf("Notify go routines about interrupt")
 
+		lsht.Lock()
 		shutdown = true
+		lsht.Unlock()
 
 		// Wait Go Routines
 
@@ -1047,12 +1257,40 @@ func main() {
 
 		timeout := 5 * time.Second
 
+		// Merge Search DB
+
+		if searchindex != "bpt" {
+
+			appLogger.Warnf("Merging search db")
+
+			err = NDBMerge(ndb, searchdir)
+			if err != nil {
+				appLogger.Errorf("Merge search db error | %v", err)
+			}
+
+			appLogger.Warnf("Finished merge search db")
+
+		}
+
+		// Merge Compaction DB
+
+		appLogger.Warnf("Merging compaction db")
+
+		err = NDBMerge(cdb, cmpdir)
+		if err != nil {
+			appLogger.Errorf("Merge compaction db error | %v", err)
+		}
+
+		appLogger.Warnf("Finished merge compaction db")
+
+		// Stop Iris
+
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
 		appLogger.Warnf("Shutdown wZD server completed")
 
-		err := app.Shutdown(ctx)
+		err = app.Shutdown(ctx)
 		if err != nil {
 			fmt.Printf("Something wrong when shutdown wZD Server | %v\n", err)
 			os.Exit(1)
@@ -1151,6 +1389,10 @@ func main() {
 	readheadertimeout = time.Duration(config.Global.READHEADERTIMEOUT) * time.Second
 	writetimeout = time.Duration(config.Global.WRITETIMEOUT) * time.Second
 	idletimeout = time.Duration(config.Global.IDLETIMEOUT) * time.Second
+
+	// Start Cron Scheduler
+
+	cron.Start()
 
 	// Start WebServer
 

@@ -1,19 +1,16 @@
 package main
 
 import (
-	"github.com/eltaline/badgerhold"
+	"bytes"
+	"encoding/gob"
 	"github.com/eltaline/mmutex"
+	"github.com/eltaline/nutsdb"
 	"os"
 	"time"
 )
 
 // CMPScheduler : Compaction/Defragmentation scheduler
-func CMPScheduler(cdb *badgerhold.Store, keymutex *mmutex.Mutex) {
-	defer wg.Done()
-
-	// Wait Group
-
-	wg.Add(1)
+func CMPScheduler(keymutex *mmutex.Mutex, cdb *nutsdb.DB) {
 
 	// Variables
 
@@ -24,153 +21,199 @@ func CMPScheduler(cdb *badgerhold.Store, keymutex *mmutex.Mutex) {
 	// Struct
 
 	type Paths struct {
+		Key  []byte
 		Path string
 	}
+
+	var rpth []Paths
+	var r Paths
 
 	// Loggers
 
 	appLogger, applogfile := AppLogger()
 	defer applogfile.Close()
 
-	for {
+	// Shutdown
 
-		// Shutdown
+	if shutdown {
+		return
+	}
 
-		if shutdown {
-			wshutdown = true
-			break
+	past := time.Now().Add(time.Duration(-24*cmptime) * time.Hour)
+
+	cerr := cdb.View(func(tx *nutsdb.Tx) error {
+
+		var err error
+
+		var entries nutsdb.Entries
+
+		entries, err = tx.GetAll(cmpbucket)
+
+		if entries == nil {
+			return nil
 		}
 
-		past := time.Now().Add(time.Duration(-24*cmptime) * time.Hour)
-
-		var dataSlice []Compact = nil
-		var pathsSlice []Paths = nil
-		var paths Paths
-
-		err := cdb.Find(&dataSlice, badgerhold.Where("Time").Lt(past).And("MachID").Eq(machid))
 		if err != nil {
-			appLogger.Errorf("| Find compactions paths error | %v", err)
-			time.Sleep(cmpcheck)
-			continue
+			return err
 		}
 
-		for _, scan := range dataSlice {
-			paths.Path = scan.Path
-			pathsSlice = append(pathsSlice, paths)
-		}
+		for _, entry := range entries {
 
-		for _, dbf := range pathsSlice {
+			if shutdown {
+				break
+			}
 
-			key := false
+			var ev Compact
 
-			for i := 0; i < trytimes; i++ {
+			dec := gob.NewDecoder(bytes.NewReader(entry.Value))
+			err := dec.Decode(&ev)
+			if err != nil {
 
-				if key = keymutex.TryLock(dbf.Path); key {
-					break
-				}
+				appLogger.Errorf("| Gob decode from compaction db error | %v", err)
 
-				time.Sleep(defsleep)
+				r.Key = entry.Key
+				r.Path = ev.Path
+
+				rpth = append(rpth, r)
+
+				continue
 
 			}
 
-			if key {
+			diff := ev.Time.Sub(past)
 
-				sdts := &Compact{}
+			if diff < 0 {
 
-				if !FileExists(dbf.Path) {
+				r.Key = entry.Key
+				r.Path = ev.Path
 
-					appLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
-					err = cdb.Delete(dbf.Path, sdts)
-					if err != nil {
-						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-					}
+				rpth = append(rpth, r)
 
-					keymutex.Unlock(dbf.Path)
-					continue
+			}
 
+		}
+
+		return nil
+
+	})
+
+	if cerr != nil {
+		appLogger.Errorf("| Work with compaction db error | %v", cerr)
+	}
+
+	for _, dbf := range rpth {
+
+		if shutdown {
+			break
+		}
+
+		var err error
+
+		key := false
+
+		sdbf := string(dbf.Key)
+
+		for i := 0; i < trytimes; i++ {
+
+			if key = keymutex.TryLock(dbf.Path); key {
+				break
+			}
+
+			time.Sleep(defsleep)
+
+		}
+
+		if key {
+
+			if !FileExists(dbf.Path) {
+
+				appLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
+				err = NDBDelete(cdb, cmpbucket, dbf.Key)
+				if err != nil {
+					appLogger.Errorf("| Delete compaction task error | DB Key [%s] | %v", sdbf, err)
 				}
 
-				infile, err := os.Stat(dbf.Path)
+				keymutex.Unlock(dbf.Path)
+				continue
+
+			}
+
+			infile, err := os.Stat(dbf.Path)
+			if err != nil {
+
+				appLogger.Errorf("| Can`t stat file error | File [%s] | %v", dbf.Path, err)
+				err = NDBDelete(cdb, cmpbucket, dbf.Key)
 				if err != nil {
-
-					appLogger.Errorf("| Can`t stat file error | File [%s] | %v", dbf.Path, err)
-					err = cdb.Delete(dbf.Path, sdts)
-					if err != nil {
-						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-					}
-
-					keymutex.Unlock(dbf.Path)
-					continue
-
+					appLogger.Errorf("| Delete compaction task error | DB Key [%s] | %v", sdbf, err)
 				}
 
-				filemode := infile.Mode()
+				keymutex.Unlock(dbf.Path)
+				continue
 
-				db, err := BoltOpenWrite(dbf.Path, filemode, timeout, opentries, freelist)
+			}
+
+			filemode := infile.Mode()
+
+			db, err := BoltOpenWrite(dbf.Path, filemode, timeout, opentries, freelist)
+			if err != nil {
+
+				appLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
+				err = NDBDelete(cdb, cmpbucket, dbf.Key)
 				if err != nil {
-
-					appLogger.Errorf("| Can`t open db for compaction error | DB [%s] | %v", dbf.Path, err)
-					err = cdb.Delete(dbf.Path, sdts)
-					if err != nil {
-						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-					}
-
-					keymutex.Unlock(dbf.Path)
-					continue
-
-				}
-				// No need to defer in loop
-
-				err = db.CompactQuietly()
-				if err != nil {
-					appLogger.Errorf("| Scheduled compaction task error | DB [%s] | %v", dbf.Path, err)
-
-					err = cdb.Delete(dbf.Path, sdts)
-					if err != nil {
-						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-					}
-
-					db.Close()
-					keymutex.Unlock(dbf.Path)
-					continue
-
+					appLogger.Errorf("| Delete compaction task error | DB Key [%s] | %v", sdbf, err)
 				}
 
-				err = os.Chmod(dbf.Path, filemode)
+				keymutex.Unlock(dbf.Path)
+				continue
+
+			}
+
+			err = db.CompactQuietly()
+			if err != nil {
+				appLogger.Errorf("| Scheduled compaction task error | DB [%s] | %v", dbf.Path, err)
+
+				err = NDBDelete(cdb, cmpbucket, dbf.Key)
 				if err != nil {
-					appLogger.Errorf("Can`t chmod db error | DB [%s] | %v", dbf.Path, err)
-
-					err = cdb.Delete(dbf.Path, sdts)
-					if err != nil {
-						appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-					}
-
-					db.Close()
-					keymutex.Unlock(dbf.Path)
-					continue
-
-				}
-
-				err = cdb.Delete(dbf.Path, sdts)
-				if err != nil {
-					appLogger.Errorf("| Delete compaction task error | DB [%s] | %v", dbf.Path, err)
-					db.Close()
-					keymutex.Unlock(dbf.Path)
-					continue
+					appLogger.Errorf("| Delete compaction task error | DB Key [%s] | %v", sdbf, err)
 				}
 
 				db.Close()
 				keymutex.Unlock(dbf.Path)
+				continue
 
-			} else {
+			}
 
-				appLogger.Errorf("| Timeout mmutex lock error | DB [%s]", dbf.Path)
+			err = os.Chmod(dbf.Path, filemode)
+			if err != nil {
+				appLogger.Errorf("Can`t chmod db error | DB [%s] | %v", dbf.Path, err)
+
+				err = NDBDelete(cdb, cmpbucket, dbf.Key)
+				if err != nil {
+					appLogger.Errorf("| Delete compaction task error | DB Key [%s] | %v", sdbf, err)
+				}
+
+				db.Close()
+				keymutex.Unlock(dbf.Path)
+				continue
+
+			}
+
+			err = NDBDelete(cdb, cmpbucket, dbf.Key)
+			if err != nil {
+				appLogger.Errorf("| Delete compaction task error | DB Key [%s] | %v", sdbf, err)
+				db.Close()
+				keymutex.Unlock(dbf.Path)
 				continue
 			}
 
-		}
+			db.Close()
+			keymutex.Unlock(dbf.Path)
 
-		time.Sleep(cmpcheck)
+		} else {
+
+			appLogger.Errorf("| Timeout mmutex lock error | DB [%s]", dbf.Path)
+			continue
+		}
 
 	}
 
