@@ -25,76 +25,94 @@ import (
 
 // Sort Ascending Handlers
 
+// Len : len sort
 func (e KeysListAsc) Len() int {
 	return len(e)
 }
 
+// Less : less sort
 func (e KeysListAsc) Less(i, j int) bool {
 	return e[i].Key < e[j].Key
 }
 
+// Swap : swap sort
 func (e KeysListAsc) Swap(i, j int) {
 	e[i], e[j] = e[j], e[i]
 }
 
+// Len : len sort
 func (e KeysInfoListAsc) Len() int {
 	return len(e)
 }
 
+// Less : less sort
 func (e KeysInfoListAsc) Less(i, j int) bool {
 	return e[i].Key < e[j].Key
 }
 
+// Swap : swap sort
 func (e KeysInfoListAsc) Swap(i, j int) {
 	e[i], e[j] = e[j], e[i]
 }
 
+// Len : len sort
 func (e KeysSearchListAsc) Len() int {
 	return len(e)
 }
 
+// Less : less sort
 func (e KeysSearchListAsc) Less(i, j int) bool {
 	return e[i].Key < e[j].Key
 }
 
+// Swap : swap sort
 func (e KeysSearchListAsc) Swap(i, j int) {
 	e[i], e[j] = e[j], e[i]
 }
 
 // Sort Descending Handlers
 
+// Len : len sort
 func (e KeysListDsc) Len() int {
 	return len(e)
 }
 
+// Less : less sort
 func (e KeysListDsc) Less(i, j int) bool {
 	return e[i].Key > e[j].Key
 }
 
+// Swap : swap sort
 func (e KeysListDsc) Swap(i, j int) {
 	e[i], e[j] = e[j], e[i]
 }
 
+// Len : len sort
 func (e KeysInfoListDsc) Len() int {
 	return len(e)
 }
 
+// Less : less sort
 func (e KeysInfoListDsc) Less(i, j int) bool {
 	return e[i].Key > e[j].Key
 }
 
+// Swap : swap sort
 func (e KeysInfoListDsc) Swap(i, j int) {
 	e[i], e[j] = e[j], e[i]
 }
 
+// Len : len sort
 func (e KeysSearchListDsc) Len() int {
 	return len(e)
 }
 
+// Less : less sort
 func (e KeysSearchListDsc) Less(i, j int) bool {
 	return e[i].Key > e[j].Key
 }
 
+// Swap : swap sort
 func (e KeysSearchListDsc) Swap(i, j int) {
 	e[i], e[j] = e[j], e[i]
 }
@@ -118,7 +136,7 @@ func FileKeys(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offset i
 	}
 
 	dirpath = filepath.Clean(dirpath)
-	//url = strings.TrimSuffix(url, "/")
+	// url = strings.TrimSuffix(url, "/")
 
 	paths, err := RTree(dirpath, withjoin, recursive)
 	if err != nil {
@@ -340,7 +358,7 @@ func FileKeysInfo(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offs
 	}
 
 	dirpath = filepath.Clean(dirpath)
-	//url = strings.TrimSuffix(url, "/")
+	// url = strings.TrimSuffix(url, "/")
 
 	paths, err := RTree(dirpath, withjoin, recursive)
 	if err != nil {
@@ -566,7 +584,7 @@ func FileKeysSearch(ndb *nutsdb.DB, base string, dirpath string, msort uint8, of
 	}
 
 	dirpath = filepath.Clean(dirpath)
-	//url = strings.TrimSuffix(url, "/")
+	// url = strings.TrimSuffix(url, "/")
 
 	paths, err := RTree(dirpath, withjoin, recursive)
 	if err != nil {
@@ -809,7 +827,7 @@ func DBKeys(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offset int
 	}
 
 	dirpath = filepath.Clean(dirpath)
-	//url = strings.TrimSuffix(url, "/")
+	// url = strings.TrimSuffix(url, "/")
 
 	paths, err := RTree(dirpath, withjoin, recursive)
 	if err != nil {
@@ -1031,7 +1049,7 @@ func DBKeysInfo(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offset
 	}
 
 	dirpath = filepath.Clean(dirpath)
-	//url = strings.TrimSuffix(url, "/")
+	// url = strings.TrimSuffix(url, "/")
 
 	paths, err := RTree(dirpath, withjoin, recursive)
 	if err != nil {
@@ -1257,7 +1275,7 @@ func DBKeysSearch(filemode os.FileMode, timeout time.Duration, opentries int, fr
 	}
 
 	dirpath = filepath.Clean(dirpath)
-	//url = strings.TrimSuffix(url, "/")
+	// url = strings.TrimSuffix(url, "/")
 
 	paths, err := RTree(dirpath, withjoin, recursive)
 	if err != nil {
@@ -1626,13 +1644,13 @@ func RTree(dirpath string, withjoin map[string]int, recursive int) (paths map[st
 
 	for edir, erec := range withjoin {
 
-		spc := int(strings.Count(edir, "/"))
+		spc := strings.Count(edir, "/")
 
 		recursive = erec
 
 		walk := func(bdir []byte, dcrc interface{}) bool {
 
-			fpc := int(bytes.Count(bdir, bslash)) - recursive
+			fpc := bytes.Count(bdir, bslash) - recursive
 
 			if spc >= fpc {
 				paths[string(bdir)] = dcrc.(uint64)

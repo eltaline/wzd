@@ -90,7 +90,7 @@ Main:
 					fullpath := []byte(filepath.Clean(dirname + "/" + partpath))
 
 					radix.Lock()
-					tree, _, _ = tree.Insert(fullpath, crc64.Checksum([]byte(fullpath), ctbl64))
+					tree, _, _ = tree.Insert(fullpath, crc64.Checksum(fullpath, ctbl64))
 					radix.Unlock()
 
 				}

@@ -180,7 +180,7 @@ func DBGetVal(db *bolt.DB, bucket string, key []byte) (data []byte, err error) {
 		b := tx.Bucket([]byte(bucket))
 		if b != nil {
 
-			val := b.GetOffset([]byte(key), 36)
+			val := b.GetOffset(key, 36)
 			if val != nil {
 				data = val
 			}
@@ -234,7 +234,7 @@ func KeyGetVal(db *bolt.DB, xbucket string, key []byte) (data []byte, err error)
 		b := tx.Bucket([]byte(xbucket))
 		if b != nil {
 
-			val := b.Get([]byte(key))
+			val := b.Get(key)
 			if val != nil {
 				data = val
 			}

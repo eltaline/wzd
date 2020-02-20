@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/binary"
-	//"encoding/hex"
+	// "encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -338,7 +338,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 			prefix := ""
 			expression := ""
-			recursive := int(0)
+			recursive := 0
 			stopfirst := uint8(0)
 			withurl := false
 			withjoin := make(map[string]int)
@@ -350,16 +350,16 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 			minstmp := uint64(0)
 			maxstmp := uint64(0)
 
-			offset := int(-1)
-			limit := int(-1)
+			offset := -1
+			limit := -1
 
 			msort := uint8(0)
 
-			expire := int(-1)
+			expire := -1
 			skipcache := false
 
-			//sbucket := "size"
-			//tbucket := "time"
+			// sbucket := "size"
+			// tbucket := "time"
 
 			hkeys := ctx.GetHeader("Keys")
 			hkeysfiles := ctx.GetHeader("KeysFiles")
@@ -1052,8 +1052,8 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 					";hoff:" + hoffset + ";hlim:" + hlimit + ";hsrt:" + hsort + ";hjsn:" + hjson)
 
 				vcblk := blake2b.Sum256(vckey)
-				vchash = []byte(vcblk[:])
-				//vchash = hex.EncodeToString(vcblk[:])
+				vchash = vcblk[:]
+				// vchash = hex.EncodeToString(vcblk[:])
 
 				if !skipcache {
 
@@ -1062,7 +1062,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 						conttype := http.DetectContentType(vcget)
 
-						hsize := fmt.Sprintf("%d", (len(vcget)))
+						hsize := fmt.Sprintf("%d", len(vcget))
 						scctrl := fmt.Sprintf("max-age=%d", cctrl)
 
 						ctx.Header("Content-Type", conttype)

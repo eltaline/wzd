@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/binary"
 	"fmt"
-	//"github.com/eltaline/machineid"
+	// "github.com/eltaline/machineid"
 	"os"
 	"os/user"
 	"strconv"

@@ -57,7 +57,7 @@ func DirExists(filename string) bool {
 
 }
 
-// IsEmptyDir : check on empty diricetory
+// IsEmptyDir : check on empty directory
 func IsEmptyDir(directory string) (bool, error) {
 
 	dir, err := os.Open(directory)

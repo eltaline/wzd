@@ -290,7 +290,7 @@ fmaxsize
 - **Section:** [server.name]
 
 vmaxsize
-- **Description:** This is the maximum size of the requested file or value when searching with the WithValue header. If this parameter is exceeded for a specific file or value, the value will not be displayed in the JSON document. Recommended size no more than 4096 (4KB). It is not recommended to request values in the search if the files or values are larger than 16KB (bytes).
+- **Description:** This is the maximum size of the requested file or value when searching with the WithValue header. If this parameter is exceeded for a specific file or value, the value will not be displayed in the JSON document. Recommended size no more than 4096 (4 KB). It is not recommended to request values in the search if the files or values are larger than 16 KB (bytes).
 - **Default:** Required
 - **Values:** 1-262144
 - **Type:** int64

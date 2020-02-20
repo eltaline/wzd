@@ -3,7 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
-	//"encoding/json"
+	// "encoding/json"
 	"errors"
 	"fmt"
 	"github.com/eltaline/bolt"
@@ -151,7 +151,7 @@ func SearchInit(nopt nutsdb.Options) {
 							os.Exit(1)
 						}
 
-						//json.NewEncoder(nbuffer).Encode(nval)
+						// json.NewEncoder(nbuffer).Encode(nval)
 
 						err = ndb.Update(func(tx *nutsdb.Tx) error {
 
@@ -247,7 +247,7 @@ func SearchInit(nopt nutsdb.Options) {
 									return err
 								}
 
-								//json.NewEncoder(nbuffer).Encode(nval)
+								// json.NewEncoder(nbuffer).Encode(nval)
 
 								err = NDBInsert(ndb, nbucket, nkey, nbuffer.Bytes(), 0)
 								if err != nil {

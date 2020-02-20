@@ -157,7 +157,10 @@ type Keys struct {
 	Type int    `json:"type"`
 }
 
+// KeysListAsc : type for ascending sort
 type KeysListAsc []Keys
+
+// KeysListDsc : type for descending sort
 type KeysListDsc []Keys
 
 // KeysInfo : type for files and/or keys with info
@@ -168,7 +171,10 @@ type KeysInfo struct {
 	Type int    `json:"type"`
 }
 
+// KeysInfoListAsc : type for ascending sort
 type KeysInfoListAsc []KeysInfo
+
+// KeysInfoListDsc : type for descending sort
 type KeysInfoListDsc []KeysInfo
 
 // KeysSearch : type for files and/or keys for search
@@ -180,7 +186,10 @@ type KeysSearch struct {
 	Value string `json:"value"`
 }
 
+// KeysSearchListAsc : type for ascending sort
 type KeysSearchListAsc []KeysSearch
+
+// KeysSearchListDsc : type for descending sort
 type KeysSearchListDsc []KeysSearch
 
 // RawKeysData : raw type keys for search metadata db
@@ -245,7 +254,7 @@ var (
 	idletimeout       time.Duration = 60 * time.Second
 	keepalive         bool          = false
 
-	//machid string = "nomachineid"
+	// machid string = "nomachineid"
 
 	shutdown bool = false
 
@@ -1011,7 +1020,7 @@ func main() {
 
 	// Get Machine ID
 
-	//MachineID()
+	// MachineID()
 
 	// Get Pid
 
@@ -1173,9 +1182,9 @@ func main() {
 
 	copt := nutsdb.DefaultOptions
 	copt.Dir = cmpdir
-	//copt.EntryIdxMode = nutsdb.HintKeyValAndRAMIdxMode
+	// copt.EntryIdxMode = nutsdb.HintKeyValAndRAMIdxMode
 	copt.EntryIdxMode = nutsdb.HintKeyAndRAMIdxMode
-	//copt.EntryIdxMode = nutsdb.HintBPTSparseIdxMode
+	// copt.EntryIdxMode = nutsdb.HintBPTSparseIdxMode
 	copt.SegmentSize = 67108864
 	copt.NodeNum = 1
 	copt.StartFileLoadingMode = nutsdb.MMap
@@ -1201,7 +1210,7 @@ func main() {
 
 	}
 
-	// Gargage Collection Percent
+	// Garbage Collection Percent
 
 	gcpercent = config.Global.GCPERCENT
 	debug.SetGCPercent(gcpercent)

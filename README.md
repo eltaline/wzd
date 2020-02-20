@@ -512,7 +512,7 @@ Notes and Q&A
 
 - If the nonunique = true parameter is turned on in the virtual host, this means that the wZD server will allow uploading of individual files with the same name, even if the Bolt archive in this directory already contains data with the same key name as the uploaded file
 
-- Despite the fact that the nonunique = false parameter is disabled in the virtual host, the wZD server will upload the file or value to the new Bolt archive, even if the key name matches the already existing file name in this directory. This is required for non-stop operation of the service and working in a mixed mode during data migration to Bolt archives, including when adding new files non-stop through the PUT method or deleting them through the DELETE method
+- Despite the fact that the nonunique = false parameter is disabled in the virtual host, the wZD server will upload the file or value to the new Bolt archive, even if the key name matches the already existing file name in this directory. This is required for non-stop operation of the service and working in mixed mode during data migration to Bolt archives, including when adding new files non-stop through the PUT method or deleting them through the DELETE method
 
 - When using the writeintegrity = true and readintegrity = true parameters, the downloaded file or value is completely written to RAM, but no more than 32 MB per request, with the maximum parameter fmaxsize set. It is highly recommended that these options be enabled as true. These parameters affect only files or values in Bolt archives
 
