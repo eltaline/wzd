@@ -21,7 +21,7 @@ Current stable version: 1.2.0
 **Important: incompatibilities with previous versions**
 
 - **By default, now curl -X PUT without additional headers works in automatic mode based on the fmaxsize parameter**
-- *Search now without replication(in development)***
+- **Search now without replication(in development)**
 - Removed excessive carriage return `"\n"` when displaying in all types of search
 - Removed redundant headers ```KeysAll, KeysInfoAll, KeysSearchAll, KeysCountAll```
 - Removed double encoding when working with the header ```WithValue```, the values are encoded only in HEX
