@@ -138,11 +138,6 @@ Below is a more visual test done with files of 32 megabytes in size. In this cas
 
 <img align="center" src="/images/get-put-32M.png"/>
 
-<p align="center">
-<b>A table that describes the best options for using the server. How many files can be uploaded in one Bolt archive.</b>
-<img src="/images/optimal.png"/>
-</p>
-
 Documentation
 ========
 
