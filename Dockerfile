@@ -102,6 +102,7 @@ COPY conf/wzd/docker/put-localhost.conf /etc/wzd/put-localhost.conf
 COPY conf/wzd/docker/del-localhost.conf /etc/wzd/del-localhost.conf
 COPY scripts/docker/start.sh /
 COPY LICENSE /
+COPY NOTICE /
 
 EXPOSE 80/tcp
 
