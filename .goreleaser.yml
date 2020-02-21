@@ -39,6 +39,7 @@ archives:
     name_template: "{{.ProjectName}}-{{.Version}}-{{.Os}}-{{.Arch}}"
     files:
       - LICENSE
+      - NOTICE
 
 nfpms:
   -
@@ -51,7 +52,7 @@ nfpms:
     homepage: "https://wzd.dev/"
     maintainer: "Andrey Kuvshinov <dev@wzd.dev>"
     description: "Sharded NoSQL Compact Storage Server. Distributing any number of small and large files/values"
-    license: "BSD-3 Clause"
+    license: "Apache 2.0"
     name_template: "{{.ProjectName}}-{{.Version}}-{{.Os}}-{{.Arch}}"
 
     bindir: /usr/sbin
@@ -70,6 +71,7 @@ nfpms:
       "conf/systemd/wzd.service": "/lib/systemd/system/wzd.service"
       "conf/logrotate.d/wzd": "/etc/logrotate.d/wzd"
       "LICENSE": "/usr/share/wzd/LICENSE"
+      "NOTICE": "/usr/share/wzd/NOTICE"
 
     config_files:
       "conf/wzd/wzd.conf": "/etc/wzd/wzd.conf"
@@ -121,6 +123,7 @@ dockers:
     - scripts/docker/start.sh
     - wza/wza
     - LICENSE
+    - NOTICE
 
 scoop:
 
@@ -128,7 +131,7 @@ scoop:
     name: "Andrey Kuvshinov"
     email: dev@wzd.dev
   homepage: "https://wzd.dev/"
-  license: BSD-3 Clause
+  license: Apache 2.0
 
 brews:
  -
