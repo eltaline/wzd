@@ -1,3 +1,28 @@
+Version: 1.2.0
+========
+
+**Important: incompatibilities with previous versions**
+
+- **By default, now curl -X PUT without additional headers works in automatic mode based on the fmaxsize parameter**
+- **Search now without replication(in development)**
+- Removed excessive carriage return `"\n"` when displaying in all types of search
+- Removed redundant headers ```KeysAll, KeysInfoAll, KeysSearchAll, KeysCountAll```
+- Removed double encoding when working with the header ```WithValue```, the values are encoded only in HEX
+- For headers ```Keys, KeysFiles, KeysArchives``` added a type of file/key
+- Renamed `srchcache` option to `searchcache`, dimension changed to bytes
+
+Added in version 1.2.0:
+
+- **Implemented a fast search, the search has been completely rewritten**
+- Header ```File``` for PUT method
+- Headers for ```Prefix, WithJoin, Sort```
+- Header ```Compact``` for PUT and DELETE methods
+- Updated documentation
+
+Fixed in version 1.2.0:
+
+- Fixed work with the header ```WithValue```
+
 Version: 1.1.3
 ========
 

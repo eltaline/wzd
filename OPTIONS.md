@@ -105,37 +105,38 @@ freelist
 - **Type:** string
 - **Section:** [global]
 
-srchcache
-- **Description:** This globally sets the size of the search cache (megabytes). Values greater than 1/1024 of the cache size do not fit into the cache. It is not configured for a virtual host.
-- **Default:** 128
-- **Values:** 1-1048576
+search
+- **Description:** This globally enables or disables search.
+- **Default:** true
+- **Values:** true or false
+- **Type:** bool
+- **Section:** [global]
+
+searchcache
+- **Description:** Globally sets the size of the search cache. Values greater than 1/1024 of the cache size do not fit into the cache. Not configured for virtual host. (bytes)
+- **Default:** 134217728
+- **Values:** 33554432-2147483647
 - **Type:** int
 - **Section:** [global]
 
-pidfile
-- **Description:** This is the PID file path.
-- **Default:** "/run/wzd/wzd.pid"
+searchdir
+- **Description:** Directory for search database. The database is filled at the first start of the server. You can safely remove data and reinitialize again.
+- **Default:** "/var/lib/wzd/search"
 - **Type:** string
 - **Section:** [global]
 
-logdir
-- **Description:** This is the path to the log directory.
-- **Default:** "/var/log/wzd"
-- **Type:** string
-- **Section:** [global]
-
-logmode
-- **Description:** This sets the permissions for the log files (mask).
-- **Default:** 0640
-- **Values:** 0600-0666
-- **Type:** uint32
-- **Section:** [global]
-
-defsleep
-- **Description:** This sets the sleep time between attempts to open Bolt archive (seconds).
-- **Default:** 1
-- **Values:** 1-5
+searchinit
+- **Description:** The number of parallel threads during initialization of the search database.
+- **Default:** 4
+- **Values:** 1-256
 - **Type:** int
+- **Section:** [global]
+
+searchindex
+- **Description:** Search database location. The order of performance in descending order is ram, disk, bpt.
+- **Default:** "ram"
+- **Values:** "ram" or "disk" or "bpt"
+- **Type:** string
 - **Section:** [global]
 
 cmpsched = true
@@ -161,6 +162,32 @@ cmptime = 30
 cmpcheck = 5
 - **Description:** This is the start interval of the automatic compaction/defragmentation manager (seconds).
 - **Default:** 5
+- **Values:** 1-5
+- **Type:** int
+- **Section:** [global]
+
+pidfile
+- **Description:** This is the PID file path.
+- **Default:** "/run/wzd/wzd.pid"
+- **Type:** string
+- **Section:** [global]
+
+logdir
+- **Description:** This is the path to the log directory.
+- **Default:** "/var/log/wzd"
+- **Type:** string
+- **Section:** [global]
+
+logmode
+- **Description:** This sets the permissions for the log files (mask).
+- **Default:** 0640
+- **Values:** 0600-0666
+- **Type:** uint32
+- **Section:** [global]
+
+defsleep
+- **Description:** This sets the sleep time between attempts to open Bolt archive (seconds).
+- **Default:** 1
 - **Values:** 1-5
 - **Type:** int
 - **Section:** [global]
@@ -282,6 +309,20 @@ opentries
 - **Type:** int
 - **Section:** [server.name]
 
+skeyscnt
+- **Description:** The maximum allowable number of files and/or keys per Bolt archive. If this parameter is exceeded, the file or value will be uploaded to the next Bolt archive in this directory. Recommended size not more than 65536.
+- **Default:** Required
+- **Values:** 4096-131072
+- **Type:** int
+- **Section:** [server.name]
+
+smaxsize
+- **Description:** The maximum size of the Bolt archive. If this parameter is exceeded, then the file or value will be loaded into the next Bolt archive in the same directory. (bytes)
+- **Default:** Required
+- **Values:** 33554432-1073741824
+- **Type:** int64
+- **Section:** [server.name]
+
 fmaxsize
 - **Description:** This is the maximum size of the uploaded file or value in the Bolt archive. If this parameter is exceeded, the file or value will be loaded as a separate file with the same path. The recommended size is not more than 1048576 (1 MB). It is not recommended uploading files or values to Bolt archives that are larger than 16 MB. Such files or values must be stored separately (bytes).
 - **Default:** Required
@@ -332,7 +373,14 @@ getsearch
 - **Section:** [server.name]
 
 getrecursive
-- **Description:** If this is disabled, then a recursive search for file names or keys (including individual files) will be prohibited. Recursive header.
+- **Description:** If this is disabled, then a recursive search for file names or keys will be prohibited.
+- **Default:** Required
+- **Values:** true or false
+- **Type:** bool
+- **Section:** [server.name]
+
+getjoin
+- **Description:** If disabled, then joining with recursion during the search for file names or keys will be prohibited.
 - **Default:** Required
 - **Values:** true or false
 - **Type:** bool
@@ -357,6 +405,20 @@ getcache
 - **Default:** Required
 - **Values:** true or false
 - **Type:** bool
+- **Section:** [server.name]
+
+searchthreads
+- **Description:** Number of parallel search threads
+- **Default:** Required
+- **Values:** 1-256
+- **Type:** int
+- **Section:** [server.name]
+
+searchtimeout
+- **Description:** This sets search timeout
+- **Default:** Required
+- **Values:** 1-86400
+- **Type:** int
 - **Section:** [server.name]
 
 nonunique

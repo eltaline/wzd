@@ -1,3 +1,27 @@
+/*
+
+Copyright © 2020 Andrey Kuvshinov. Contacts: <syslinux@protonmail.com>
+Copyright © 2020 Eltaline OU. Contacts: <eltaline.ou@gmail.com>
+All rights reserved.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+
+The wZD project contains unmodified/modified libraries imports too with
+separate copyright notices and license terms. Your use of the source code
+this libraries is subject to the terms and conditions of licenses these libraries.
+
+*/
+
 package main
 
 import (
@@ -1125,7 +1149,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 						if hjson == "1" {
 							jkeys, _ := json.Marshal(getkeys)
-							allkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+							allkeys = fmt.Sprintf("{\"keys\": %s}", string(jkeys))
 						} else {
 
 							var sgetkeys []string
@@ -1134,7 +1158,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
-							allkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+							allkeys = strings.TrimSpace(strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n"))
 
 						}
 
@@ -1226,7 +1250,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 						if hjson == "1" {
 							jkeys, _ := json.Marshal(getkeys)
-							filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+							filekeys = fmt.Sprintf("{\"keys\": %s}", string(jkeys))
 						} else {
 
 							var sgetkeys []string
@@ -1235,7 +1259,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
-							filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+							filekeys = strings.TrimSpace(strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n"))
 
 						}
 
@@ -1326,7 +1350,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 						if hjson == "1" {
 							jkeys, _ := json.Marshal(getkeys)
-							dbkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+							dbkeys = fmt.Sprintf("{\"keys\": %s}", string(jkeys))
 						} else {
 
 							var sgetkeys []string
@@ -1335,7 +1359,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
-							dbkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+							dbkeys = strings.TrimSpace(strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n"))
 
 						}
 
@@ -1434,7 +1458,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 						if hjson == "1" {
 							jkeys, _ := json.Marshal(getkeys)
-							allkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+							allkeys = fmt.Sprintf("{\"keys\": %s}", string(jkeys))
 						} else {
 
 							var sgetkeys []string
@@ -1443,7 +1467,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(vs.Date, 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
-							allkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+							allkeys = strings.TrimSpace(strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n"))
 
 						}
 
@@ -1534,7 +1558,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 						if hjson == "1" {
 							jkeys, _ := json.Marshal(getkeys)
-							filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+							filekeys = fmt.Sprintf("{\"keys\": %s}", string(jkeys))
 						} else {
 
 							var sgetkeys []string
@@ -1543,7 +1567,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(vs.Date, 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
-							filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+							filekeys = strings.TrimSpace(strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n"))
 
 						}
 
@@ -1634,7 +1658,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 						if hjson == "1" {
 							jkeys, _ := json.Marshal(getkeys)
-							dbkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+							dbkeys = fmt.Sprintf("{\"keys\": %s}", string(jkeys))
 						} else {
 
 							var sgetkeys []string
@@ -1643,7 +1667,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(vs.Date, 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
-							dbkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+							dbkeys = strings.TrimSpace(strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n"))
 
 						}
 
@@ -1742,7 +1766,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 						if hjson == "1" {
 							jkeys, _ := json.Marshal(getkeys)
-							allkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+							allkeys = fmt.Sprintf("{\"keys\": %s}", string(jkeys))
 						} else {
 
 							var sgetkeys []string
@@ -1751,7 +1775,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(vs.Date, 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
-							allkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+							allkeys = strings.TrimSpace(strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n"))
 
 						}
 
@@ -1842,7 +1866,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 						if hjson == "1" {
 							jkeys, _ := json.Marshal(getkeys)
-							filekeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+							filekeys = fmt.Sprintf("{\"keys\": %s}", string(jkeys))
 						} else {
 
 							var sgetkeys []string
@@ -1851,7 +1875,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(vs.Date, 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
-							filekeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+							filekeys = strings.TrimSpace(strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n"))
 
 						}
 
@@ -1942,7 +1966,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 						if hjson == "1" {
 							jkeys, _ := json.Marshal(getkeys)
-							dbkeys = fmt.Sprintf("{\n\t\"keys\": %s\n}\n", string(jkeys))
+							dbkeys = fmt.Sprintf("{\"keys\": %s}", string(jkeys))
 						} else {
 
 							var sgetkeys []string
@@ -1951,7 +1975,7 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 								sgetkeys = append(sgetkeys, vs.Key, strconv.FormatUint(vs.Size, 10), strconv.FormatUint(vs.Date, 10), strconv.FormatInt(int64(vs.Type), 10), "\n")
 							}
 
-							dbkeys = strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n")
+							dbkeys = strings.TrimSpace(strings.Join(strings.SplitAfterN(strings.Replace(strings.Trim(fmt.Sprintf("%s", sgetkeys), "[]"), "\n ", "\n", -1), "\n", 1), "\n"))
 
 						}
 
@@ -2084,9 +2108,9 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 					if hjson == "1" {
 						jcount, _ := json.Marshal(allkeyscount)
-						allkeyscnt = fmt.Sprintf("{\n\t\"count\": %s\n}\n", string(jcount))
+						allkeyscnt = fmt.Sprintf("{\"count\": %s}", string(jcount))
 					} else {
-						allkeyscnt = fmt.Sprintf("%d\n", allkeyscount)
+						allkeyscnt = fmt.Sprintf("%d", allkeyscount)
 					}
 
 					rbytes := []byte(allkeyscnt)
@@ -2208,9 +2232,9 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 					if hjson == "1" {
 						jcount, _ := json.Marshal(filekeyscount)
-						filekeyscnt = fmt.Sprintf("{\n\t\"count\": %s\n}\n", string(jcount))
+						filekeyscnt = fmt.Sprintf("{\"count\": %s}", string(jcount))
 					} else {
-						filekeyscnt = fmt.Sprintf("%d\n", filekeyscount)
+						filekeyscnt = fmt.Sprintf("%d", filekeyscount)
 					}
 
 					rbytes := []byte(filekeyscnt)
@@ -2332,9 +2356,9 @@ func ZDGet(cache *freecache.Cache, ndb *nutsdb.DB, wg *sync.WaitGroup) iris.Hand
 
 					if hjson == "1" {
 						jcount, _ := json.Marshal(dbkeyscount)
-						dbkeyscnt = fmt.Sprintf("{\n\t\"count\": %s\n}\n", string(jcount))
+						dbkeyscnt = fmt.Sprintf("{\"count\": %s}", string(jcount))
 					} else {
-						dbkeyscnt = fmt.Sprintf("%d\n", dbkeyscount)
+						dbkeyscnt = fmt.Sprintf("%d", dbkeyscount)
 					}
 
 					rbytes := []byte(dbkeyscnt)

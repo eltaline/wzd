@@ -13,34 +13,32 @@ Architecture
 
 <img align="center" src="/images/wzd-arch.png" alt="wZD Arch"/>
 
-Current stable version: 1.1.3
+Current stable version: 1.2.0
 ========
 
 - <a href=/CHANGELOG.md>Changelog</a>
 
 **Important: incompatibilities with previous versions**
-:
-- For use all ```Keys*``` headers, you need to add a header ```curl -H "Sea: 1" ...```
-- Headers ```Keys...Archive``` renamed to ```Keys...Archives```
-- In the docker image, getkeys and getinfo options are disabled by default
 
-Added in version 1.1.3:
+- **By default, now curl -X PUT without additional headers works in automatic mode based on the fmaxsize parameter**
+- *Search now without replication(in development)***
+- Removed excessive carriage return `"\n"` when displaying in all types of search
+- Removed redundant headers ```KeysAll, KeysInfoAll, KeysSearchAll, KeysCountAll```
+- Removed double encoding when working with the header ```WithValue```, the values are encoded only in HEX
+- For headers ```Keys, KeysFiles, KeysArchives``` added a type of file/key
+- Renamed `srchcache` option to `searchcache`, dimension changed to bytes
 
-- Advanced recursive search for files and values
-- Global options: gcpercent, srchcache (configure garbage collector and search cache)
-- ```Sea``` header (required to work with ```Keys*``` search)
-- Headers: ```KeysSearch*, Recursive``` (getsearch, getrecursive parameters)
-- Headers: ```Expression, StopFirst``` (regular expression and stop search)
-- Headers: ```WithValue, Expire``` (getvalue, getcache parameters)
-- Headers: ```MinSize, MaxSize, MinStmp, MaxStmp, WithUrl```
-- Headers: ```Expire, SkipCache``` (Query cache search and skip cache)
-- Response headers: ```Hitcache, Errcache, Errmsg``` for search
-- ```FromFile``` header for GET and DELETE methods
+Added in version 1.2.0:
+
+- **Implemented a fast search, the search has been completely rewritten**
+- Header ```File``` for PUT method
+- Headers for ```Prefix, WithJoin, Sort```
+- Header ```Compact``` for PUT and DELETE methods
 - Updated documentation
 
-Fixed in version 1.1.3:
+Fixed in version 1.2.0:
 
-- Minor bug fixes
+- Fixed work with the header ```WithValue```
 
 Features
 ========
@@ -174,10 +172,11 @@ More advanced option:
 
 ```bash
 docker run -d --restart=always -e bindaddr=127.0.0.1:9699 -e host=localhost -e root=/var/storage \
--e upload=true -e delete=true -e compaction=true -e fmaxsize=1048576 \
--e writeintegrity=true -e readintegrity=true \
--e args=false -e getbolt=false -e getcount=true -e getkeys=true -e getinfo=true \
--e getsearch=true -e getrecursive=true -e getvalue=true -e getcache=true \
+-e upload=true -e delete=true -e compaction=true -e search=true -e fmaxsize=1048576 \
+-e writeintegrity=true -e readintegrity=true -e args=false \
+-e getbolt=false -e getkeys=true -e getinfo=true -e getsearch=true \
+-e getrecursive=true -e getjoin=true -e getvalue=true -e getcount=true -e getcache=true \
+-e nonunique=false -e cctrl=2592000 -e delbolt=false -e deldir=false \
 -v /var/storage:/var/storage --name wzd -p 9699:9699 eltaline/wzd
 ```
 
@@ -232,10 +231,16 @@ Downloading the whole Bolt archive from the directory (if the server parameter g
 curl -o test.bolt http://localhost/test/test.bolt
 ```
 
-Uploading file to the directory
+Uploading file to the directory depending on the fmaxszie parameter
 
 ```bash
 curl -X PUT --data-binary @test.jpg http://localhost/test/test.jpg
+```
+
+Uploading file to the regular file
+
+```bash
+curl -X PUT -H "File: 1" --data-binary @test.jpg http://localhost/test/test.jpg
 ```
 
 Uploading file to the Bolt archive (if the server parameter fmaxsize is not exceeded)
@@ -271,16 +276,10 @@ curl -X DELETE http://localhost/test/test.bolt
 Search
 --------
 
-Getting list of all unique file names from directory and archive (if the server parameter getkeys = true)
+Getting list of all file names from directory and archive (if the server parameter getkeys = true)
 
 ```bash
 curl -H "Sea: 1" -H "Keys: 1" http://localhost/test
-```
-
-Getting list of all file names from the directory and archive (if the server parameter getkeys = true)
-
-```bash
-curl -H "Sea: 1" -H "KeysAll: 1" http://localhost/test
 ```
 
 Getting list of all file names only from the directory (if the server parameter getkeys = true)
@@ -295,16 +294,10 @@ Getting list of all file names only from the archive (if the server parameter ge
 curl -H "Sea: 1" -H "KeysArchives: 1" http://localhost/test
 ```
 
-Getting list of all unique file names from the directory and archive with their sizes and dates (if the server parameter getinfo = true)
-
-```bash
-curl -H "Sea: 1" -H "KeysInfo: 1" http://localhost/test
-```
-
 Getting list of all file names from the directory and archive with their sizes and dates (if the server parameter getinfo = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysInfoAll: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysInfo: 1" http://localhost/test
 ```
 
 Getting list of all file names only from the directory with their sizes and dates (if the server parameter getinfo = true)
@@ -319,16 +312,10 @@ Getting list of all file names only from the archive with their sizes and dates 
 curl -H "Sea: 1" -H "KeysInfoArchives: 1" http://localhost/test
 ```
 
-Getting list of all unique file names from the directory and archive with their sizes and dates (if the server parameter getsearch = true)
-
-```bash
-curl -H "Sea: 1" -H "KeysSearch: 1" -H "Expression: (\.jpg$)" http://localhost/test
-```
-
 Getting list of all file names from the directory and archive with their sizes and dates (if the server parameter getsearch = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "Expression: (\.jpg$)" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "Expression: (\.jpg$)" http://localhost/test
 ```
 
 Getting list of all file names only from the directory with their sizes and dates (if the server parameter getsearch = true)
@@ -343,16 +330,10 @@ Getting list of all file names only from the archive with their sizes and dates 
 curl -H "Sea: 1" -H "KeysSearchArchives: 1" -H "Expression: (\.jpg$)" http://localhost/test
 ```
 
-Getting count number of all unique files from the directory and archive (if the server parameter getcount = true)
+Getting count number of all files from the directory and archive (if the server parameter getcount = true)
 
 ```bash
 curl -H "Sea: 1" -H "KeysCount: 1" http://localhost/test
-```
-
-Getting count number of all files from directory and archive (if the server parameter getcount = true)
-
-```bash
-curl -H "Sea: 1" -H "KeysCountAll: 1" http://localhost/test
 ```
 
 Getting count number of all files only from the directory (if the server parameter getcount = true)
@@ -372,76 +353,97 @@ Advanced search
 
 - **```Keys, KeysInfo``` headers also support all search headers except the ```WithValue``` header**
 - **```KeysCount``` headers also support all search headers except ```Limit, Offset, WithValue``` headers**
+- **```WithJoin``` header does not work with ```Recursive``` header, but allows you to set recursion for each directory**
 - **```WithValue``` header is only available if you use ```KeysSearch*``` and ```JSON``` headers together**
-- **The ```Recursive``` header supports a maximum recursion depth of 3**
-- **The ```Expire``` header sets the lifetime once for a particular request. Other same particular request returns result from the cache and the lifetime for the result in the cache is not updated**
+- **```Prefix``` header, if used together with ```Expression``` header, then the regular expression search should not include the prefix**
+- **```Recursive``` header supports a maximum recursion depth of 3**
+- **```Offset``` header only works in single-threaded mode**
+- **```Expire``` header sets the lifetime once for a particular request. Other same particular request returns result from the cache and the lifetime for the result in the cache is not updated**
 - **Using ```Expire``` and ```SkipCache``` headers together will force updates the result and lifetime in the cache**
-- **When using header ```WithValue``` values are encoded by base64(outer) and HEX(inner)**
+- **When using header ```WithValue``` values are encoded by HEX**
 
 Regex search (if server parameter getsearch = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expression: (\ .jpg $)" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Expression: (\ .jpg $)" http://localhost/test
 ````
 
 Recursive search (if server parameter getrecursive = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Recursive: 3" http://localhost/test
 ````
 
 Search with saving the result to the server cache for 120 seconds (if the server parameter getcache = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Expire: 120" http://localhost/test
 ````
 
 Search with a skip result from the server cache
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "SkipCache: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "SkipCache: 1" http://localhost/test
 ````
 
 Search with skipping the result from the server cache and changing the value in the server cache with setting new lifetime of 120 seconds (if the server parameter getcache = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expire: 120" -H "SkipCache: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Expire: 120" -H "SkipCache: 1" http://localhost/test
 ````
 
 Search with limit and offset
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Limit: 25" -H "Offset: 100" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Limit: 25" -H "Offset: 100" http://localhost/test
 ````
 
 Search with adding the virtual host URL to the key names
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "WithUrl: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "WithUrl: 1" http://localhost/test
 ````
 
 Search with size limits. ```WithValue: 1``` If any value exceeds the server parameter vmaxsize, then value will not be included in the output, but the key in the output will be present
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "MinSize: 512" -H "MaxSize: 1024" -H "WithUrl: 1" -H "WithValue: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "MinSize: 512" -H "MaxSize: 1024" -H "WithUrl: 1" -H "WithValue: 1" http://localhost/test
 ````
 
 Search with timestamp date interval. ```WithValue: 1``` If any value exceeds the server parameter vmaxsize, then value will not be included in the output, but the key in the output will be present
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "MinStmp: 1570798400" -H "MaxStmp: 1580798400" -H "WithUrl: 1" -H "WithValue: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "MinStmp: 1570798400" -H "MaxStmp: 1580798400" -H "WithUrl: 1" -H "WithValue: 1" http://localhost/test
+```
+
+Search with prefix
+
+```bash
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Prefix: file_" http://localhost/test
+```
+
+Search by prefix and regular expression with reverse sorting
+
+```bash
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Prefix: file_" -H "Expression: 10.jpg" -H "Sort: 1" http://localhost/test
+```
+
+Search with prefix and regular expression with join and with depths of recursion
+
+```bash
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "WithJoin: mydir9:1 mydir2:3 mydir1/subdir4:2 mydir7/subdir1/subdir2:0" -H "Prefix: file_" -H "Expression: 10.jpg" http://localhost/
 ```
 
 Search before the first match
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Expression: (10.jpg)" -H "StopFirst: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Expression: (10.jpg)" -H "StopFirst: 1" http://localhost/test
 ```
 
 No comments
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearchAll: 1" -H "JSON: 1" -H "Recursive: 3" -H "Expression: (\.jpg$)" -H "MinSize: 512" -H "MaxSize: 1024" -H "MinStmp: 1570798400" -H "MaxStmp: 1580798400" -H "Limit: 25 " -H "Offset: 50" -H "WithUrl: 1" -H "WithValue: 1" -H "Expire: 3600" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Recursive: 3" -H "Expression: (\.jpg$)" -H "MinSize: 512" -H "MaxSize: 1024" -H "MinStmp: 1570798400" -H "MaxStmp: 1580798400" -H "Limit: 25 " -H "Offset: 50" -H "WithUrl: 1" -H "WithValue: 1" -H "Sort: 1" -H "Expire: 3600" http://localhost/test
 ```
 
 Data migration in 3 steps without stopping the service
