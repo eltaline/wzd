@@ -31,6 +31,7 @@ Current stable version: 1.2.0
 Added in version 1.2.0:
 
 - **Implemented a fast search, the search has been completely rewritten**
+- **Implemented automatic sharding of Bolt archives within the directory (skeyscnt, smaxsize parameters)**
 - Header ```File``` for PUT method
 - Headers for ```Prefix, WithJoin, Sort```
 - Header ```Compact``` for PUT and DELETE methods
