@@ -81,11 +81,13 @@ RUN useradd wzd -g wzd
 
 RUN mkdir -p /etc/wzd
 RUN mkdir -p ${logdir}
+RUN mkdir -p ${searchdir}
 RUN mkdir -p ${cmpdir}
 RUN mkdir -p ${root}
 RUN mkdir -p `dirname ${pidfile}`
 
 RUN chown wzd.wzd ${logdir}
+RUN chown wzd.wzd ${searchdir}
 RUN chown wzd.wzd ${cmpdir}
 RUN chown wzd.wzd `dirname ${pidfile}`
 

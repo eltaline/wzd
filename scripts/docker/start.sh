@@ -7,7 +7,7 @@ echo "$VARKEY:$VARVAL"
 VARKEY=`echo $X | awk -F "=" '{print $1}'`
 VARVAL=`echo $X | awk -F "=" '{print $2}'`
 
-sed -i -e "s#\bvar_$VARKEY#$VARVAL#" /etc/wzd/wzd.conf
+sed -i -e "s#\bvar_$VARKEY\b#$VARVAL#" /etc/wzd/wzd.conf
 
 if [ "$VARKEY" == "root" ] ; then
 
