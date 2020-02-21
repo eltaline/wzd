@@ -10,6 +10,7 @@ Version: 1.2.0
 - Removed double encoding when working with the header ```WithValue```, the values are encoded only in HEX
 - For headers ```Keys, KeysFiles, KeysArchives``` added a type of file/key
 - Renamed `srchcache` option to `searchcache`, dimension changed to bytes
+- Project license changed to Apache License 2.0
 
 Added in version 1.2.0:
 
