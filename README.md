@@ -362,7 +362,7 @@ Advanced search
 Regex search (if server parameter getsearch = true)
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Expression: (\ .jpg $)" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Expression: (\.jpg$)" http://localhost/test
 ````
 
 Recursive search (if server parameter getrecursive = true)
@@ -434,7 +434,7 @@ curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "WithJoin: mydir9:1 mydir2:3
 Search before the first match
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Expression: (10.jpg)" -H "StopFirst: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Expression: 10.jpg" -H "StopFirst: 1" http://localhost/test
 ```
 
 No comments
