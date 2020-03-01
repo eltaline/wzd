@@ -434,7 +434,7 @@ curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "WithJoin: mydir9:1 mydir2:3
 Поиск до первого совпадения
 
 ```bash
-curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Expression: (10.jpg)" -H "StopFirst: 1" http://localhost/test
+curl -H "Sea: 1" -H "KeysSearch: 1" -H "JSON: 1" -H "Expression: 10.jpg" -H "StopFirst: 1" http://localhost/test
 ```
 
 Без комментариев
