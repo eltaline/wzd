@@ -431,7 +431,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 					}
 
-					keymutex.Unlock(abs)
+					keymutex.UnLock(abs)
 					return
 
 				}
@@ -476,12 +476,12 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 				}
 
-				keymutex.Unlock(abs)
+				keymutex.UnLock(abs)
 				return
 
 			}
 
-			keymutex.Unlock(abs)
+			keymutex.UnLock(abs)
 
 			if fromfile == "1" {
 
@@ -691,7 +691,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 				}
 
-				keymutex.Unlock(dbf)
+				keymutex.UnLock(dbf)
 				return
 
 			}
@@ -713,7 +713,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 				}
 
 				db.Close()
-				keymutex.Unlock(dbf)
+				keymutex.UnLock(dbf)
 				return
 
 			}
@@ -734,7 +734,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 				}
 
 				db.Close()
-				keymutex.Unlock(dbf)
+				keymutex.UnLock(dbf)
 				return
 
 			}
@@ -774,7 +774,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -812,7 +812,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -850,7 +850,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -888,7 +888,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -923,7 +923,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -953,7 +953,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -976,7 +976,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -999,7 +999,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1043,7 +1043,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1063,7 +1063,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1085,7 +1085,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						delLogger.Errorf("| Gob encode for compaction db error | Path [%s] | %v", dbf, err)
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1107,7 +1107,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1115,7 +1115,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 				}
 
 				db.Close()
-				keymutex.Unlock(dbf)
+				keymutex.UnLock(dbf)
 				return
 
 			}
@@ -1136,7 +1136,7 @@ func ZDDel(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 			}
 
 			db.Close()
-			keymutex.Unlock(dbf)
+			keymutex.UnLock(dbf)
 			return
 
 		} else {

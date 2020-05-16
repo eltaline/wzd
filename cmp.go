@@ -157,7 +157,7 @@ func CMPScheduler(keymutex *mmutex.Mutex, cdb *nutsdb.DB) {
 					appLogger.Errorf("| Delete compaction task error | DB Key [%s] | %v", sdbf, err)
 				}
 
-				keymutex.Unlock(dbf.Path)
+				keymutex.UnLock(dbf.Path)
 				continue
 
 			}
@@ -171,7 +171,7 @@ func CMPScheduler(keymutex *mmutex.Mutex, cdb *nutsdb.DB) {
 					appLogger.Errorf("| Delete compaction task error | DB Key [%s] | %v", sdbf, err)
 				}
 
-				keymutex.Unlock(dbf.Path)
+				keymutex.UnLock(dbf.Path)
 				continue
 
 			}
@@ -187,7 +187,7 @@ func CMPScheduler(keymutex *mmutex.Mutex, cdb *nutsdb.DB) {
 					appLogger.Errorf("| Delete compaction task error | DB Key [%s] | %v", sdbf, err)
 				}
 
-				keymutex.Unlock(dbf.Path)
+				keymutex.UnLock(dbf.Path)
 				continue
 
 			}
@@ -202,7 +202,7 @@ func CMPScheduler(keymutex *mmutex.Mutex, cdb *nutsdb.DB) {
 				}
 
 				db.Close()
-				keymutex.Unlock(dbf.Path)
+				keymutex.UnLock(dbf.Path)
 				continue
 
 			}
@@ -217,7 +217,7 @@ func CMPScheduler(keymutex *mmutex.Mutex, cdb *nutsdb.DB) {
 				}
 
 				db.Close()
-				keymutex.Unlock(dbf.Path)
+				keymutex.UnLock(dbf.Path)
 				continue
 
 			}
@@ -226,12 +226,12 @@ func CMPScheduler(keymutex *mmutex.Mutex, cdb *nutsdb.DB) {
 			if err != nil {
 				appLogger.Errorf("| Delete compaction task error | DB Key [%s] | %v", sdbf, err)
 				db.Close()
-				keymutex.Unlock(dbf.Path)
+				keymutex.UnLock(dbf.Path)
 				continue
 			}
 
 			db.Close()
-			keymutex.Unlock(dbf.Path)
+			keymutex.UnLock(dbf.Path)
 
 		} else {
 

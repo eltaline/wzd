@@ -657,7 +657,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 					}
 
-					keymutex.Unlock(abs)
+					keymutex.UnLock(abs)
 					return
 
 				}
@@ -678,7 +678,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 					}
 
-					keymutex.Unlock(abs)
+					keymutex.UnLock(abs)
 					return
 
 				}
@@ -730,7 +730,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 										}
 
-										keymutex.Unlock(abs)
+										keymutex.UnLock(abs)
 										return
 
 									}
@@ -744,7 +744,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 									}
 
-									keymutex.Unlock(abs)
+									keymutex.UnLock(abs)
 									return
 
 								}
@@ -790,7 +790,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 								}
 
-								keymutex.Unlock(abs)
+								keymutex.UnLock(abs)
 								return
 
 							}
@@ -804,7 +804,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 							}
 
-							keymutex.Unlock(abs)
+							keymutex.UnLock(abs)
 							return
 
 						}
@@ -832,7 +832,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 						}
 
-						keymutex.Unlock(abs)
+						keymutex.UnLock(abs)
 						return
 
 					}
@@ -871,14 +871,14 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 								}
 
-								keymutex.Unlock(abs)
+								keymutex.UnLock(abs)
 								return
 
 							}
 
 						}
 
-						keymutex.Unlock(abs)
+						keymutex.UnLock(abs)
 						return
 
 					}
@@ -922,14 +922,14 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 							}
 
-							keymutex.Unlock(abs)
+							keymutex.UnLock(abs)
 							return
 
 						}
 
 					}
 
-					keymutex.Unlock(abs)
+					keymutex.UnLock(abs)
 					return
 
 				}
@@ -951,7 +951,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 					}
 
-					keymutex.Unlock(abs)
+					keymutex.UnLock(abs)
 					return
 
 				}
@@ -975,7 +975,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 					}
 
-					keymutex.Unlock(abs)
+					keymutex.UnLock(abs)
 					return
 
 				}
@@ -997,7 +997,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 					}
 
-					keymutex.Unlock(abs)
+					keymutex.UnLock(abs)
 					return
 
 				}
@@ -1023,7 +1023,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 						}
 
-						keymutex.Unlock(abs)
+						keymutex.UnLock(abs)
 						return
 
 					}
@@ -1037,7 +1037,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 					}
 
-					keymutex.Unlock(abs)
+					keymutex.UnLock(abs)
 					return
 
 				}
@@ -1081,14 +1081,14 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 						}
 
-						keymutex.Unlock(abs)
+						keymutex.UnLock(abs)
 						return
 
 					}
 
 				}
 
-				keymutex.Unlock(abs)
+				keymutex.UnLock(abs)
 				return
 
 			} else {
@@ -1443,7 +1443,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 
 					}
 
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1465,7 +1465,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1495,7 +1495,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1525,7 +1525,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1555,7 +1555,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1585,7 +1585,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1606,7 +1606,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1627,7 +1627,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1652,7 +1652,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1673,7 +1673,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1718,7 +1718,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 							}
 
 							db.Close()
-							keymutex.Unlock(dbf)
+							keymutex.UnLock(dbf)
 							return
 
 						}
@@ -1769,7 +1769,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1799,7 +1799,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1821,7 +1821,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1846,7 +1846,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1869,7 +1869,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -1902,7 +1902,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1929,7 +1929,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1950,7 +1950,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1977,7 +1977,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -1998,7 +1998,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -2038,7 +2038,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -2076,7 +2076,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -2114,7 +2114,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -2152,7 +2152,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 					}
 
 					db.Close()
-					keymutex.Unlock(dbf)
+					keymutex.UnLock(dbf)
 					return
 
 				}
@@ -2189,7 +2189,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -2216,7 +2216,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -2239,7 +2239,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -2262,7 +2262,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -2287,7 +2287,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -2343,7 +2343,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -2365,7 +2365,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -2387,7 +2387,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						putLogger.Errorf("| Gob encode for compaction db error | Path [%s] | %v", dbf, err)
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -2409,7 +2409,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 						}
 
 						db.Close()
-						keymutex.Unlock(dbf)
+						keymutex.UnLock(dbf)
 						return
 
 					}
@@ -2417,7 +2417,7 @@ func ZDPut(keymutex *mmutex.Mutex, cdb *nutsdb.DB, ndb *nutsdb.DB, wg *sync.Wait
 				}
 
 				db.Close()
-				keymutex.Unlock(dbf)
+				keymutex.UnLock(dbf)
 				return
 
 			} else {
