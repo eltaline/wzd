@@ -16,8 +16,6 @@ Architecture
 Current stable version: 1.2.1
 ========
 
-- <a href=/CHANGELOG.md>Changelog</a>
-
 - Update to Go 1.14
 - Update to Iris 12.1.8
 - Transition to Go module support
