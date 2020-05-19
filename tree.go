@@ -28,7 +28,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/eltaline/cwalk"
-	"github.com/eltaline/go-waitgroup"
+	"github.com/pieterclaerhout/go-waitgroup"
 	"hash/crc64"
 	"os"
 	"path/filepath"

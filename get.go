@@ -35,7 +35,7 @@ import (
 	"github.com/coocood/freecache"
 	"github.com/eltaline/bolt"
 	"github.com/eltaline/nutsdb"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 	"golang.org/x/crypto/blake2b"
 	"hash/crc32"
 	"io"

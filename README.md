@@ -13,34 +13,14 @@ Architecture
 
 <img align="center" src="/images/wzd-arch.png" alt="wZD Arch"/>
 
-Current stable version: 1.2.0
+Current stable version: 1.2.1
 ========
 
 - <a href=/CHANGELOG.md>Changelog</a>
 
-**Important: incompatibilities with previous versions**
-
-- **By default, now curl -X PUT without additional headers works in automatic mode based on the fmaxsize parameter**
-- **Search now without replication(in development)**
-- Removed excessive carriage return `"\n"` when displaying in all types of search
-- Removed redundant headers ```KeysAll, KeysInfoAll, KeysSearchAll, KeysCountAll```
-- Removed double encoding when working with the header ```WithValue```, the values are encoded only in HEX
-- For headers ```Keys, KeysFiles, KeysArchives``` added a type of file/key
-- Renamed `srchcache` option to `searchcache`, dimension changed to bytes
-- Project license changed to Apache License 2.0
-
-Added in version 1.2.0:
-
-- **Implemented a fast search, the search has been completely rewritten**
-- **Implemented automatic sharding of Bolt archives within the directory (skeyscnt, smaxsize parameters)**
-- Header ```File``` for PUT method
-- Headers ```Prefix, WithJoin, Sort```
-- Header ```Compact``` for PUT and DELETE methods
-- Updated documentation
-
-Fixed in version 1.2.0:
-
-- Fixed work with the header ```WithValue```
+- Update to Go 1.14
+- Update to Iris 12.1.8
+- Transition to Go module support
 
 Features
 ========
@@ -113,7 +93,7 @@ Mixed use
 
 The wZD server was designed for mixed use. One can write not only ordinary files, but even html or json generated documents, and one can even simply use NoSQL as a sharding database consisting of a large number of small BoltDB databases, and carry out all sharding through the structure of directories and subdirectories.
 
-Performance tests (Updated v1.1.0)
+Performance tests
 ========
 
 **Testing shows the read or write difference between working with regular files and with Bolt archives. The writeintegrity and readintegrity options are enabled; that is, when writing or reading files in Bolt archives, CRC is used.**

@@ -30,7 +30,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/eltaline/go-waitgroup"
+	"github.com/pieterclaerhout/go-waitgroup"
 	"github.com/eltaline/nutsdb"
 	"hash/crc64"
 	"io/ioutil"

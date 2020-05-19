@@ -1,3 +1,10 @@
+Version: 1.2.1
+========
+
+- Update to Go 1.14
+- Update to Iris 12.1.8
+- Transition to Go module support
+
 Version: 1.2.0
 ========
 

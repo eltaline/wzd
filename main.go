@@ -37,9 +37,9 @@ import (
 	"github.com/eltaline/nutsdb"
 	"github.com/eltaline/toml"
 	"github.com/hashicorp/go-immutable-radix"
-	"github.com/kataras/iris"
-	"github.com/kataras/iris/middleware/logger"
-	"github.com/kataras/iris/middleware/recover"
+	"github.com/kataras/iris/v12"
+	"github.com/kataras/iris/v12/middleware/logger"
+	"github.com/kataras/iris/v12/middleware/recover"
 	"hash/crc32"
 	"hash/crc64"
 	"io/ioutil"
@@ -320,7 +320,7 @@ func init() {
 
 	var err error
 
-	var version string = "1.2.0"
+	var version string = "1.2.1"
 	var vprint bool = false
 	var help bool = false
 

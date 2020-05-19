@@ -309,6 +309,13 @@ opentries
 - **Type:** int
 - **Section:** [server.name]
 
+locktimeout
+- **Description:** This is the maximum timeout for opening the Bolt archive in 1 attempt (seconds).
+- **Default:** Required
+- **Values:** 1-3600
+- **Type:** int
+- **Section:** [server.name]
+
 skeyscnt
 - **Description:** The maximum allowable number of files and/or keys per Bolt archive. If this parameter is exceeded, the file or value will be uploaded to the next Bolt archive in this directory. Recommended size not more than 65536.
 - **Default:** Required

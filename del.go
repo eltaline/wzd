@@ -32,7 +32,7 @@ import (
 	"github.com/eltaline/bolt"
 	"github.com/eltaline/mmutex"
 	"github.com/eltaline/nutsdb"
-	"github.com/kataras/iris"
+	"github.com/kataras/iris/v12"
 	"hash/crc64"
 	"net"
 	"os"
