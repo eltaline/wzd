@@ -181,6 +181,8 @@ func FileKeys(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offset i
 		searchthreads = 1
 	}
 
+	qwait := make(chan bool)
+
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -206,6 +208,8 @@ Main:
 			vdirname := strings.TrimPrefix(dirname, base) + "/"
 
 			nbucket := strconv.FormatUint(dcrc, 16)
+
+			qwait <- true
 
 			nerr := ndb.View(func(tx *nutsdb.Tx) error {
 
@@ -320,6 +324,8 @@ Main:
 
 		})
 
+		<-qwait
+
 	}
 
 	if err != nil {
@@ -403,6 +409,8 @@ func FileKeysInfo(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offs
 		searchthreads = 1
 	}
 
+	qwait := make(chan bool)
+
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -428,6 +436,8 @@ Main:
 			vdirname := strings.TrimPrefix(dirname, base) + "/"
 
 			nbucket := strconv.FormatUint(dcrc, 16)
+
+			qwait <- true
 
 			nerr := ndb.View(func(tx *nutsdb.Tx) error {
 
@@ -544,6 +554,8 @@ Main:
 
 		})
 
+		<-qwait
+
 	}
 
 	if err != nil {
@@ -629,6 +641,8 @@ func FileKeysSearch(ndb *nutsdb.DB, base string, dirpath string, msort uint8, of
 		searchthreads = 1
 	}
 
+	qwait := make(chan bool)
+
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -654,6 +668,8 @@ Main:
 			vdirname := strings.TrimPrefix(dirname, base) + "/"
 
 			nbucket := strconv.FormatUint(dcrc, 16)
+
+			qwait <- true
 
 			nerr := ndb.View(func(tx *nutsdb.Tx) error {
 
@@ -789,6 +805,8 @@ Main:
 
 		})
 
+		<-qwait
+
 	}
 
 	if err != nil {
@@ -872,6 +890,8 @@ func DBKeys(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offset int
 		searchthreads = 1
 	}
 
+	qwait := make(chan bool)
+
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -897,6 +917,8 @@ Main:
 			vdirname := strings.TrimPrefix(dirname, base) + "/"
 
 			nbucket := strconv.FormatUint(dcrc, 16)
+
+			qwait <- true
 
 			nerr := ndb.View(func(tx *nutsdb.Tx) error {
 
@@ -1011,6 +1033,8 @@ Main:
 
 		})
 
+		<-qwait
+
 	}
 
 	if err != nil {
@@ -1094,6 +1118,8 @@ func DBKeysInfo(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offset
 		searchthreads = 1
 	}
 
+	qwait := make(chan bool)
+
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -1119,6 +1145,8 @@ Main:
 			vdirname := strings.TrimPrefix(dirname, base) + "/"
 
 			nbucket := strconv.FormatUint(dcrc, 16)
+
+			qwait <- true
 
 			nerr := ndb.View(func(tx *nutsdb.Tx) error {
 
@@ -1235,6 +1263,8 @@ Main:
 
 		})
 
+		<-qwait
+
 	}
 
 	if err != nil {
@@ -1320,6 +1350,8 @@ func DBKeysSearch(filemode os.FileMode, timeout time.Duration, opentries int, fr
 		searchthreads = 1
 	}
 
+	qwait := make(chan bool)
+
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -1347,6 +1379,8 @@ Main:
 			vdirname := strings.TrimPrefix(dirname, base) + "/"
 
 			nbucket := strconv.FormatUint(dcrc, 16)
+
+			qwait <- true
 
 			nerr := ndb.View(func(tx *nutsdb.Tx) error {
 
@@ -1494,6 +1528,8 @@ Main:
 			return nil
 
 		})
+
+		<-qwait
 
 	}
 
