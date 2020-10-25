@@ -86,8 +86,6 @@ func TreeInit() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	qwait := make(chan bool)
-
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchinit)
 
 Main:
@@ -101,15 +99,15 @@ Main:
 		default:
 		}
 
-		dirname := idirname
+		qwait := make(chan bool)
 
 		qwg.Add(func() error {
 
-			qdirname := dirname
+			dirname := idirname
 
 			qwait <- true
 
-			err := cwalk.Walk(qdirname, func(partpath string, ln os.FileInfo, err error) error {
+			err := cwalk.Walk(dirname, func(partpath string, ln os.FileInfo, err error) error {
 
 				if err != nil {
 					return err
@@ -117,7 +115,7 @@ Main:
 
 				if ln.IsDir() {
 
-					fullpath := []byte(filepath.Clean(qdirname + "/" + partpath))
+					fullpath := []byte(filepath.Clean(dirname + "/" + partpath))
 
 					radix.Lock()
 					tree, _, _ = tree.Insert(fullpath, crc64.Checksum(fullpath, ctbl64))

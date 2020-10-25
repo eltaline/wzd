@@ -30,8 +30,8 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
-	"github.com/pieterclaerhout/go-waitgroup"
 	"github.com/eltaline/nutsdb"
+	"github.com/pieterclaerhout/go-waitgroup"
 	"hash/crc64"
 	"io/ioutil"
 	"os"
@@ -181,8 +181,6 @@ func FileKeys(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offset i
 		searchthreads = 1
 	}
 
-	qwait := make(chan bool)
-
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -196,10 +194,12 @@ Main:
 		default:
 		}
 
-		dirname := idirname
-		dcrc := paths[dirname]
+		qwait := make(chan bool)
 
 		qwg.Add(func() error {
+
+			dirname := idirname
+			dcrc := paths[dirname]
 
 			qoffset := offset
 
@@ -409,8 +409,6 @@ func FileKeysInfo(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offs
 		searchthreads = 1
 	}
 
-	qwait := make(chan bool)
-
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -424,10 +422,12 @@ Main:
 		default:
 		}
 
-		dirname := idirname
-		dcrc := paths[dirname]
+		qwait := make(chan bool)
 
 		qwg.Add(func() error {
+
+			dirname := idirname
+			dcrc := paths[dirname]
 
 			qoffset := offset
 
@@ -641,8 +641,6 @@ func FileKeysSearch(ndb *nutsdb.DB, base string, dirpath string, msort uint8, of
 		searchthreads = 1
 	}
 
-	qwait := make(chan bool)
-
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -656,10 +654,12 @@ Main:
 		default:
 		}
 
-		dirname := idirname
-		dcrc := paths[dirname]
+		qwait := make(chan bool)
 
 		qwg.Add(func() error {
+
+			dirname := idirname
+			dcrc := paths[dirname]
 
 			qoffset := offset
 
@@ -890,8 +890,6 @@ func DBKeys(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offset int
 		searchthreads = 1
 	}
 
-	qwait := make(chan bool)
-
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -905,10 +903,12 @@ Main:
 		default:
 		}
 
-		dirname := idirname
-		dcrc := paths[dirname]
+		qwait := make(chan bool)
 
 		qwg.Add(func() error {
+
+			dirname := idirname
+			dcrc := paths[dirname]
 
 			qoffset := offset
 
@@ -1118,8 +1118,6 @@ func DBKeysInfo(ndb *nutsdb.DB, base string, dirpath string, msort uint8, offset
 		searchthreads = 1
 	}
 
-	qwait := make(chan bool)
-
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -1133,10 +1131,12 @@ Main:
 		default:
 		}
 
-		dirname := idirname
-		dcrc := paths[dirname]
+		qwait := make(chan bool)
 
 		qwg.Add(func() error {
+
+			dirname := idirname
+			dcrc := paths[dirname]
 
 			qoffset := offset
 
@@ -1350,8 +1350,6 @@ func DBKeysSearch(filemode os.FileMode, timeout time.Duration, opentries int, fr
 		searchthreads = 1
 	}
 
-	qwait := make(chan bool)
-
 	qwg, ctx := waitgroup.NewErrorGroup(ctx, searchthreads)
 
 Main:
@@ -1365,10 +1363,12 @@ Main:
 		default:
 		}
 
-		dirname := idirname
-		dcrc := paths[dirname]
+		qwait := make(chan bool)
 
 		qwg.Add(func() error {
+
+			dirname := idirname
+			dcrc := paths[dirname]
 
 			qoffset := offset
 
