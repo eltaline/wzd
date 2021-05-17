@@ -49,8 +49,8 @@ nfpms:
       - deb
       - rpm
     vendor: "Eltaline"
-    homepage: "https://wzd.dev/"
-    maintainer: "Andrey Kuvshinov <dev@wzd.dev>"
+    homepage: "https://elta.ee/"
+    maintainer: "Andrey Kuvshinov"
     description: "Sharded NoSQL Compact Storage Server. Distributing any number of small and large files/values"
     license: "Apache 2.0"
     name_template: "{{.ProjectName}}-{{.Version}}-{{.Os}}-{{.Arch}}"
@@ -129,16 +129,16 @@ scoop:
 
   commit_author:
     name: "Andrey Kuvshinov"
-    email: dev@wzd.dev
-  homepage: "https://wzd.dev/"
+    email: syslinux@protonmail.com
+  homepage: "https://elta.ee"
   license: Apache 2.0
 
 brews:
  -
    commit_author:
      name: "Andrey Kuvshinov"
-     email: dev@wzd.dev
-   homepage: "https://wzd.dev/"
+     email: syslinux@protonmail.com
+   homepage: "https://elta.ee/"
    goarm: 7
 
 snapshot:
