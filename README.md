@@ -545,8 +545,6 @@ Donations
 Contacts
 ========
 
-- E-mail: dev@wzd.dev
-- wZD website: https://wzd.dev
 - Company website: <a href="https://elta.ee">Eltaline</a>
 
 ```
