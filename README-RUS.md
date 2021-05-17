@@ -537,16 +537,9 @@ HTTP Core
 
 Никакие гарантии на данное программное обеспечение не предоставляются. Просьба сначала тестировать.
 
-Пожертвования
-========
-
-<a href="https://www.paypal.me/xwzd"><img src="/images/paypal.png"><a/>
-
 Контакты
 ========
 
-- E-Mail: dev@wzd.dev
-- Сайт wZD: https://wzd.dev
 - Сайт компании: <a href="https://elta.ee">Eltaline</a>
 
 ```
