@@ -48,9 +48,9 @@ nfpms:
     formats:
       - deb
       - rpm
-    vendor: "Eltaline"
+    vendor: "Eltaline <eltaline.ou@gmail.com>"
     homepage: "https://elta.ee/"
-    maintainer: "Andrey Kuvshinov"
+    maintainer: "Andrey Kuvshinov <syslinux@protonmail.com>"
     description: "Sharded NoSQL Compact Storage Server. Distributing any number of small and large files/values"
     license: "Apache 2.0"
     name_template: "{{.ProjectName}}-{{.Version}}-{{.Os}}-{{.Arch}}"
