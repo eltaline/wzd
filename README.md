@@ -537,11 +537,6 @@ Guarantees
 
 No warranty is provided for this software. Please test first
 
-Donations
-========
-
-<a href="https://www.paypal.me/xwzd"><img src="/images/paypal.png"><a/>
-
 Contacts
 ========
 
