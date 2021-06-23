@@ -67,11 +67,6 @@ nfpms:
       - /var/lib/wzd
       - /usr/share/wzd
 
-    empty_folders:
-      - /etc/hsd
-      - /var/log/hsd
-      - /usr/share/hsd
-
     contents:
       - src: "conf/systemd/wzd.service"
         dst: "/lib/systemd/system/wzd.service"
