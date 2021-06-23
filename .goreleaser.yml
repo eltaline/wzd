@@ -53,7 +53,7 @@ nfpms:
     maintainer: "Andrey Kuvshinov <syslinux@protonmail.com>"
     description: "Sharded NoSQL Compact Storage Server. Distributing any number of small and large files/values"
     license: "Apache 2.0"
-    name_template: "{{.ProjectName}}-{{.Version}}-{{.Os}}-{{.Arch}}"
+    file_name_template: "{{.ProjectName}}-{{.Version}}-{{.Os}}-{{.Arch}}"
 
     bindir: /usr/sbin
 
@@ -67,17 +67,39 @@ nfpms:
       - /var/lib/wzd
       - /usr/share/wzd
 
-    files:
-      "conf/systemd/wzd.service": "/lib/systemd/system/wzd.service"
-      "conf/logrotate.d/wzd": "/etc/logrotate.d/wzd"
-      "LICENSE": "/usr/share/wzd/LICENSE"
-      "NOTICE": "/usr/share/wzd/NOTICE"
+    empty_folders:
+      - /etc/hsd
+      - /var/log/hsd
+      - /usr/share/hsd
 
-    config_files:
-      "conf/wzd/wzd.conf": "/etc/wzd/wzd.conf"
-      "conf/wzd/get-localhost.conf": "/etc/wzd/get-localhost.conf"
-      "conf/wzd/put-localhost.conf": "/etc/wzd/put-localhost.conf"
-      "conf/wzd/del-localhost.conf": "/etc/wzd/del-localhost.conf"
+    contents:
+      - src: "conf/systemd/wzd.service"
+        dst: "/lib/systemd/system/wzd.service"
+
+      - src: "conf/logrotate.d/wzd"
+        dst: "/etc/logrotate.d/wzd"
+
+      - src: "LICENSE"
+        dst: "/usr/share/wzd/LICENSE"
+
+      - src: "NOTICE"
+        dst: "/usr/share/wzd/NOTICE"
+
+      - src: "conf/wzd/wzd.conf"
+        dst: "/etc/wzd/wzd.conf"
+        type: config
+
+      - src: "conf/wzd/get-localhost.conf"
+        dst: "/etc/wzd/get-localhost.conf"
+        type: config
+
+      - src: "conf/wzd/put-localhost.conf"
+        dst: "/etc/wzd/put-localhost.conf"
+        type: config
+
+      - src: "conf/wzd/del-localhost.conf"
+        dst: "/etc/wzd/del-localhost.conf"
+        type: config
 
     scripts:
       postinstall: "scripts/postinstall.sh"
